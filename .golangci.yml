@@ -1,0 +1,320 @@
+---
+# golangci-lint configuration. Adapted from
+# https://github.com/maratori/golangci-lint-config.
+
+version: "2"
+
+issues:
+  max-same-issues: 50
+
+formatters:
+  enable:
+    - gci
+    - gofumpt
+    - goimports
+    - golines
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/tbhb/agent-tools)
+        - blank
+        - dot
+        - alias
+        - localmodule
+      custom-order: true
+    gofumpt:
+      module-path: github.com/tbhb/agent-tools
+      extra-rules: true
+    goimports:
+      local-prefixes:
+        - github.com/tbhb/agent-tools
+    golines:
+      max-len: 120
+
+linters:
+  enable:
+    - asasalint  # slice passed as a variadic interface arg silently drops elements
+    - asciicheck  # non-ASCII characters in Go identifiers (typo/homoglyph guard)
+    - bidichk  # bidi Unicode control chars in source (Trojan Source attack vector)
+    - bodyclose  # http.Response.Body must be closed
+    - canonicalheader  # HTTP header keys must use canonical MIME form
+    - containedctx  # struct fields holding context.Context (anti-pattern)
+    - contextcheck  # functions must propagate the inbound ctx, not Background()
+    - copyloopvar  # unnecessary `x := x` copies under Go 1.22 loop semantics
+    - cyclop  # cyclomatic complexity per function and package average
+    - depguard  # allow/deny imports by package path
+    - dupl  # token-stream duplicate code detector
+    - dupword  # repeated words in comments and strings ("the the")
+    - durationcheck  # suspicious time.Duration arithmetic
+    - embeddedstructfieldcheck  # placement rules for embedded struct fields
+    - err113  # errors must be sentinel vars, not inline errors.New
+    - errcheck  # unchecked error returns
+    - errchkjson  # unchecked errors from json.Marshal/Encode
+    - errname  # error vars named ErrX, error types named XError
+    - errorlint  # misuse of error wrapping (== vs errors.Is, %v vs %w)
+    - exhaustive  # switch/map over enum-like types must cover every case
+    - exptostd  # suggests stdlib replacements for golang.org/x/exp packages
+    - fatcontext  # nested context allocation in loops (memory bloat)
+    - forbidigo  # forbid configured identifiers/calls
+    - forcetypeassert  # type assertions must use the comma-ok form
+    - funlen  # function length thresholds
+    - gocheckcompilerdirectives  # validates //go: directive syntax
+    - gochecknoglobals  # flags package-level mutable variables
+    - gochecknoinits  # flags init() functions
+    - gochecksumtype  # sum-type exhaustiveness for tagged interfaces
+    - gocognit  # cognitive complexity per function
+    - goconst  # repeated string/numeric literals that could be constants
+    - gocritic  # bundle of opinionated style and diagnostic checks
+    - gocyclo  # cyclomatic complexity per function (overlaps with cyclop)
+    - godot  # top-level comments must end with a period
+    - goheader  # enforces the SPDX/copyright header on every file
+    - gomoddirectives  # restricts replace/retract/exclude in go.mod
+    - gomodguard_v2  # module-level bans (entire modules), complementing depguard's package-level rules
+    - goprintffuncname  # printf-style functions must end in "f"
+    - gosec  # security analyzer (weak crypto, SQL injection, hardcoded creds, etc.)
+    - govet  # the stdlib `go vet` suite
+    - iface  # redundant or identical interface definitions
+    - inamedparam  # interface method parameters must be named
+    - ineffassign  # assignments whose value is never read
+    - intrange  # suggests Go 1.22 `for i := range N` form
+    - iotamixing  # forbids mixing iota and literals in a const block
+    - loggercheck  # verifies key/value pairing in structured loggers
+    - makezero  # `make([]T, n)` followed by `append` (likely length bug)
+    - mirror  # detects bytes/strings API mismatches
+    - mnd  # magic-number detector
+    - modernize  # suggests modern Go idioms (overlap with `go fix`)
+    - musttag  # types used with json/yaml/toml must have struct tags
+    - nakedret  # naked returns over a length threshold
+    - nestif  # flags deeply nested if-blocks
+    - nilerr  # returns nil when an error was non-nil (and inverse)
+    - nilnesserr  # subtle nil-vs-typed-nil error wrapping bugs
+    - nilnil  # `(T, error)` functions returning `(nil, nil)`
+    - noctx  # HTTP requests must carry a context
+    - nolintlint  # lints the `//nolint:` directives themselves
+    - nonamedreturns  # forbids named return values
+    - nosprintfhostport  # use `net.JoinHostPort` over `Sprintf("%s:%d", host, port)`
+    - paralleltest  # tests should call `t.Parallel()` where safe
+    - perfsprint  # suggests `strconv` etc. over `fmt.Sprintf` for hot paths
+    - prealloc  # suggests pre-allocating slices with known capacity
+    - predeclared  # forbids shadowing predeclared identifiers (len, error, etc.)
+    - promlinter  # Prometheus metric naming conventions
+    - protogetter  # use generated `Get*()` methods on protobuf messages
+    - reassign  # flags reassignment of top-level (package) variables
+    - recvcheck  # methods on a type must consistently use pointer or value receivers
+    - revive  # configurable replacement for golint
+    - rowserrcheck  # `database/sql` `Rows.Err()` must be checked
+    - sloglint  # enforces `log/slog` usage conventions
+    - spancheck  # OpenTelemetry spans must `End()` and record errors
+    - sqlclosecheck  # `*sql.Rows` and `*sql.Stmt` must be closed
+    - staticcheck  # Honnef.co/go/tools suite (SA/ST/QF/S checks)
+    - tagalign  # struct field tags must be vertically aligned
+    - testableexamples  # `Example` functions must be runnable
+    - testifylint  # common testify misuse patterns
+    - testpackage  # tests live in `package foo_test`, not `package foo`
+    - thelper  # test helpers must call `t.Helper()`
+    - tparallel  # misuse of `t.Parallel()` (e.g., shared state in subtests)
+    - unconvert  # removes redundant type conversions
+    - unparam  # parameters unused or always passed the same value
+    - unused  # unused identifiers within a package
+    - usestdlibvars  # use named stdlib consts (`http.MethodGet` over `"GET"`)
+    - usetesting  # use `t.Setenv`/`t.TempDir`/`t.Context` over os-level forms
+    - wastedassign  # assignments whose result is never used
+    - whitespace  # unnecessary leading/trailing whitespace in blocks
+    - wrapcheck  # errors crossing package boundaries should be wrapped
+
+  settings:
+    cyclop:
+      max-complexity: 15
+      package-average: 10.0
+
+    # depguard handles package-level path rules (stdlib bans, layer rules
+    # later). Module-level bans (entire third-party modules) live in
+    # gomodguard_v2 below, which has richer recommendations/reason fields.
+    depguard:
+      rules:
+        "non-test files":
+          files:
+            - "!$test"
+          deny:
+            - pkg: math/rand$
+              desc: "Use math/rand/v2 instead"
+        "non-main files":
+          files:
+            - "!**/cmd/*/main.go"
+          deny:
+            - pkg: log$
+              desc: "Use log/slog instead"
+
+    # gomodguard_v2 bans entire third-party modules with replacement
+    # recommendations.
+    gomodguard_v2:
+      blocked:
+        - module: github.com/golang/protobuf
+          recommendations:
+            - google.golang.org/protobuf
+          reason: "Use google.golang.org/protobuf; golang/protobuf is the legacy import path"
+        - module: github.com/satori/go.uuid
+          recommendations:
+            - github.com/google/uuid
+          reason: "satori/go.uuid is unmaintained and has known race conditions"
+        - module: github.com/gofrs/uuid
+          recommendations:
+            - github.com/gofrs/uuid/v5
+          reason: "Use the v5+ module path; older paths predate generics fixes"
+
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+
+    exhaustive:
+      check:
+        - switch
+        - map
+
+    funlen:
+      lines: 100
+      statements: 50
+
+    gochecksumtype:
+      default-signifies-exhaustive: false
+
+    gocognit:
+      min-complexity: 15
+
+    gocritic:
+      settings:
+        captLocal:
+          paramsOnly: false
+        underef:
+          skipRecvDeref: false
+
+    goheader:
+      template: |-
+        SPDX-License-Identifier: Apache-2.0
+        Copyright Authors of agent-tools
+
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+      settings:
+        shadow:
+          strict: true
+
+    mnd:
+      ignored-functions:
+        - args.Error
+        - flag.Arg
+        - flag.Duration.*
+        - flag.Float.*
+        - flag.Int.*
+        - flag.Uint.*
+        - os.Chmod
+        - os.Mkdir.*
+        - os.OpenFile
+        - os.WriteFile
+
+    nakedret:
+      max-func-lines: 0
+
+    nolintlint:
+      # golines is the only threshold lint whose violation is purely visual —
+      # any explanation ("line is long") just restates the violation. funlen
+      # and gocognit nolints carry real signal (why the function resists
+      # splitting, what invariant the complexity protects), so they go through
+      # the standard require-explanation gate.
+      allow-no-explanation: [golines]
+      require-explanation: true
+      require-specific: true
+
+    perfsprint:
+      strconcat: false
+
+    reassign:
+      patterns:
+        - ".*"
+
+    sloglint:
+      no-global: all
+      context: scope
+
+    staticcheck:
+      checks:
+        - all
+        # ST1000 — "at least one file in a package should have a package
+        # comment". Excluded because package docs are written where they
+        # carry signal, not as ritual; consistent with the revive
+        # exclusions below that drop the mandatory exported-symbol docs.
+        - -ST1000
+        # ST1016 — "methods on the same type should use a consistent
+        # receiver name". Excluded because `recvcheck` (enabled above)
+        # already catches the load-bearing receiver bug class
+        # (pointer/value mixing), and ST1016 churns during refactors
+        # without surfacing a real defect.
+        - -ST1016
+        # QF1008 — quickfix that strips embedded-type qualifiers from
+        # selectors (`s.field` over `s.Embedded.field`). Excluded because
+        # the explicit form is usually more readable, especially when
+        # multiple embedded types could expose a similarly-named field.
+        - -QF1008
+
+    testifylint:
+      expected-actual:
+        # Default only matches `^expected`. Go convention here is `got`/`want`,
+        # so extend the pattern to catch swapped args in `assert.Equal(t, got, want)`.
+        pattern: ^(expected|want)
+      formatter:
+        # Verify format strings in `*.Equalf`, `*.NoErrorf`, etc. match their args.
+        check-format-string: true
+
+    usetesting:
+      os-temp-dir: true
+
+  exclusions:
+    warn-unused: true
+    presets:
+      - std-error-handling
+      - common-false-positives
+    paths:
+      - vendor
+    rules:
+      # godot requires comments to end with a period, but TODO comments
+      # ("TODO: do X", "TODO(name)") conventionally don't. Skip godot on
+      # any line whose source contains "TODO".
+      - source: "TODO"
+        linters: [godot]
+      # revive's package-comment requirement, excluded for the same reason
+      # as staticcheck ST1000 above: package docs are written where they
+      # carry signal, not as ritual.
+      - text: "should have a package comment"
+        linters: [revive]
+      # revive's "every exported identifier needs a doc comment" rule.
+      # Not every exported symbol benefits from a forced comment; docs
+      # land where they communicate intent.
+      - text: 'exported \S+ \S+ should have comment( \(or a comment on this block\))? or be unexported'
+        linters: [revive]
+      # revive demands the package comment start with `Package X ...`, but
+      # files often open with a top-of-file `//nolint:` or `// TODO`
+      # directive that revive misreads as the package comment. Scope the
+      # suppression to that specific source pattern.
+      - text: 'package comment should be of the form ".+"'
+        source: "// ?(nolint|TODO)"
+        linters: [revive]
+      # Same shape as the rule above, but for the per-symbol form
+      # requirement (`// Foo ...`). nolint/TODO comments next to an
+      # exported symbol can be misread as that symbol's doc comment.
+      - text: 'comment on exported \S+ \S+ should be of the form ".+"'
+        source: "// ?(nolint|TODO)"
+        linters: [revive, staticcheck]
+      # Tests are exempt from two linters specifically:
+      #   funlen  — table-driven tests legitimately exceed the
+      #             100-line / 50-statement function limit.
+      #   goconst — repeated test strings (URLs, fixture values,
+      #             field names) read better inline than as named
+      #             constants.
+      - path: "_test\\.go"
+        linters:
+          - funlen
+          - goconst

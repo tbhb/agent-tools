@@ -1,0 +1,16 @@
+---
+# Gremlins mutation-testing configuration, auto-discovered from the
+# module root. The vendored dependency tree carries no tests of ours,
+# so gremlins labels every mutant it finds there NOT COVERED: tens of
+# thousands of them that swamp the real findings and drag mutator
+# coverage down to a fraction of a percent. Excluding `vendor/` scopes
+# the run to first-party code. Each entry compiles as a Go regexp and
+# matches against the module-root-relative path.
+#
+# The timeout coefficient stays a recipe flag so the nightly workflow
+# can override it per run (a CLI flag outranks this file); see the
+# `mutate` recipe in the Justfile.
+
+unleash:
+  exclude-files:
+    - "^vendor/"

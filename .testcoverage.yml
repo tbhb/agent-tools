@@ -1,0 +1,21 @@
+---
+# Coverage thresholds enforced by `just cover-check` via the
+# vladopajic/go-test-coverage tool. The three levels apply
+# independently. A profile that meets the total but fails on any one
+# package or file gets rejected. Mutation testing (`just mutate`)
+# remains the stronger gate for assertion quality; line coverage
+# here guards against new code shipping with no test reach at all.
+
+profile: coverage.out
+local-prefix: github.com/tbhb/agent-tools
+
+threshold:
+  file: 75
+  package: 80
+  total: 85
+
+exclude:
+  paths:
+    # Binary entry points hold os.Args parsing and os.Exit glue that
+    # can't run from a go test process.
+    - ^cmd/[^/]+/main\.go$

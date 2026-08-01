@@ -1,0 +1,52 @@
+---
+# go-arch-lint configuration. Enforces directional dependencies between
+# top-level components. The compiler already prevents cycles and
+# cross-module imports; this catches the intra-project layering rules the
+# compiler doesn't (e.g., "cmd may depend on internal, but not the
+# reverse").
+#
+# Scaffold: today the only components are `cmd` and `internal/**`. As
+# `internal/` gains sub-packages worth fencing (handlers vs services,
+# domain vs infrastructure, etc.), add finer-grained components and the
+# `mayDependOn` rules between them here.
+version: 3
+
+# Vendored third-party imports are governed by depguard / gomodguard,
+# not go-arch-lint. Allow any vendor dep at the architectural layer.
+#
+# deepScan: false disables the method-call / dependency-injection
+# tracking, which requires running a Go toolchain inside the linter
+# container. The official image bundles Go 1.25; until it tracks our
+# `go` directive (1.26+), we stick to the basic component-imports
+# check, which is the rule that's load-bearing at this scale.
+allow:
+  depOnAnyVendor: true
+  deepScan: false
+
+# Exclude vendored code, test fixtures, and any out-of-band tooling
+# directories from component analysis. Without this, every vendored file
+# shows up as "not attached to any component" — the architecture rules
+# are about *our* code, not theirs.
+exclude:
+  - vendor
+  - testdata
+  - tools
+
+components:
+  cmd:
+    in: cmd/**
+  internal:
+    in: internal/**
+
+deps:
+  cmd:
+    mayDependOn:
+      - internal
+  internal:
+    # internal/ has no enforced sub-structure yet. Listing internal as
+    # its only allowed component dep enforces the meaningful rule at
+    # this scale — "internal packages may not import cmd" — while
+    # permitting any intra-internal imports. Split this into per-layer
+    # components once internal/ gains sub-packages worth fencing.
+    mayDependOn:
+      - internal
