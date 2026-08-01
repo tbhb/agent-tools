@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright Authors of agent-tools
+// Copyright Tony Burns
 
 // Command agentcontext provides one of the shared agent tools for tbhb
 // repositories.

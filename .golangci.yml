@@ -193,7 +193,7 @@ linters:
     goheader:
       template: |-
         SPDX-License-Identifier: Apache-2.0
-        Copyright Authors of agent-tools
+        Copyright Tony Burns
 
     govet:
       enable-all: true
