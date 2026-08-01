@@ -1,0 +1,23 @@
+tag_prefix = "v"
+
+# Keep the APM package manifest version in lockstep with the tag cog
+# is about to cut. The hook runs before the version commit, so the
+# rewritten apm.yml lands inside that commit and one vX.Y.Z tag
+# serves both consumer paths (apm install #vX.Y.Z, go install
+# @vX.Y.Z). perl rather than sed keeps the in-place edit portable
+# across the BSD sed on macOS dev hosts and GNU sed on CI runners.
+pre_bump_hooks = [
+  "perl -pi -e 's/^version: .*/version: {{version}}/' apm.yml",
+]
+
+[changelog]
+path = "CHANGELOG.md"
+template = "remote"
+remote = "github.com"
+repository = "agent-tools"
+owner = "tbhb"
+authors = [{ username = "tbhb", signature = "Tony Burns" }]
+
+[commit_types]
+chore = { omit_from_changelog = true }
+test = { omit_from_changelog = true }
