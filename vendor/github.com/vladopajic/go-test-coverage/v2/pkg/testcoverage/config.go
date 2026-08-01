@@ -1,0 +1,197 @@
+package testcoverage
+
+import (
+	"errors"
+	"fmt"
+	"os"
+	"reflect"
+	"regexp"
+	"strings"
+
+	yaml "gopkg.in/yaml.v3"
+
+	"github.com/vladopajic/go-test-coverage/v2/pkg/testcoverage/badgestorer"
+)
+
+const HiddenValue = "***"
+
+var (
+	ErrThresholdNotInRange         = errors.New("threshold must be in range [0 - 100]")
+	ErrCoverageProfileNotSpecified = errors.New("coverage profile file not specified")
+	ErrRegExpNotValid              = errors.New("regular expression is not valid")
+	ErrCDNOptionNotSet             = errors.New("CDN options are not valid")
+	ErrGitOptionNotSet             = errors.New("git options are not valid")
+)
+
+type Config struct {
+	Profile                string     `yaml:"profile"`
+	Debug                  bool       `yaml:"-"`
+	SourceDir              string     `yaml:"-"`
+	Threshold              Threshold  `yaml:"threshold"`
+	Override               []Override `yaml:"override,omitempty"`
+	Exclude                Exclude    `yaml:"exclude"`
+	BreakdownFileName      string     `yaml:"breakdown-file-name"`
+	GithubActionOutput     bool       `yaml:"github-action-output"`
+	Diff                   Diff       `yaml:"diff"`
+	Badge                  Badge      `yaml:"-"`
+	ForceAnnotationComment bool       `yaml:"force-annotation-comment"`
+}
+
+type Threshold struct {
+	File    int `yaml:"file"`
+	Package int `yaml:"package"`
+	Total   int `yaml:"total"`
+}
+
+type Override struct {
+	Threshold int    `yaml:"threshold"`
+	Path      string `yaml:"path"`
+}
+
+type Exclude struct {
+	Paths []string `yaml:"paths,omitempty"`
+}
+
+type Diff struct {
+	BaseBreakdownFileName string   `yaml:"base-breakdown-file-name"`
+	Threshold             *float64 `yaml:"threshold,omitempty"`
+}
+
+type Badge struct {
+	FileName string
+	CDN      badgestorer.CDN
+	Git      badgestorer.Git
+}
+
+// Redacted returns a copy of Config with sensitive credentials obscured.
+//
+//nolint:wsl,mnd // relax
+func (c Config) Redacted() Config {
+	r := c
+
+	if r.Badge.CDN.Key != "" {
+		r.Badge.CDN.Key = r.Badge.CDN.Key[0:min(len(r.Badge.CDN.Key), 5)] + HiddenValue
+	}
+
+	if r.Badge.CDN.Secret != "" {
+		r.Badge.CDN.Secret = HiddenValue
+	}
+
+	if r.Badge.Git.Token != "" {
+		r.Badge.Git.Token = HiddenValue
+	}
+
+	return r
+}
+
+func (c Config) Validate() error {
+	validateRegexp := func(s string) error {
+		_, err := regexp.Compile(s)
+		return err //nolint:wrapcheck // error is wrapped at level above
+	}
+
+	if c.Profile == "" {
+		return ErrCoverageProfileNotSpecified
+	}
+
+	if err := c.validateThreshold(); err != nil {
+		return err
+	}
+
+	for i, pattern := range c.Exclude.Paths {
+		if err := validateRegexp(pattern); err != nil {
+			return fmt.Errorf("%w for excluded paths element[%d]: %w", ErrRegExpNotValid, i, err)
+		}
+	}
+
+	for i, o := range c.Override {
+		if !inRange(o.Threshold) {
+			return fmt.Errorf("override element[%d] %w", i, ErrThresholdNotInRange)
+		}
+
+		if err := validateRegexp(o.Path); err != nil {
+			return fmt.Errorf("%w for override element[%d]: %w", ErrRegExpNotValid, i, err)
+		}
+	}
+
+	if err := c.validateCDN(); err != nil {
+		return fmt.Errorf("%w: %s", ErrCDNOptionNotSet, err.Error())
+	}
+
+	if err := c.validateGit(); err != nil {
+		return fmt.Errorf("%w: %s", ErrGitOptionNotSet, err.Error())
+	}
+
+	return nil
+}
+
+func (c Config) validateThreshold() error {
+	if !inRange(c.Threshold.File) {
+		return fmt.Errorf("file %w", ErrThresholdNotInRange)
+	}
+
+	if !inRange(c.Threshold.Package) {
+		return fmt.Errorf("package %w", ErrThresholdNotInRange)
+	}
+
+	if !inRange(c.Threshold.Total) {
+		return fmt.Errorf("total %w", ErrThresholdNotInRange)
+	}
+
+	return nil
+}
+
+func (c Config) validateCDN() error {
+	// when cdn config is empty, cdn feature is disabled and there is no need to validate
+	if reflect.DeepEqual(c.Badge.CDN, badgestorer.CDN{}) {
+		return nil
+	}
+
+	return hasNonEmptyFields(c.Badge.CDN)
+}
+
+func (c Config) validateGit() error {
+	// when git config is empty, git feature is disabled and there is no need to validate
+	if reflect.DeepEqual(c.Badge.Git, badgestorer.Git{}) {
+		return nil
+	}
+
+	return hasNonEmptyFields(c.Badge.Git)
+}
+
+func hasNonEmptyFields(obj any) error {
+	v := reflect.ValueOf(obj)
+	for i := range v.NumField() {
+		f := v.Field(i)
+
+		if !f.IsZero() { // field is set
+			continue
+		}
+
+		if f.Type().Kind() == reflect.Bool { // boolean fields are always set
+			continue
+		}
+
+		name := strings.ToLower(v.Type().Field(i).Name)
+
+		return fmt.Errorf("property [%v] should be set", name)
+	}
+
+	return nil
+}
+
+func ConfigFromFile(cfg *Config, filename string) error {
+	source, err := os.ReadFile(filename)
+	if err != nil {
+		return fmt.Errorf("failed reading file: %w", err)
+	}
+
+	err = yaml.Unmarshal(source, cfg)
+	if err != nil {
+		return fmt.Errorf("failed parsing config file: %w", err)
+	}
+
+	return nil
+}
+
+func inRange(t int) bool { return t >= 0 && t <= 100 }

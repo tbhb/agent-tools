@@ -1,0 +1,212 @@
+# go-test-coverage
+
+[![test](https://github.com/vladopajic/go-test-coverage/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/vladopajic/go-test-coverage/actions/workflows/test.yml)
+[![action-test-docker](https://github.com/vladopajic/go-test-coverage/actions/workflows/action-docker-test.yml/badge.svg?branch=main)](https://github.com/vladopajic/go-test-coverage/actions/workflows/action-docker-test.yml)
+[![action-test-source](https://github.com/vladopajic/go-test-coverage/actions/workflows/action-source-test.yml/badge.svg?branch=main)](https://github.com/vladopajic/go-test-coverage/actions/workflows/action-source-test.yml)
+[![lint](https://github.com/vladopajic/go-test-coverage/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/vladopajic/go-test-coverage/actions/workflows/lint.yml)
+[![coverage](https://raw.githubusercontent.com/vladopajic/go-test-coverage/badges/.badges/main/coverage.svg)](/.github/.testcoverage.yml)
+[![Release](https://img.shields.io/github/release/vladopajic/go-test-coverage.svg?color=%23007ec6)](https://github.com/vladopajic/go-test-coverage/releases/latest)
+
+![go-test-coverage cover image](https://github.com/user-attachments/assets/2febc74e-7437-4dc6-87a4-0ca47f8e714e)
+
+`go-test-coverage` is a tool designed to report issues when test coverage falls below a specified threshold, ensuring higher code quality and preventing regressions in test coverage over time.
+
+## Why Use go-test-coverage?
+
+Here are the key features and benefits:
+
+- **Quick Setup**: Install and configure in just 5 minutes.
+- **Serverless Operation**: No need for external servers, registration, or permissions.
+  - Eliminates connectivity or server-related failures.
+- **Data Privacy**: All coverage checks are done locally, so no sensitive information leaks to third parties.
+  - Learn more about [information leakage risks](https://gist.github.com/vladopajic/0b835b28bcfe4a5a22bb0ae20e365266).
+- **Performance**: Lightning-fast execution (e.g., ~1 second on [this repo](https://github.com/vladopajic/go-test-coverage/actions/runs/19500646271/job/55814181873)).
+- **Versatility**: Can be used both locally and in CI pipelines.
+- **Customizable**: Extensive configuration options to fit any project's needs.
+- **Stylish Badges**: Generate beautiful coverage badges for your repository.
+- **Coverage Diff**: Detailed comparison of code coverage changes relative to the base branch.
+- **Open Source**: Free to use and contribute to!
+
+## Usage
+
+You can use  `go-test-coverage` in two ways:
+ - Locally as part of your development process.
+ - As a step in your GitHub Workflow.
+
+It’s recommended to utilize both options for Go projects.
+
+### Local Usage
+
+Here’s an example `Makefile` with a `check-coverage` command that runs `go-test-coverage` locally:
+
+
+```makefile
+GOBIN ?= $$(go env GOPATH)/bin
+
+.PHONY: install-go-test-coverage
+install-go-test-coverage:
+	go install github.com/vladopajic/go-test-coverage/v2@latest
+
+.PHONY: check-coverage
+check-coverage: install-go-test-coverage
+	go test ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./...
+	${GOBIN}/go-test-coverage --config=./.testcoverage.yml
+```
+
+### GitHub Workflow
+
+Here’s an example of how to integrate `go-test-coverage` into a GitHub Actions workflow:
+
+
+```yml
+name: Go test coverage check
+runs-on: ubuntu-latest
+steps:
+  - uses: actions/checkout@v3
+  - uses: actions/setup-go@v3
+  
+  - name: generate test coverage
+    run: go test ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./...
+
+  - name: check test coverage
+    uses: vladopajic/go-test-coverage@v2
+    with:
+      config: ./.testcoverage.yml
+```
+
+For detailed information about the GitHub Action, check out [this page](./docs/github_action.md).
+
+### Configuration
+
+Here’s an example [.testcoverage.yml](./.testcoverage.example.yml) configuration file:
+
+```yml
+# (mandatory) 
+# Path to coverage profile file (output of `go test -coverprofile` command).
+#
+# For cases where there are many coverage profiles, such as when running 
+# unit tests and integration tests separately, you can combine all those
+# profiles into one. In this case, the profile should have a comma-separated list 
+# of profile files, e.g., 'cover_unit.out,cover_integration.out'.
+profile: cover.out
+
+# Holds coverage thresholds percentages, values should be in range [0-100].
+threshold:
+  # (optional; default 0) 
+  # Minimum coverage percentage required for individual files.
+  file: 70
+
+  # (optional; default 0) 
+  # Minimum coverage percentage required for each package.
+  package: 80
+
+  # (optional; default 0) 
+  # Minimum overall project coverage percentage required.
+  total: 95
+
+# Holds regexp rules which will override thresholds for matched files or packages 
+# using their paths.
+#
+# First rule from this list that matches file or package is going to apply 
+# new threshold to it. If project has multiple rules that match same path, 
+# override rules should be listed in order from specific to more general rules.
+override:
+  # Increase coverage threshold to 100% for `foo` package 
+  # (default is 80, as configured above in this example).
+  - path: ^pkg/lib/foo$
+    threshold: 100
+
+# Holds regexp rules which will exclude matched files or packages 
+# from coverage statistics.
+exclude:
+  # Exclude files or packages matching their paths
+  paths:
+    - \.pb\.go$    # excludes all protobuf generated files
+    - ^pkg/bar     # exclude package `pkg/bar`
+
+# (optional; default false)
+# When true, requires all coverage-ignore annotations to include explanatory comments
+force-annotation-comment: false
+
+# If specified, saves the current test coverage breakdown to this file.
+#
+# Typically, this breakdown is generated only for main (base) branches and 
+# stored as an artifact. Later, this file can be used in feature branches 
+# to compare test coverage against the base branch.
+breakdown-file-name: ''
+
+diff:
+  # Path to the test coverage breakdown file from the base branch.
+  #
+  # This file is usually generated and stored in the main (base) branch,
+  # controled via `breakdown-file-name` property.
+  # When set in a feature branch, it allows the tool to compute and report 
+  # the coverage difference between the current (feature) branch and the base.
+  base-breakdown-file-name: ''
+
+  # Allowed threshold for the test coverage difference (in percentage) 
+  # between the feature branch and the base branch.
+  #
+  # By default, this is disabled (set to null). Valid values range from 
+  # -100.0 to +100.0.
+  #
+  # Example: 
+  #   If set to 0.5, an error will be reported if the feature branch has 
+  #   less than 0.5% more coverage than the base.
+  #
+  #   If set to -0.5, the check allows up to 0.5% less coverage than the base.
+  threshold: null
+```
+
+### Exclude Code from Coverage
+
+For cases where there is a code block that does not need to be tested, it can be ignored from coverage statistics by adding the comment `// coverage-ignore` at the start line of the statement body (right after `{`).
+
+```go
+...
+result, err := foo()
+if err != nil { // coverage-ignore
+	return err
+}
+...
+```
+
+Similarly, the entire function can be excluded from coverage statistics when a comment is found at the start line of the function body (right after `{`).
+```go
+func bar() { // coverage-ignore
+...
+}
+```
+
+## Generate Coverage Badge
+
+You can easily generate a stylish coverage badge for your repository and embed it in your markdown files. Here’s an example badge: ![coverage](https://raw.githubusercontent.com/vladopajic/go-test-coverage/badges/.badges/main/coverage.svg)
+
+Instructions for badge creation are available [here](./docs/badge.md).
+
+## Visualise Coverage
+
+Go includes a built-in tool for visualizing coverage profiles, allowing you to see which parts of the code are not covered by tests.
+Following command will generate `cover.html` page with visualized coverage profile: 
+```console
+go tool cover -html=cover.out -o=cover.html
+```
+
+## Support the Project
+
+`go-test-coverage` is freely available for all users. If your organization benefits from this tool, especially if you’ve transitioned from a paid coverage service, consider [sponsoring the project](https://github.com/sponsors/vladopajic). 
+Your sponsorship will help sustain development, introduce new features, and maintain high-quality support. Every contribution directly impacts the future growth and stability of this project.
+
+⭐ Love this project? Star it!
+
+This tool is still not widely known, and giving the repository a ⭐️ is a simple, cost-free way to help it gain visibility. It’s a win-win for everyone: new users discover a useful tool they might have otherwise missed, and existing users benefit from a larger community where issues get identified sooner, improvements happen faster and new contributions help the project grow.
+
+## Contribution
+
+All contributions are welcome - whether you're fixing a typo, adding a new feature, or reporting an issue. Feel free to open a pull request or create an issue to contribute!
+
+See the [contributing](/docs/contributing.md) page for more details before opening a PR.
+
+---
+
+Happy coding 🌞

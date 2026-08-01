@@ -1,0 +1,198 @@
+version: "2"
+linters:
+  enable:
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - containedctx
+    - contextcheck
+    - copyloopvar
+    - cyclop
+    - decorder
+    - dogsled
+    - dupl
+    - dupword
+    - durationcheck
+    - embeddedstructfieldcheck
+    - err113
+    - errchkjson
+    - errname
+    - errorlint
+    - exhaustive
+    - exptostd
+    - fatcontext
+    - forbidigo
+    - forcetypeassert
+    - funlen
+    - funcorder
+    - gocheckcompilerdirectives
+    - gochecknoglobals
+    - gochecknoinits
+    - gochecksumtype
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godox
+    - goheader
+    - gomoddirectives
+    - gomodguard
+    - goprintffuncname
+    - gosec
+    - grouper
+    - iface
+    - importas
+    - inamedparam
+    - interfacebloat
+    - intrange
+    - iotamixing
+    - lll
+    - loggercheck
+    - maintidx
+    - makezero
+    - mirror
+    - misspell
+    - mnd
+    - nakedret
+    - nestif
+    - nilerr
+    - nilnesserr
+    - nilnil
+    - nlreturn
+    - noctx
+    - nolintlint
+    - nonamedreturns
+    - nosprintfhostport
+    - paralleltest
+    - perfsprint
+    - prealloc
+    - predeclared
+    - promlinter
+    - protogetter
+    - reassign
+    - recvcheck
+    - revive
+    - sloglint
+    - sqlclosecheck
+    - staticcheck
+    - tagalign
+    - tagliatelle
+    - testifylint
+    - testpackage
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - usetesting
+    - wastedassign
+    - whitespace
+    - wrapcheck
+    - wsl_v5
+    - zerologlint
+  settings:
+    dupl:
+      threshold: 120
+    errcheck:
+      disable-default-exclusions: true
+      check-blank: true
+    errchkjson:
+      report-no-exported: true
+    forbidigo:
+      forbid:
+        - pattern: time\.Sleep*(# Do not sleep)?
+        - pattern: panic*(# Do not panic)?
+        - pattern: os\.Exit*(# Do not exit)?
+        - pattern: fmt\.Print*(# Do not print)?
+    funlen:
+      ignore-comments: true
+    gocognit:
+      min-complexity: 20
+    goconst:
+      min-occurrences: 3
+      numbers: true
+    gocyclo:
+      min-complexity: 20
+    govet:
+      disable:
+        - fieldalignment
+      enable-all: true
+    grouper:
+      import-require-single-import: true
+    iface:
+      enable:
+        - identical
+        - unused
+    lll:
+      line-length: 100
+      tab-width: 1
+    maintidx:
+      under: 40
+    misspell:
+      locale: US
+    nlreturn:
+      block-size: 5
+    nolintlint:
+      require-explanation: true
+    tagliatelle:
+      case:
+        rules:
+          yaml: kebab
+        use-field-name: true
+    testifylint:
+      enable-all: true
+    unparam:
+      check-exported: true
+    wsl:
+      force-err-cuddling: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - funlen            ## Function length is okay due to many tests cases
+          - maintidx          ## No need to check wrapping errors in tests
+          - wrapcheck         ## Test are okay to be long
+        path: _test\.go
+      - linters:
+          - gosec
+        path: _test\.go
+        text: G404              ## allow weak rand in tests
+      - linters:
+          - gochecknoglobals   ## Global values are useful when exporting functions
+          - revive            ## Disabling linter because we intentionally want to use unexported types in tests
+        path: export_test\.go
+      - linters:
+          - revive
+        path: _test\.go
+        text: dot-imports    ## Enable dot-imports in tests
+      - linters:
+          - testifylint
+        text: require-error
+      - linters:
+          - err113 
+        text: do not define dynamic errors  ## dynamic errors are okay is this is simple tool
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/vladopajic/go-test-coverage/v2
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

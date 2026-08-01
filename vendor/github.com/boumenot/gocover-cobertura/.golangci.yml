@@ -1,0 +1,38 @@
+# https://github.com/golangci/golangci-lint/blob/master/.golangci.example.yml
+# https://golangci-lint.run/usage/configuration/
+run:
+  timeout: 30s
+
+  sort-results: true
+
+linters:
+  fast: false
+  presets:
+    - bugs
+    - complexity
+    - unused
+  enable:
+    - misspell
+
+linters-settings:
+  gocognit:
+    min-complexity: 31 # TODO: update to 20
+  cyclop:
+    max-complexity: 20 # TODO: update to 10
+  funlen:
+    statements: 45     # TODO: update to 40
+    lines: 75          # TODO: update to 60
+  misspell:
+    locale: US
+
+issues:
+  exclude-rules:
+    # Exclude some linters from running on tests files.
+    - path: _test\.go
+      linters:
+        - dupl
+        - funlen
+        - gochecknoglobals
+        - goconst
+        - gocyclo
+        - gosec
