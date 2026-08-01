@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright Authors of agent-tools
+// Copyright Tony Burns
 
 package buildmeta_test
 
