@@ -1,5 +1,9 @@
 # Changelog
 
+All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
+
+- - -
+
 ## [v0.1.0](https://github.com/tbhb/agent-tools/compare/049e81a012a34887cd44a1a256cdfbd5656de6d0..v0.1.0) - 2026-08-01
 
 ### Features
