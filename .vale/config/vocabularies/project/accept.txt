@@ -239,3 +239,11 @@ rhysd
 agent-tools
 [Ss]hellcheck
 [Ss]hfmt
+[Rr]ebases
+[Uu]nstaged
+[Rr]elitigate[sd]?
+[Rr]estage[sd]?
+[Rr]estaging
+multiSelect
+[Ff]rontmatter
+[Aa]tomicity

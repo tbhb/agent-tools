@@ -14,7 +14,8 @@ The package deploys these primitives from [`.apm/`](.apm/):
 
 | Primitive | Type | Purpose |
 | --- | --- | --- |
-| `commit` | skill | Draft commit messages in `COMMIT_AGENTMSG`, lint with `just lint-commit-msg`, then commit the validated draft. |
+| `commit` | skill | Group changes into one atomic commit, draft the message in `COMMIT_AGENTMSG`, review and lint it, confirm it, then commit and rebase. |
+| `review-commit-message` | skill | Review a drafted message against the staged diff as an independent agent, for what linting can't see. |
 | `worktree-wip` | instructions | Stash and work-in-progress rules for repos that run more than one agent worktree session. |
 
 This repo dogfoods its own package: `apm install` deploys the primitives into the local harness layout, and CI rejects drift between `.apm/` sources and the deployed copies.

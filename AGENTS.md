@@ -4,11 +4,15 @@ Guidance for AI coding agents working in this repository. Read it alongside the 
 
 ## Commit messages
 
-Draft every commit message in the repo-root file `COMMIT_AGENTMSG` before you run `git commit`. A gitignore entry keeps that file out of history, so it serves purely as a scratchpad for iterating on the message.
+Run the `commit` skill. It owns the whole sequence, from choosing the rebase base through the commit and the rebase that follows, and this section only summarizes it.
 
-1. Write the full message (subject, body, and trailers) to `COMMIT_AGENTMSG`.
-2. Run `just lint-commit-msg` and resolve whatever it reports.
-3. Commit the validated draft with `git commit -F COMMIT_AGENTMSG`.
+Draft every commit message in the repo-root file `COMMIT_AGENTMSG` before you run `git commit`. A gitignore entry keeps that file out of history, and the post-commit hook deletes it after the commit succeeds, so each commit starts from a blank scratchpad.
+
+1. Group the outstanding work into atomic commits, and stage the paths for one of them by name. Never `git add -A` or `git add .`.
+2. Write the full message (subject, body, and trailers) to `COMMIT_AGENTMSG`. The body explains why the change exists, because the diff already says what changed.
+3. Review the draft with the `review-commit-message` skill, which runs as an independent agent.
+4. Run `just lint-commit-msg` and resolve whatever it reports.
+5. Confirm the message with the operator, then commit the validated draft with `git commit -F COMMIT_AGENTMSG`.
 
 `just lint-commit-msg` mirrors the commit-msg hook:
 
@@ -20,6 +24,8 @@ Draft every commit message in the repo-root file `COMMIT_AGENTMSG` before you ru
 Running it while drafting surfaces problems early, rather than at the commit-msg hook where a late failure interrupts the commit.
 
 The prek commit-msg hook on `.git/COMMIT_EDITMSG` stays the real gate. `COMMIT_AGENTMSG` and its recipe only preview that gate, so a clean recipe run predicts a clean commit but never replaces the hook.
+
+The skill's frontmatter carries a pair of guard hooks, scoped to a commit workflow and inert outside one. One refuses whole-tree staging, an inline `-m` message, and `--no-verify`. The other records which bytes `review-commit-message` signed off on, and blocks the commit when the draft has changed since. Editing the draft after the review means running the review again.
 
 ## Prose lint output
 
@@ -37,3 +43,5 @@ Probe it with a throwaway project instead of reasoning about it:
 4. Read the log to see what fired.
 
 The preceding probe settled a question for this repo's hook: `PostToolUse` fires once per tool call and carries `tool_input.file_path`, while `PostToolBatch` fires once per batch (a lone call still counts as a batch) and carries no per-tool fields.
+
+Against Claude Code 2.1.220, a later probe settled the questions the commit skill's guard hooks rest on. Frontmatter hooks in a `SKILL.md` file do fire, and `${CLAUDE_PROJECT_DIR}` expands inside the `command`. Exiting 2 from a `PreToolUse` hook blocks the call from that scope, same as from one configured in settings. For the Skill tool, the `PostToolUse` payload names the invoked skill at `tool_input.skill`, and carries no `tool_input.skill_name` of the kind the published reference describes.

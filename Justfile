@@ -239,13 +239,17 @@ format-toml:
 # formatter and the shell gate agree without a second config file. The
 # vendor/ exclusion matches `lint-shell`: those scripts belong to upstream
 # and are reviewed at vendor-tidy time, not reformatted to our style. The
+# .claude/ exclusion is the same idea from the other direction: those
+# scripts are byte copies that `apm install` deploys from .apm/ and
+# hooks/, so formatting them here would put a second writer in a tree
+# the installer owns, and the sources are already covered. The
 # emptiness guard keeps shfmt from falling back to reading stdin (and
 # hanging) if the tree ever carries no matching script.
 
 # Format shell scripts in place via shfmt.
 [script]
 format-shell:
-    files=$(git ls-files '*.sh' ':!:vendor/**')
+    files=$(git ls-files '*.sh' ':!:vendor/**' ':!:.claude/**')
     if [ -n "$files" ]; then shfmt -w $files; fi
 
 # just's formatter is still an unstable subcommand upstream. The `set
@@ -454,7 +458,7 @@ check-tombi-version:
 # Lint every tracked non-vendored *.sh via the pinned shellcheck image.
 [script]
 lint-shell:
-    files=$(git ls-files '*.sh' ':!:vendor/**')
+    files=$(git ls-files '*.sh' ':!:vendor/**' ':!:.claude/**')
     if [ -n "$files" ]; then {{ shellcheck }} $files; fi
 
 # The check-only mirror of `format-shell`: -d prints a unified diff and
@@ -467,7 +471,7 @@ lint-shell:
 # Fail if shfmt would reformat any tracked non-vendored *.sh.
 [script]
 lint-shell-fmt:
-    files=$(git ls-files '*.sh' ':!:vendor/**')
+    files=$(git ls-files '*.sh' ':!:vendor/**' ':!:.claude/**')
     if [ -n "$files" ]; then shfmt -d $files; fi
 
 # --check makes the formatter a gate: it exits non-zero and prints the
@@ -790,13 +794,19 @@ prek:
 prek-all:
     prek run --all-files
 
-# Installs the commit-msg, pre-commit, and pre-push hooks. `just setup`
-# runs this for new contributors; run it directly to reinstall the hooks
-# without the rest of setup. Installing hooks modifies .git/.
+# Installs the commit-msg, pre-commit, pre-push, and post-commit hooks.
+# `just setup` runs this for new contributors; run it directly to
+# reinstall the hooks without the rest of setup. Installing hooks
+# modifies .git/.
+#
+# post-commit carries one hook, clear-commit-agentmsg, which removes the
+# COMMIT_AGENTMSG draft once a commit lands. Skip that stage and drafts
+# accumulate across commits, which is how an agent ends up committing a
+# message it wrote for an earlier change.
 
 # Install the project's pre-commit hooks.
 prek-install:
-    prek install -t commit-msg -t pre-commit -t pre-push
+    prek install -t commit-msg -t pre-commit -t pre-push -t post-commit
 
 # `cog changelog` emits Markdown without an H1; the pipeline prepends one,
 # writes the file, then lints it in place so the CHANGELOG.md

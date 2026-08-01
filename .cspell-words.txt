@@ -307,3 +307,10 @@ venv
 koalaman
 pathspec
 gofmt
+diffstat
+frontmatter
+relitigates
+retarget
+retunes
+symref
+unreviewed

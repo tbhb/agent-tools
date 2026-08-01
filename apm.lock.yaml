@@ -1,10 +1,92 @@
 lockfile_version: '1'
 generated_at: '2026-06-12T03:31:53.572853+00:00'
 dependencies: []
+deployments:
+- kind: project-relative
+  target: claude
+  value: .claude/rules/worktree-wip.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:0204082643d1ea505ae20eaf93e7d94dd52b65046f3e4f290ec7bbc5c6093634
+- kind: project-relative
+  target: claude
+  value: .claude/skills/commit
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/commit/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:c466ddacaa3d3f499d7ff244a336fdb7cc4d8a468e37689a8f26cf3ad44698cd
+- kind: project-relative
+  target: claude
+  value: .claude/skills/commit/scripts/guard-git.sh
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:56253dbd3aea58b7558d666232423b07921deffbd135bcd7b58f67fc79bbeb74
+- kind: project-relative
+  target: claude
+  value: .claude/skills/commit/scripts/preflight.sh
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:b177c2adea6e67e63a1b9d53698243e9be69da7c45f8189dbb3d745ad9515aca
+- kind: project-relative
+  target: claude
+  value: .claude/skills/commit/scripts/stamp-review.sh
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:49735a8476c4ac2db54c7698f8018dab76f7c28761d5b19094f259d31cea4ab5
+- kind: project-relative
+  target: claude
+  value: .claude/skills/review-commit-message
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/review-commit-message/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:f891f0a39f711a56cbfa578f9a8f34b7937f9d4205d6829e9e8e76ed98664f62
 local_deployed_files:
 - .claude/rules/worktree-wip.md
 - .claude/skills/commit
 - .claude/skills/commit/SKILL.md
+- .claude/skills/commit/scripts/guard-git.sh
+- .claude/skills/commit/scripts/preflight.sh
+- .claude/skills/commit/scripts/stamp-review.sh
+- .claude/skills/review-commit-message
+- .claude/skills/review-commit-message/SKILL.md
 local_deployed_file_hashes:
   .claude/rules/worktree-wip.md: sha256:0204082643d1ea505ae20eaf93e7d94dd52b65046f3e4f290ec7bbc5c6093634
-  .claude/skills/commit/SKILL.md: sha256:533f0c78cde63f97d2e27e41431fb91905fc45dd5886662fee0df3acab5f397c
+  .claude/skills/commit/SKILL.md: sha256:c466ddacaa3d3f499d7ff244a336fdb7cc4d8a468e37689a8f26cf3ad44698cd
+  .claude/skills/commit/scripts/guard-git.sh: sha256:56253dbd3aea58b7558d666232423b07921deffbd135bcd7b58f67fc79bbeb74
+  .claude/skills/commit/scripts/preflight.sh: sha256:b177c2adea6e67e63a1b9d53698243e9be69da7c45f8189dbb3d745ad9515aca
+  .claude/skills/commit/scripts/stamp-review.sh: sha256:49735a8476c4ac2db54c7698f8018dab76f7c28761d5b19094f259d31cea4ab5
+  .claude/skills/review-commit-message/SKILL.md: sha256:f891f0a39f711a56cbfa578f9a8f34b7937f9d4205d6829e9e8e76ed98664f62
