@@ -1,13 +1,10 @@
 # agent-tools
 
-Shared agent tooling for tbhb repositories. The repo provides Go
-command-line tools for agent harnesses, plus the shared
-[APM](https://microsoft.github.io/apm) package of agent primitives.
+Shared agent tooling for tbhb repositories. The repo provides Go command-line tools for agent harnesses, plus the shared [APM](https://microsoft.github.io/apm) package of agent primitives.
 
 ## APM package
 
-Repositories across tbhb install the shared primitives with the
-[APM CLI](https://microsoft.github.io/apm/quickstart/):
+Repositories across tbhb install the shared primitives with the [APM CLI](https://microsoft.github.io/apm/quickstart/):
 
 ```bash
 apm install tbhb/agent-tools#v0.1.0
@@ -20,9 +17,7 @@ The package deploys these primitives from [`.apm/`](.apm/):
 | `commit` | skill | Draft commit messages in `COMMIT_AGENTMSG`, lint with `just lint-commit-msg`, then commit the validated draft. |
 | `worktree-wip` | instructions | Stash and work-in-progress rules for repos that run more than one agent worktree session. |
 
-This repo dogfoods its own package: `apm install` deploys the
-primitives into the local harness layout, and CI rejects drift between
-`.apm/` sources and the deployed copies.
+This repo dogfoods its own package: `apm install` deploys the primitives into the local harness layout, and CI rejects drift between `.apm/` sources and the deployed copies.
 
 ## Go tools
 
@@ -46,18 +41,11 @@ just build
 
 ## Development
 
-`just` drives the workflow: `just lint` runs the full lint suite,
-`just test` runs the tests, and `just build` compiles the binaries
-into `bin/`. See the [Justfile](Justfile) for the complete recipe
-list, and [AGENTS.md](AGENTS.md) for the agent-facing contributor
-guide.
+`just` drives the workflow: `just lint` runs the full lint suite, `just test` runs the tests, and `just build` compiles the binaries into `bin/`. See the [Justfile](Justfile) for the complete recipe list, and [AGENTS.md](AGENTS.md) for the agent-facing contributor guide.
 
 ## Releases
 
-[cocogitto](https://github.com/cocogitto/cocogitto) cuts `vX.Y.Z` tags
-from the Conventional Commit history. One tag serves both consumer
-paths, with APM installs pinning `tbhb/agent-tools#vX.Y.Z` and
-Go installs pinning `@vX.Y.Z`.
+[cocogitto](https://github.com/cocogitto/cocogitto) cuts `vX.Y.Z` tags from the Conventional Commit history. One tag serves both consumer paths, with APM installs pinning `tbhb/agent-tools#vX.Y.Z` and Go installs pinning `@vX.Y.Z`.
 
 ## License
 
