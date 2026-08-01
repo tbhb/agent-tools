@@ -1,0 +1,37 @@
+[cosmic-ray]
+# The hook scripts are the mutation target. cosmic-ray walks the
+# directory and mutates every module under it, so naming the directory
+# root here keeps `mutate-py-all` honest as new hooks land — a new
+# script joins the sweep without a config edit.
+module-path = "hooks"
+
+# Absolute per-mutant test budget in seconds, not a multiplier:
+# cosmic-ray kills a mutant's run at this wall-clock ceiling and records
+# it as incompetent rather than survived. The suite finishes in well
+# under a second, so 30s leaves wide headroom for a mutant that drives
+# the code into a slow path or a loop while still bounding a genuine
+# hang. The `mutate-py` recipes raise it from MUTATION_TIMEOUT for a
+# loaded machine.
+timeout = 30.0
+
+# A fast suite with no coverage plugin and no xdist: cosmic-ray reruns
+# this once per mutant, so every redundant millisecond multiplies across
+# the work order. `-x` bails on the first failing assertion, which is all
+# a kill needs, and dropping --cov sidesteps the per-mutant coverage
+# write.
+#
+# The interpreter comes from `.venv` directly rather than through
+# `uv run`. cosmic-ray times a mutant out with subprocess.run(timeout=),
+# which signals only its immediate child. Behind `uv run` that child is
+# uv itself and pytest is a grandchild, so a timeout reaped the wrapper
+# and left pytest alive; every sweep ended by terminating orphaned
+# pytest processes. Naming the interpreter makes pytest the direct
+# child, so the timeout reaches the process it is meant to stop. The
+# recipes already invoke cosmic-ray under `uv run`, so the environment
+# exists by the time this command runs.
+test-command = ".venv/bin/pytest -q -x"
+
+[cosmic-ray.distributor]
+# Run mutants in-process on this machine. The http distributor exists for
+# farming work across a worker pool, which a sub-second suite never needs.
+name = "local"

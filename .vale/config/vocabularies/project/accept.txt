@@ -50,6 +50,7 @@ PAT
 PII
 PRNG
 QEMU
+REUSE
 ROI
 SARIF
 SBOM[s]?
@@ -279,6 +280,7 @@ tabWidth
 tbhb
 toolchain
 uniqueid
+uv
 variadic
 vendoredModule
 vendormod

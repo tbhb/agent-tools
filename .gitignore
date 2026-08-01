@@ -24,10 +24,27 @@ coverage.covdata*/
 # Test outputs
 testdata/fuzz/
 
+# Python
+__pycache__/
+*.py[co]
+.venv/
+.pytest_cache/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+
+# cosmic-ray mutation session databases. The `mutate-py` recipes write
+# the work order plus per-mutant results here; it is regenerated each
+# run.
+.cosmic-ray/
+
 # Linter caches
 .rumdl_cache/
 node_modules/
 .cspell-cache
+.ruff_cache/
+.complexipy_cache/
 
 # goreleaser
 dist/

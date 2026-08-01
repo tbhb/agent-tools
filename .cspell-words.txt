@@ -12,11 +12,13 @@ TSSDK
 Tricolon
 Worktree
 Worktrees
+addopts
 agentcontext
 agenthooks
 agentstore
 allstar
 argjson
+argparse
 asasalint
 asciicheck
 autobuild
@@ -47,6 +49,7 @@ codeowners
 codeql
 codespell
 commitlint
+complexipy
 containedctx
 contextcheck
 contexttemplate
@@ -60,6 +63,7 @@ covdir
 covermode
 coverprofile
 creds
+cuda
 cve
 cyclop
 daixiang
@@ -70,8 +74,10 @@ depguard
 depscan
 diffstat
 distroless
+docstrings
 dogfooding
 dogfoods
+dunder
 dupl
 dupword
 durationcheck
@@ -103,6 +109,7 @@ ghlabels
 ghmilestones
 ghprojects
 ghsa
+gitpython
 gitsign
 goarch
 gocheckcompilerdirectives
@@ -144,7 +151,9 @@ hardwrap
 heredoc
 heredocs
 hookio
+htmlcov
 httpcache
+hypofuzz
 idempotent
 idempotently
 iface
@@ -170,6 +179,7 @@ malscan
 maratori
 matrixed
 mattn
+mccabe
 mget
 misconfigured
 mitm
@@ -225,8 +235,14 @@ prepends
 prereq
 prng
 promlinter
+proofhouse
 protogetter
+pycache
+pydocstyle
+pylint
 pyproject
+pyrefly
+pytest
 recompiles
 recvcheck
 relitigates
@@ -246,6 +262,7 @@ sadd
 sandboxed
 sarif
 scvs
+sdist
 searchpath
 securityscorecards
 sed
@@ -254,6 +271,7 @@ setnx
 shellcheck
 shfmt
 sigstore
+singledispatch
 sismember
 sloglint
 slotsdir
@@ -288,6 +306,7 @@ testcoverage
 testdata
 testifylint
 testpackage
+testpaths
 textfmt
 thelper
 tmpl
@@ -314,5 +333,6 @@ worktreeinclude
 worktrees
 wrapcheck
 xdg
+xdist
 xhigh
 yamllintignore

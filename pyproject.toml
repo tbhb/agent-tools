@@ -1,0 +1,383 @@
+# Python toolchain configuration. This repository is primarily Go; the
+# Python lives under packages/, and this file is the workspace root that
+# owns the shared gate configuration rather than any code of its own.
+# `package = false` keeps the root virtual: uv syncs the dependency groups
+# and the workspace members into .venv without trying to build the root.
+#
+# The gates are ported from proofhouse/proofhouse-python-tool. Absent here:
+# import-linter (its contracts describe that project's layering, not this
+# one) and lint-reuse (REUSE compliance is tree-wide rather than
+# Python-specific, so adopting it belongs in its own change).
+[project]
+name = "agent-tools"
+# Inert. Nothing builds or publishes from this table, so it does not
+# track the vX.Y.Z tags — cog's pre-bump hook rewrites apm.yml alone
+# (see cog.toml), and Go consumers read the tag directly.
+version = "0"
+description = "Workspace root for the tbhb agent-tools Python packages"
+requires-python = ">=3.14"
+dependencies = []
+
+# The test group stands alone so a CI test matrix can sync it without
+# the lint tools. complexipy publishes no free-threaded wheels, and its
+# sdist fails to link against the 3.14t interpreter on Windows; lint
+# tooling never runs in the test matrix, so those slots should not have
+# to install (or build) it.
+[dependency-groups]
+dev = [
+  { include-group = "test" },
+  "bandit>=1.9.4",
+  "complexipy>=5.5.0",
+  "cosmic-ray>=8.4.6",
+  "diff-cover>=10.3.0",
+  # hypofuzz is AGPL-3.0. It drives the hypothesis property tests under
+  # coverage-guided search in the nightly fuzz sweep; it is never
+  # imported by the hook scripts and never ships anywhere, so the
+  # Apache-2.0 distribution stays clear of the copyleft terms.
+  "hypofuzz>=25.11.1",
+  "pip-audit>=2.10.1",
+  "pylint>=4.0.5",
+  "pyrefly>=1.0.0",
+  "ruff>=0.15.17",
+  "vulture>=2.16",
+  "agent-tools-py",
+]
+# pytest-cov rides in the test group, not dev: a CI test matrix syncs
+# only this group and every slot captures its own coverage data.
+# diff-cover stays in dev — it runs solely in the downstream coverage
+# job, never on the per-slot path. hypothesis sits here for the same
+# reason: the property suites run on every matrix slot, so the test
+# group has to carry their engine. pytest-randomly and pytest-xdist join
+# on the same logic: randomly's per-run reordering happens on every
+# invocation once installed, and the slots pass `-n auto` to xdist.
+test = [
+  "hypothesis>=6.155.2",
+  "pytest>=9.0.3",
+  "pytest-cov>=7.1.0",
+  "pytest-mock>=3.15.1",
+  "pytest-randomly>=4.1.0",
+  "pytest-xdist>=3.8.0",
+]
+
+[tool.uv]
+# Virtual root: sync the groups and the members, build nothing here.
+package = false
+# cosmic-ray drags GitPython in transitively and constrains nothing, so
+# the resolver is free to settle on a release carrying the 2026 argument
+# and option injection advisories (GHSA-94p4-4cq8-9g67 and the seven
+# before it). Nothing here imports GitPython, and the mutation tooling
+# never runs it over untrusted input, but a dev-only path is still a
+# path: the floor keeps the locked closure on a patched line.
+constraint-dependencies = ["gitpython>=3.1.55"]
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+# The member joins the dev group rather than the root's runtime
+# dependencies, so an editable install of it lands in .venv and the suite
+# can import it without a src-path hack.
+[tool.uv.sources]
+agent-tools-py = { workspace = true }
+
+[tool.complexipy]
+# Scope lives here rather than in the Justfile recipe so editor and
+# pre-commit invocations of a bare `complexipy` measure the same tree
+# the CI gate does.
+paths = ["packages"]
+# Sonar's default cognitive complexity ceiling; complexipy ships the
+# same default, but an unpinned threshold would let an upstream default
+# change move the gate without a visible diff here.
+max-complexity-allowed = 15
+
+[tool.pylint.main]
+# tests/ holds no __init__.py files (pytest's importlib mode); recursive
+# discovery lets pylint walk it as a plain directory instead of refusing
+# non-package paths.
+recursive = true
+
+[tool.pylint."messages control"]
+# pylint serves exactly one purpose here: its similarities checker, the
+# cross-file copy-paste detector nothing else in the toolchain provides.
+# Everything pylint could otherwise report is ruff's and pyrefly's job,
+# so the whole catalog goes off and one message comes back on.
+disable = ["all"]
+enable = ["duplicate-code"]
+
+[tool.pylint.similarities]
+# Four matching lines counts as a clone — pylint's default, pinned so an
+# upstream default change cannot move the gate without a visible diff.
+min-similarity-lines = 4
+# Two modules importing the same names is convergence, not copy-paste,
+# and docstrings repeating a phrase share wording, not logic; left in,
+# both would feed the similarity window with lines nobody would
+# deduplicate.
+ignore-imports = true
+ignore-docstrings = true
+
+[tool.pyrefly]
+project-includes = ["packages"]
+# The strict preset is pyrefly's hardest baseline: it demands parameter
+# annotations and refuses implicit Any. The errors table below names each
+# diagnostic kind at error severity on top of it, so the gate holds even
+# if a later release reshuffles what the preset turns on.
+preset = "strict"
+
+# Every error kind pyrefly 1.2 knows, pinned to "error" except the two
+# marked below. Several kinds (the implicit-any and unannotated families
+# among them) default to off or warn; enumerating the whole catalog turns
+# those on and keeps kinds that upstream later demotes from failing
+# silently.
+#
+# The catalog is version-specific and pyrefly reorganizes it between
+# releases -- 1.2 dropped `annotation-mismatch` and added roughly
+# twenty-five kinds, and an unknown name here is a fatal config error,
+# not a warning. Regenerate the list on every pyrefly bump: naming an
+# unknown kind makes pyrefly print the full catalog as the accepted
+# values, which is the source this table was generated from.
+[tool.pyrefly.errors]
+abstract-method-call = "error"
+assert-type = "error"
+bad-argument-count = "error"
+bad-argument-type = "error"
+bad-assignment = "error"
+bad-class-definition = "error"
+bad-context-manager = "error"
+bad-dunder-all = "error"
+bad-function-definition = "error"
+bad-index = "error"
+bad-instantiation = "error"
+bad-keyword-argument = "error"
+bad-match = "error"
+bad-override = "error"
+bad-override-mutable-attribute = "error"
+bad-override-param-name = "error"
+bad-param-name-override = "error"
+bad-raise = "error"
+bad-return = "error"
+bad-singledispatch-register = "error"
+bad-specialization = "error"
+bad-typed-dict = "error"
+bad-typed-dict-key = "error"
+bad-unpacking = "error"
+column-type-mismatch = "error"
+coverage-missing = "error"
+coverage-partial = "error"
+deprecated = "error"
+direct-abstract-base-instantiation = "error"
+division-by-zero = "error"
+empty-body = "error"
+explicit-any = "error"
+implicit-abstract-class = "error"
+implicit-any = "error"
+implicit-any-attribute = "error"
+implicit-any-empty-container = "error"
+implicit-any-lambda = "error"
+implicit-any-parameter = "error"
+implicit-any-type-argument = "error"
+# Off, deliberately. This one is a style opinion rather than a type
+# error: it rejects `if not lines` and `x if match else y`, the
+# truthiness idiom PEP 8 endorses and ruff's own SIM rules push code
+# toward. Honoring it would mean spelling every emptiness check as an
+# explicit length or None comparison, which reads worse.
+implicit-bool = "ignore"
+implicit-import = "error"
+implicit-reexport = "error"
+implicitly-defined-attribute = "error"
+incompatible-comparison = "error"
+incompatible-overload-residual = "error"
+inconsistent-inheritance = "error"
+inconsistent-overload = "error"
+inconsistent-overload-default = "error"
+internal-error = "error"
+invalid-abstract-method = "error"
+invalid-annotation = "error"
+invalid-argument = "error"
+invalid-cast = "error"
+invalid-decorator = "error"
+invalid-inheritance = "error"
+invalid-literal = "error"
+invalid-overload = "error"
+invalid-param-spec = "error"
+invalid-pattern = "error"
+invalid-self-type = "error"
+invalid-sentinel = "error"
+invalid-super-call = "error"
+invalid-syntax = "error"
+invalid-type-alias = "error"
+invalid-type-checking-constant = "error"
+invalid-type-var = "error"
+invalid-type-var-tuple = "error"
+invalid-variance = "error"
+invalid-yield = "error"
+misplaced-ignore = "error"
+missing-argument = "error"
+missing-attribute = "error"
+missing-import = "error"
+missing-module-attribute = "error"
+missing-override-decorator = "error"
+missing-source = "error"
+missing-source-for-stubs = "error"
+missing-super-call = "error"
+name-mismatch = "error"
+no-access = "error"
+no-any-return = "error"
+no-any-return-explicit = "error"
+no-any-return-implicit = "error"
+no-matching-overload = "error"
+non-convergent-recursion = "error"
+non-exhaustive-match = "error"
+not-a-type = "error"
+not-async = "error"
+not-callable = "error"
+not-iterable = "error"
+not-required-key-access = "error"
+open-unpacking = "error"
+parse-error = "error"
+potential-bad-keyword-argument = "error"
+protocol-implicitly-defined-attribute = "error"
+pytorch-efficiency-lint-cuda-call = "error"
+pytorch-efficiency-lint-item-call = "error"
+pytorch-efficiency-lint-print-tensor = "error"
+pytorch-efficiency-lint-redundant-to-call = "error"
+read-only = "error"
+redefinition = "error"
+redundant-cast = "error"
+redundant-condition = "error"
+reveal-type = "error"
+string-as-iterable = "error"
+unannotated-attribute = "error"
+unannotated-parameter = "error"
+unannotated-protocol-member = "error"
+unannotated-return = "error"
+unbound-name = "error"
+unexpected-keyword = "error"
+unexpected-positional-argument = "error"
+unimported-directive = "error"
+unknown-argument-type = "error"
+unknown-attribute-type = "error"
+unknown-column = "error"
+unknown-name = "error"
+unknown-variable-type = "error"
+unnecessary-comparison = "error"
+unnecessary-type-conversion = "error"
+unreachable = "error"
+unreachable-match-case = "error"
+unresolvable-dunder-all = "error"
+unsafe-overlap = "error"
+unsupported = "error"
+unsupported-delete = "error"
+unsupported-dynamic-base = "error"
+unsupported-operation = "error"
+untyped-class-decorator = "error"
+untyped-function-decorator = "error"
+untyped-import = "error"
+# Off, deliberately. Discarding a return value is how large parts of the
+# standard library are meant to be used -- argparse's add_argument
+# returns an Action nobody keeps. Assigning each one to `_` would add
+# noise at every call site to satisfy a rule that catches nothing here.
+unused-call-result = "ignore"
+unused-coroutine = "error"
+unused-ignore = "error"
+unused-type-ignore = "error"
+useless-overload-body = "error"
+variance-mismatch = "error"
+
+[tool.coverage.run]
+# Measure branch coverage, not just line coverage: a 100% line score can
+# still leave one side of a conditional never taken, which is the exact
+# failure mode the structural-skip branches in the detector would hide.
+branch = true
+# Coverage instruments the shipped package, never the tests. A test file
+# with no assertion would otherwise count itself as covered; the mutation
+# and property gates are what prove the tests pin behavior. Naming the
+# import package rather than a path keeps the editable install and a built
+# wheel measuring the same thing.
+source = ["agent_tools_py"]
+# Store paths relative to the project root so per-slot data files from a
+# CI matrix combine cleanly across operating systems — an absolute
+# Windows path and an absolute Linux path for the same module would
+# otherwise refuse to merge.
+relative_files = true
+
+[tool.coverage.report]
+# The whole point of this gate: nothing ships without a branch reaching
+# it. Anything genuinely unreachable belongs in exclude_also below with
+# a reason, not behind a lowered threshold.
+fail_under = 100
+show_missing = true
+exclude_also = [
+  # Bodies guarded by TYPE_CHECKING run only under a type checker, never
+  # at runtime.
+  "if TYPE_CHECKING:",
+  # assert_never marks a match arm the type checker has proven
+  # unreachable; reaching it at runtime is a bug, not a tested path.
+  "assert_never\\(",
+  # The module-level entry guard fires only when a file runs as a
+  # script, which the test suite never does — it imports the module.
+  "if __name__ == \"__main__\":",
+]
+
+[tool.pytest]
+addopts = [
+  "-ra",
+  "--strict-markers",
+  "--strict-config",
+  "--import-mode=importlib",
+]
+testpaths = ["packages"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+  # COM812 and ISC001 conflict with the formatter; ruff itself warns
+  # when they are enabled alongside `ruff format`.
+  "COM812",
+  "ISC001",
+  # Docstrings belong where they carry signal, not on every module,
+  # class, and function as ritual. The pydocstyle shape rules (D2xx,
+  # D4xx) still apply to every docstring that does exist.
+  "D100",
+  "D101",
+  "D102",
+  "D103",
+  "D104",
+  "D105",
+  "D106",
+  "D107",
+  # License headers ride the two-line SPDX comment the Go sources also
+  # carry; CPY001 only runs under preview mode anyway.
+  "CPY",
+  # Plain TODO comments are allowed; requiring an author (TD002), an
+  # issue link (TD003), or treating each one as a defect (FIX002) turns
+  # lightweight notes into ceremony.
+  "TD002",
+  "TD003",
+  "FIX002",
+]
+
+[tool.ruff.lint.mccabe]
+# Sonar's default cyclomatic complexity ceiling.
+max-complexity = 15
+
+[tool.ruff.lint.per-file-ignores]
+# S101: asserts are pytest's assertion API. PLR2004: literal expected
+# values read better in tests than named constants. INP001: test dirs
+# are intentionally __init__-free under pytest's importlib mode. FBT001:
+# a parametrized expected value is data, not a behavior flag, so the
+# boolean-trap rule has nothing to warn about at these call sites.
+"packages/*/tests/**" = ["S101", "PLR2004", "INP001", "FBT001"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.vulture]
+# Scope lives here rather than in the Justfile recipe so editor and
+# pre-commit invocations of a bare `vulture` scan the same tree the CI
+# gate does. No confidence threshold is lowered. There is no
+# vulture_allowlist.py yet: nothing here hides its caller from vulture's
+# static view. Add one (and name it in `paths`) the first time something
+# does, with a comment per entry explaining where the real caller lives.
+paths = ["packages"]
