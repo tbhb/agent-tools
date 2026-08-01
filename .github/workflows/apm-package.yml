@@ -1,0 +1,101 @@
+---
+name: apm-package
+
+# Validates the shared APM package for tbhb repositories whenever the
+# package surface changes, with two gates.
+#
+#   validate: runs the pinned apm CLI through primitive validation, a
+#   frozen install against apm.lock.yaml, the lockfile/on-disk audit,
+#   and a working-tree check proving the committed deployed copies
+#   under .claude/ match the .apm/ sources. The CLI tarball is pinned
+#   by version and checksum, mirroring how the Justfile pins its
+#   linter images by digest.
+#
+#   scan-skills: runs Cisco's skill-scanner over .apm/skills via the
+#   upstream reusable workflow, uploading SARIF to code scanning so a
+#   risky skill change surfaces as a PR annotation.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - apm.yml
+      - apm.lock.yaml
+      - .apm/**
+      - .claude/rules/**
+      - .claude/skills/**
+      - .github/workflows/apm-package.yml
+  pull_request:
+    paths:
+      - apm.yml
+      - apm.lock.yaml
+      - .apm/**
+      - .claude/rules/**
+      - .claude/skills/**
+      - .github/workflows/apm-package.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  validate:
+    name: validate
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # renovate: datasource=github-releases depName=microsoft/apm
+      - name: Install apm
+        env:
+          APM_VERSION: 0.19.0
+          APM_SHA256: 93c447da0857da55ff12e7071a5af974c0f85de9717155e7dc06682bc1afe362
+        run: |
+          cd "$RUNNER_TEMP"
+          release="https://github.com/microsoft/apm/releases/download/v${APM_VERSION}"
+          curl -sSLo apm.tar.gz "${release}/apm-linux-x86_64.tar.gz"
+          echo "${APM_SHA256}  apm.tar.gz" | sha256sum -c -
+          tar -xzf apm.tar.gz
+          echo "$RUNNER_TEMP/apm-linux-x86_64" >> "$GITHUB_PATH"
+
+      - name: Validate primitives
+        run: apm compile --validate
+
+      - name: Run frozen install
+        run: apm install --frozen
+
+      - name: Audit deployed state
+        run: apm audit --ci
+
+      - name: Check deployed copies for drift
+        run: |
+          status=$(git status --porcelain)
+          if [ -n "$status" ]; then
+            echo "$status"
+            echo "::error::apm install changed the tree; run apm install locally and commit the result"
+            exit 1
+          fi
+
+  scan-skills:
+    name: scan-skills
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    # yamllint disable-line rule:line-length
+    uses: cisco-ai-defense/skill-scanner/.github/workflows/scan-skills.yml@605afdc5c7ea887c07e2afeb0fadc1452c07bfa7 # 2.0.12
+    with:
+      skill_path: .apm/skills
+      format: sarif
+      fail_on_severity: high

@@ -1,0 +1,21 @@
+---
+# APM package manifest. Declares this repo as the shared agent package
+# for tbhb repositories: the primitives under .apm/ deploy into any
+# consuming repo via `apm install tbhb/agent-tools#vX.Y.Z`.
+#
+# `includes: auto` self-applies the root .apm/ content, so running
+# `apm install` here dogfoods the package into this repo's own
+# harness layout. The cog pre-bump hook keeps `version` in lockstep
+# with the vX.Y.Z git tags (see cog.toml).
+name: agent-tools
+version: 0.1.0
+description: Shared agent package for tbhb repositories
+author: tbhb
+license: Apache-2.0
+target:
+  - claude
+dependencies:
+  apm: []
+  mcp: []
+includes: auto
+scripts: {}
