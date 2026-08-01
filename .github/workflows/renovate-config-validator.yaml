@@ -1,0 +1,29 @@
+---
+# PR gate that catches broken Renovate config before it lands on main,
+# delegated to the shared reusable workflow in tbhb/github-actions.
+# That workflow runs renovate-config-validator from the same SHA-pinned
+# Renovate image the cron workflow uses, keeping the two in lockstep.
+# `config_path` points it at this repo's config.
+name: Validate Renovate configuration
+
+on:
+  pull_request:
+    paths:
+      # Catch nested renovate configs too if/when subprojects appear.
+      - "**renovate.json5"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Renovate configuration
+    # Pinned reusable-workflow path + 40-char SHA + tag comment overruns
+    # yamllint's 120-col limit and can't be wrapped; Renovate keeps the
+    # SHA and tag in sync inline.
+    # yamllint disable-line rule:line-length
+    uses: tbhb/github-actions/.github/workflows/renovate-config-validator.yaml@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
+    permissions:
+      contents: read
+    with:
+      config_path: .github/renovate.json5

@@ -1,0 +1,47 @@
+---
+# Self-hosted Renovate, delegated to the shared reusable workflow in
+# tbhb/github-actions. That workflow mints a tbhb-renovate[bot]
+# GitHub App token, checks out this repo's tree, and runs Renovate against
+# .github/renovate.json5; `secrets: inherit` hands it the
+# RENOVATE_CLIENT_ID / RENOVATE_PRIVATE_KEY App credentials.
+#
+# The schedule and workflow_dispatch triggers live here because a reusable
+# workflow can't carry its own caller-side triggers. gomodTidy now runs
+# under the shared workflow's install-based Go toolchain rather than a
+# docker-socket sidecar, so this repo no longer needs a local action or
+# custom entrypoint.
+#
+# Execution depends on the tbhb-renovate App credentials reaching the
+# run: this repository carries RENOVATE_CLIENT_ID and
+# RENOVATE_PRIVATE_KEY as its own Actions secrets.
+name: Renovate
+
+on:
+  schedule:
+    # Hourly on weekdays, every two hours on weekends. Matches Cilium's
+    # cadence: fast enough to catch CVEs the same business day, slack
+    # enough to avoid wasting API budget on quiet weekends.
+    - cron: "11 * * * 1-5"
+    - cron: "11 */2 * * 6,0"
+  workflow_dispatch:
+    inputs:
+      renovate_log_level_debug:
+        type: boolean
+        description: "Run Renovate with debug log levels"
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  renovate:
+    name: Run self-hosted Renovate
+    uses: tbhb/github-actions/.github/workflows/renovate.yaml@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
+    permissions:
+      contents: read
+    # On a scheduled run the shared workflow already forces DEBUG, so the
+    # forwarded value only changes a manual dispatch (where it can drop to
+    # INFO). The guard keeps the expression a real boolean on schedule.
+    with:
+      renovate_log_level_debug: ${{ github.event_name != 'workflow_dispatch' || inputs.renovate_log_level_debug }}
+    secrets: inherit

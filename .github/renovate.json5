@@ -1,0 +1,30 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+
+  // The repository-level policy comes from two shared presets in
+  // tbhb/github-actions: renovate-config.json5 carries the rules plus
+  // the Justfile and Vale custom managers used by every repo, and
+  // renovate-go-config.json5 carries the Go-module specifics (gomodTidy and
+  // the go-deps grouping) shared by every Go repo. Both resolve after
+  // platform initialization, with token auth.
+  extends: [
+    "github>tbhb/github-actions//.github/renovate-config.json5",
+    "github>tbhb/github-actions//.github/renovate-go-config.json5",
+  ],
+
+  // Global-only identity, rate limits, and requireConfig. These previously
+  // came from renovate-global-config.json5 via globalExtends, but Renovate
+  // resolves globalExtends before host rules are registered, so that preset
+  // fetch was always anonymous and intermittently hit GitHub's per-IP rate
+  // limit (config-presets-invalid). Inlining the resolved values removes
+  // the pre-auth fetch entirely.
+  requireConfig: "ignored",
+  username: "tbhb-renovate[bot]",
+  gitAuthor: "tbhb-renovate[bot] <311633125+tbhb-renovate[bot]@users.noreply.github.com>",
+  prConcurrentLimit: 0,
+  prHourlyLimit: 0,
+
+  // Single-repo scope. Global-only and different per repo, so it stays here
+  // as the only genuinely local setting left.
+  repositories: ["tbhb/agent-tools"],
+}
