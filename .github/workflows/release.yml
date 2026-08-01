@@ -1,0 +1,71 @@
+---
+name: release
+
+# Cut a release on demand. cog inspects the Conventional Commit
+# history since the last tag, computes the next semver (or takes an
+# explicit version for the first cut, where --auto has no tag to
+# diff against), syncs apm.yml's version field via the pre-bump hook
+# in cog.toml, writes CHANGELOG.md, commits, tags vX.Y.Z, and pushes
+# both back to main. One tag serves both consumer paths (APM
+# installs pin tbhb/agent-tools#vX.Y.Z and Go installs pin
+# @vX.Y.Z), so no artifact build runs here.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Explicit version to release (X.Y.Z); empty runs cog bump --auto
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}
+
+jobs:
+  release:
+    name: release
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      # Unlike the read-only workflows, this checkout keeps its
+      # credentials: the job's whole purpose is pushing the release
+      # commit and tag back to main. Full history so cog can find the
+      # previous tag and walk the commits since.
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # The cocogitto action insists on a command (its install-only
+      # input exists but the pinned revision never consults it), so a
+      # small step turns the optional dispatch input into the bump
+      # arguments and the action runs the bump itself. The action also
+      # owns the git identity configuration.
+      - name: Plan bump arguments
+        id: plan
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [ -n "$VERSION" ]; then
+            echo "args=--version $VERSION" >> "$GITHUB_OUTPUT"
+          else
+            echo "args=--auto" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump version and tag
+        uses: cocogitto/cocogitto-action@52d0023b4396897f1815648e553db2ab8d782f3a # v4.2.0
+        with:
+          git-user: github-actions[bot]
+          git-user-email: github-actions[bot]@users.noreply.github.com
+          command: bump
+          args: ${{ steps.plan.outputs.args }}
+
+      - name: Push release commit and tag
+        run: git push --follow-tags origin main

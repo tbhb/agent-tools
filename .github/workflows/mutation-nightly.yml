@@ -1,0 +1,75 @@
+---
+# Nightly mutation sweep. Runs gremlins across the whole module and
+# reports which mutants the test suite kills versus which survive, so
+# mutation analysis happens off the critical path rather than on every
+# PR. Gremlins reruns the entire suite per mutant, far too slow to gate
+# a pull request. The workflow invokes the same `just mutate-all` recipe
+# contributors run locally, overriding only the timeout coefficient, so
+# the recipe stays the single source of truth for what gets mutated.
+# Mirrors the fuzz / fuzz-nightly split where one recipe powers both the
+# inner loop and the scheduled sweep.
+#
+# Gremlins exits zero whatever the score (the recipe sets no threshold),
+# so the survivor report lands in the run log rather than reddening the
+# run. A contributor reads the LIVED and NOT COVERED lines to find the
+# assertion gaps that line coverage misses.
+
+name: mutation-nightly
+
+on:
+  schedule:
+    # 04:14 UTC nightly. Off-peak and off the top of the hour, clear of
+    # the fuzz-nightly slot (02:52) so the two sweeps never queue against
+    # each other.
+    - cron: "14 4 * * *"
+  workflow_dispatch:
+    inputs:
+      timeout_coefficient:
+        description: "Per-mutant test-time budget multiplier (gremlins --timeout-coefficient)"
+        type: string
+        default: "100"
+
+permissions:
+  contents: read
+
+concurrency:
+  # Serialize scheduled and manual runs so an on-demand dispatch never
+  # races a nightly run. Never cancel a run in flight: a half-finished
+  # sweep is wasted compute.
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  mutate:
+    name: mutate
+    runs-on: ubuntu-24.04
+    # The covered-mutant set finishes in well under a minute today, but
+    # gremlins reruns the whole suite per mutant, so the ceiling scales
+    # with covered mutants times suite runtime. Keep it generous and
+    # revisit as the package set grows.
+    timeout-minutes: 60
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          check-latest: false
+
+      - name: Set up just
+        uses: tbhb/github-actions/.github/actions/setup-just@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
+
+      - name: Run mutation sweep
+        env:
+          # Scheduled runs carry no inputs, so fall back to the dispatch default.
+          GREMLINS_TIMEOUT_COEFFICIENT: ${{ github.event.inputs.timeout_coefficient || '100' }}
+        run: just mutate-all

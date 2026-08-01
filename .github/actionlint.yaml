@@ -1,0 +1,12 @@
+---
+# actionlint configuration.
+#
+# GitHub's code-quality permission scope (used by the coverage upload in
+# ci.yml) is newer than actionlint's built-in scope allowlist, which
+# still rejects it as unknown. actionlint v1.7.12 and its main branch
+# both lack the scope, so a version bump can't clear the false positive
+# yet. Drop this ignore once a release adds code-quality.
+paths:
+  .github/workflows/ci.yml:
+    ignore:
+      - 'unknown permission scope "code-quality"'

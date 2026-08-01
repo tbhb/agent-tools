@@ -1,0 +1,105 @@
+---
+# Supply-chain security scanners that report to GitHub Code Scanning.
+# Two jobs run the project's dependency scanners with SARIF output and
+# upload each result under its own category: govulncheck over the call
+# graph, and gomodscan over the vendored module set (retraction,
+# deprecation, and OSV malicious-package checks).
+#
+# Triggers cover pull requests and pushes to `main` — the pushes seed
+# the Code Scanning baseline that pull-request diffs compare against —
+# plus a daily cron that catches advisories published against
+# already-merged dependencies long after the pull request that added
+# them. Findings surface in the Security tab through SARIF rather than
+# failing the run, so a warning-level deprecation does not gate a pull
+# request. The blocking govulncheck gate stays in `ci.yml`.
+#
+# Each job installs `just` from the SHA-pinned setup-just composite and
+# invokes the matching `just *-sarif` recipe, so the scan command stays
+# the single source of truth shared with local runs.
+
+name: security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "26 6 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  govulncheck:
+    name: govulncheck
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          check-latest: false
+
+      - name: Set up just
+        uses: tbhb/github-actions/.github/actions/setup-just@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
+
+      - name: Run govulncheck (SARIF)
+        run: just vuln-sarif govulncheck.sarif
+
+      - name: Upload govulncheck SARIF
+        uses: github/codeql-action/upload-sarif@f205ea1c3313d32999d8d6a48b4f6530d4437b38 # v4
+        with:
+          sarif_file: govulncheck.sarif
+          category: govulncheck
+
+  gomodscan:
+    name: gomodscan
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          check-latest: false
+
+      - name: Set up just
+        uses: tbhb/github-actions/.github/actions/setup-just@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
+
+      - name: Run gomodscan (SARIF)
+        run: just gomodscan-sarif gomodscan.sarif
+
+      - name: Upload gomodscan SARIF
+        uses: github/codeql-action/upload-sarif@f205ea1c3313d32999d8d6a48b4f6530d4437b38 # v4
+        with:
+          sarif_file: gomodscan.sarif
+          category: gomodscan

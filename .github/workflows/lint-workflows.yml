@@ -1,0 +1,36 @@
+---
+name: lint-workflows
+
+# Lint every workflow under `.github/workflows/` with actionlint, delegated to
+# the shared reusable workflow in tbhb/github-actions so the gate runs
+# the same SHA-pinned actionlint image everywhere instead of each repository
+# carrying its own setup.
+#
+# The triggers live here because a reusable workflow can't carry its own
+# caller-side triggers. The path filter and a read-only token are all the
+# shared entry point needs: it takes no inputs or secrets and runs actionlint
+# against the caller's tree, guarding both the pull-request and push-to-main
+# ends of the integration path.
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/**
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/**
+
+permissions:
+  contents: read
+
+jobs:
+  lint-workflows:
+    name: lint-workflows
+    # Pinned reusable-workflow path + 40-char SHA + tag comment overruns
+    # yamllint's 120-col limit and can't be wrapped; Renovate keeps the
+    # SHA and tag in sync inline.
+    # yamllint disable-line rule:line-length
+    uses: tbhb/github-actions/.github/workflows/lint-workflows.yml@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
+    permissions:
+      contents: read

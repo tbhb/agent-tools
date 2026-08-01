@@ -1,0 +1,33 @@
+---
+# PR gate that validates `.github/CODEOWNERS` before a broken rule lands
+# on main, delegated to the shared reusable workflow in
+# tbhb/github-actions. That workflow checks owners and syntax via
+# GitHub's own CODEOWNERS validator and confirms every rule's pattern
+# still matches a tracked path, running both checks against this PR's
+# tree.
+#
+# The pull_request trigger lives here because a reusable workflow can't
+# carry its own caller-side triggers. The '**' path filter runs the gate
+# on every PR, so a deletion anywhere re-triggers the path-existence
+# check and the gate can be required without ever skipping.
+name: lint-codeowners
+
+on:
+  pull_request:
+    paths:
+      - .github/CODEOWNERS
+      - '**'
+
+permissions:
+  contents: read
+
+jobs:
+  lint-codeowners:
+    name: lint-codeowners
+    # Pinned reusable-workflow path + 40-char SHA + tag comment overruns
+    # yamllint's 120-col limit and can't be wrapped; Renovate keeps the
+    # SHA and tag in sync inline.
+    # yamllint disable-line rule:line-length
+    uses: tbhb/github-actions/.github/workflows/lint-codeowners.yml@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
+    permissions:
+      contents: read

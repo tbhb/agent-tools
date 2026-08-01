@@ -1,0 +1,82 @@
+---
+# CodeQL static analysis for the Go source and for the GitHub
+# Actions workflows themselves. Runs on every pull request, every
+# push to `main`, and weekly so the analysis re-evaluates `main`
+# against newly published query updates even when nothing in the
+# tree changed. Results upload to the repository's code-scanning
+# dashboard as SARIF.
+#
+# Two languages analyze in parallel matrix slots. `go` builds with
+# CodeQL autobuild; the vendored module graph lets `go build ./...`
+# resolve without network fetches. `actions` scans the workflow
+# files with no build step. Both run the `security-extended` query
+# suite, which widens the security ruleset without pulling in the
+# code-quality queries that would overlap golangci-lint.
+
+name: codeql
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly, Sunday 03:39 UTC. Off-peak and off the top of the hour
+    # so the run avoids the busiest scheduler slots.
+    - cron: "39 3 * * 0"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  analyze:
+    name: "analyze (${{ matrix.language }})"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+      packages: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: go
+            build-mode: autobuild
+          - language: actions
+            build-mode: none
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Pin the Go toolchain to the version in go.mod so autobuild
+      # builds with it instead of the CodeQL bundle's older Go.
+      - name: Set up Go
+        if: matrix.language == 'go'
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          check-latest: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-extended
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
+        with:
+          category: "/language:${{ matrix.language }}"

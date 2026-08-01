@@ -1,0 +1,78 @@
+---
+# Nightly fuzzing sweep. Walks every native Go fuzz target in the module
+# and runs each one for a longer budget than the inner-loop `just fuzz`
+# default, so corpus growth and crasher discovery happen off the critical
+# path rather than on every PR. The workflow invokes the same `just fuzz`
+# recipe contributors run locally, overriding only FUZZ_TIME, so the recipe
+# stays the single source of truth for what gets fuzzed. Mirrors the
+# gremlins / mutate-all split where one recipe powers both the inner loop
+# and the scheduled sweep.
+#
+# A crash writes its reproducing input under the package's
+# `testdata/fuzz/<target>/`; the workflow uploads that tree on failure so
+# the crasher survives the runner teardown and can be replayed locally.
+
+name: fuzz-nightly
+
+on:
+  schedule:
+    # 02:52 UTC nightly. Off-peak and off the top of the hour, where
+    # GitHub's scheduler is most congested.
+    - cron: "52 2 * * *"
+  workflow_dispatch:
+    inputs:
+      fuzz_time:
+        description: "Per-target fuzz budget (Go -fuzztime duration, e.g. 5m, 30s)"
+        type: string
+        default: "5m"
+
+permissions:
+  contents: read
+
+concurrency:
+  # Serialize scheduled and manual runs so an on-demand dispatch never races
+  # a nightly run over the same corpus. Never cancel a run in flight: a
+  # half-finished sweep is wasted compute.
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  fuzz:
+    name: fuzz
+    runs-on: ubuntu-24.04
+    # One target at the 5m default fits comfortably; the sweep is sequential,
+    # so revisit this ceiling as the target set grows.
+    timeout-minutes: 20
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          check-latest: false
+
+      - name: Set up just
+        uses: tbhb/github-actions/.github/actions/setup-just@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
+
+      - name: Run fuzz sweep
+        env:
+          # Scheduled runs carry no inputs, so fall back to the dispatch default.
+          FUZZ_TIME: ${{ github.event.inputs.fuzz_time || '5m' }}
+        run: just fuzz
+
+      - name: Upload crashers
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: fuzz-crashers
+          path: "**/testdata/fuzz/**"
+          if-no-files-found: ignore
