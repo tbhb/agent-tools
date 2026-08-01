@@ -1,0 +1,13 @@
+# Review routing for agent-tools. GitHub applies the last matching
+# rule, so the supply-chain rules below override the default for the
+# paths they name.
+
+# Default owner for everything.
+*           @tbhb
+
+# Supply-chain and CI surface. The /.github/ rule already covers
+# renovate.json5 and every workflow, so neither needs its own line.
+/.github/   @tbhb
+/vendor/    @tbhb
+/go.mod     @tbhb
+/go.sum     @tbhb
