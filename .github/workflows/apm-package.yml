@@ -22,16 +22,24 @@ on:
       - apm.yml
       - apm.lock.yaml
       - .apm/**
+      - hooks/**
       - .claude/rules/**
       - .claude/skills/**
+      - .claude/hooks/**
+      - .claude/settings.json
+      - .claude/apm-hooks.json
       - .github/workflows/apm-package.yml
   pull_request:
     paths:
       - apm.yml
       - apm.lock.yaml
       - .apm/**
+      - hooks/**
       - .claude/rules/**
       - .claude/skills/**
+      - .claude/hooks/**
+      - .claude/settings.json
+      - .claude/apm-hooks.json
       - .github/workflows/apm-package.yml
 
 permissions:
@@ -59,8 +67,12 @@ jobs:
       # renovate: datasource=github-releases depName=microsoft/apm
       - name: Install apm
         env:
-          APM_VERSION: 0.19.0
-          APM_SHA256: 93c447da0857da55ff12e7071a5af974c0f85de9717155e7dc06682bc1afe362
+          # 0.26.0 or newer: through 0.19.0 the hooks-ownership sidecar
+          # .claude/apm-hooks.json was written after the lockfile
+          # snapshot, so `apm audit --ci` reported it as drift on a tree
+          # that install had just produced.
+          APM_VERSION: 0.26.0
+          APM_SHA256: 3afba455c5283852ba4c392f668be7c27b65bc4a0fa60a8b53a4626c52628431
         run: |
           cd "$RUNNER_TEMP"
           release="https://github.com/microsoft/apm/releases/download/v${APM_VERSION}"
