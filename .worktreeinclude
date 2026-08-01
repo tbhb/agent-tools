@@ -1,0 +1,4 @@
+.vale/
+.env
+.env.local
+mise.local.toml

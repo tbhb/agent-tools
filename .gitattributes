@@ -1,0 +1,13 @@
+* text=auto eol=lf
+*.go text eol=lf
+*.sh text eol=lf
+*.md text eol=lf
+
+# Generated files — exclude from language stats and diff context.
+# -text skips line-ending normalization: go mod vendor copies upstream
+# content verbatim, and a few modules ship CRLF. Without -text every
+# vendor refresh rewrites those files to LF and breaks the vendor-tidy
+# drift check.
+vendor/** linguist-vendored -text
+go.sum -diff
+*.lock -diff

@@ -1,0 +1,59 @@
+# Local development
+tmp/
+.env
+.env.*
+!.env.example
+mise.local.toml
+
+# Agent commit-message draft. Authored at the repo root so vale's
+# [formats] mapping resolves it, linted via `just lint-commit-msg`,
+# then consumed with `git commit -F COMMIT_AGENTMSG`. Never committed.
+COMMIT_AGENTMSG
+
+# Go build output
+bin/
+/agentcontext
+/agenthooks
+/agentstore
+coverage.out
+coverage.html
+coverage.txt
+coverage.xml
+coverage.covdata*/
+
+# Test outputs
+testdata/fuzz/
+
+# Linter caches
+.rumdl_cache/
+node_modules/
+.cspell-cache
+
+# goreleaser
+dist/
+
+# gremlins
+.gremlins/
+gremlins-report.json
+
+# Claude Code
+.claude/worktrees/
+.claude/settings.local.json
+
+# Vale synced packages (keep the repo-local style, its output template,
+# and its vocabulary). Each negation needs the parent un-ignored first —
+# git can't re-include a child whose ancestor directory stays excluded.
+.vale/*
+!.vale/project/
+!.vale/config/
+.vale/config/*
+!.vale/config/templates/
+!.vale/config/vocabularies/
+.vale/config/vocabularies/*
+!.vale/config/vocabularies/project/
+
+# macOS
+.DS_Store
+
+# APM dependencies
+apm_modules/
