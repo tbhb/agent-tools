@@ -67,6 +67,15 @@ deployments:
   content_hash: sha256:49735a8476c4ac2db54c7698f8018dab76f7c28761d5b19094f259d31cea4ab5
 - kind: project-relative
   target: claude
+  value: .claude/skills/commit/tokens.json
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:a1aed36a7675c5e38a59e4ac8fadbbdef74500cd81066f912e5da16ef7c55be4
+- kind: project-relative
+  target: claude
   value: .claude/skills/review-commit-message
   runtime: null
   scope: project
@@ -83,6 +92,15 @@ deployments:
   - .
   active_owner: .
   content_hash: sha256:f891f0a39f711a56cbfa578f9a8f34b7937f9d4205d6829e9e8e76ed98664f62
+- kind: project-relative
+  target: claude
+  value: .claude/skills/review-commit-message/tokens.json
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:b2d1047ebab2909ca26d197719f3eb11ecc5effc0b2e59ba2a8f5820572ea7e9
 local_deployed_files:
 - .claude/hooks/agent-tools/hooks/go-lint.sh
 - .claude/rules/worktree-wip.md
@@ -91,8 +109,10 @@ local_deployed_files:
 - .claude/skills/commit/scripts/guard-git.sh
 - .claude/skills/commit/scripts/preflight.sh
 - .claude/skills/commit/scripts/stamp-review.sh
+- .claude/skills/commit/tokens.json
 - .claude/skills/review-commit-message
 - .claude/skills/review-commit-message/SKILL.md
+- .claude/skills/review-commit-message/tokens.json
 local_deployed_file_hashes:
   .claude/hooks/agent-tools/hooks/go-lint.sh: sha256:1e032461b8c7ca21a7ae24187ef4cf40f6573b97e4d55be10d94fab94efcd036
   .claude/rules/worktree-wip.md: sha256:0204082643d1ea505ae20eaf93e7d94dd52b65046f3e4f290ec7bbc5c6093634
@@ -100,4 +120,6 @@ local_deployed_file_hashes:
   .claude/skills/commit/scripts/guard-git.sh: sha256:3ce76f0351fc4b19e538a43842ed4cd7e8ce176327ef875949b4f64ae310d781
   .claude/skills/commit/scripts/preflight.sh: sha256:b177c2adea6e67e63a1b9d53698243e9be69da7c45f8189dbb3d745ad9515aca
   .claude/skills/commit/scripts/stamp-review.sh: sha256:49735a8476c4ac2db54c7698f8018dab76f7c28761d5b19094f259d31cea4ab5
+  .claude/skills/commit/tokens.json: sha256:a1aed36a7675c5e38a59e4ac8fadbbdef74500cd81066f912e5da16ef7c55be4
   .claude/skills/review-commit-message/SKILL.md: sha256:f891f0a39f711a56cbfa578f9a8f34b7937f9d4205d6829e9e8e76ed98664f62
+  .claude/skills/review-commit-message/tokens.json: sha256:b2d1047ebab2909ca26d197719f3eb11ecc5effc0b2e59ba2a8f5820572ea7e9

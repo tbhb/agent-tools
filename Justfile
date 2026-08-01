@@ -373,7 +373,7 @@ lint-bandit:
 # the .editorconfig whitespace contract (editorconfig-checker).
 
 # Run every linter that operates on the source tree.
-lint: lint-go-all lint-py-all lint-prose lint-spelling lint-markdown lint-markdown-wrap lint-config lint-yaml lint-toml lint-shell lint-shell-fmt lint-just lint-editorconfig
+lint: lint-go-all lint-py-all lint-prose lint-spelling lint-markdown lint-markdown-wrap lint-config lint-yaml lint-toml lint-shell lint-shell-fmt lint-just lint-editorconfig lint-skills
 
 # --modules-download-mode=vendor matches `just build`, so the linter
 # sees exactly the dependency set the compiler does and never falls back
@@ -599,6 +599,25 @@ lint-just:
 # Check every tracked file against .editorconfig via editorconfig-checker.
 lint-editorconfig:
     editorconfig-checker
+
+# The platform rejects a skill whose name or description breaks these
+# bounds, and it does so at upload, far from the edit that caused it.
+# Both are plain character counts, so this gate stays offline and runs
+# with the rest of `just lint`. The companion body-size guidance is
+# measured in tokens and needs the network, so `tools/skill-tokens.sh`
+# carries that one instead.
+
+# Check every skill against the platform's name and description limits.
+lint-skills *args:
+    bash tools/skill-limits.sh {{ args }}
+
+# Count what each skill costs in context and write tokens.json beside
+# it. Needs the `ant` CLI authenticated; kept out of `just lint` because
+# it calls the token-counting API.
+
+# Measure skill token costs against the real tokenizer.
+skill-tokens *args:
+    bash tools/skill-tokens.sh {{ args }}
 
 # Surfaces message problems while iterating rather than at commit time.
 # Reads the draft from the repo-root COMMIT_AGENTMSG file (gitignored;

@@ -222,6 +222,7 @@ owasp
 owenrumney
 paralleltest
 passthrough
+pathlib
 pathspec
 perfsprint
 pflag
@@ -250,6 +251,7 @@ pytest
 recompiles
 recvcheck
 relitigates
+relpath
 renovatebot
 repofile
 retarget
@@ -274,6 +276,7 @@ setext
 setnx
 shellcheck
 shfmt
+shlex
 sigstore
 singledispatch
 sismember
