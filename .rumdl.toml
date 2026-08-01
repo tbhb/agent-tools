@@ -1,0 +1,34 @@
+[global]
+disable = [
+  "MD013",  # Line length — we don't hardwrap markdown.
+  "MD033",  # Inline HTML — needed for cosign/badge embeds.
+]
+respect_gitignore = true
+exclude = [
+  ".git",
+  ".vale",
+  "tmp",
+  "vendor",
+  ".claude/skills/*/SKILL.md",
+  "CODEOWNERS",
+  "LICENSE",
+]
+
+# Per-path rule exclusions for the cog-generated CHANGELOG.md, which
+# repeats version headings (MD024). MD013 is already disabled globally,
+# and MD041 stays enforced here (the file opens with `# Changelog`); the
+# heading-less release-note fragments disable MD041 in their own recipe.
+[per-file-ignores]
+"CHANGELOG.md" = ["MD024"]
+
+[MD003]
+style = "atx"
+
+[MD004]
+style = "dash"
+
+[MD025]
+front_matter_title = ""
+
+[MD048]
+style = "backtick"

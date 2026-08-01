@@ -1,0 +1,28 @@
+{
+  "language": "en",
+  "ignorePaths": [
+    "**/*.d.ts",
+    "**/*.log",
+    ".claude/worktrees/**/*",
+    ".rumdl_cache/**/*",
+    ".vale/**/*",
+    "coverage.json",
+    "coverage.xml",
+    "dist/**/*",
+    "go.mod",
+    "go.sum",
+    "LICENSE",
+    "node_modules/**/*",
+    "tmp/**/*",
+    "vendor/**/*",
+    "uv.lock"
+  ],
+  "dictionaryDefinitions": [
+    {
+      "name": "agent-tools",
+      "path": "./.cspell-words.txt",
+      "addWords": true
+    }
+  ],
+  "dictionaries": ["agent-tools", "golang"]
+}
