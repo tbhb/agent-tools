@@ -1,0 +1,13 @@
+---
+extends: existence
+message: "'%s' should be in lowercase."
+link: 'https://developers.google.com/style/colons'
+nonword: true
+level: warning
+scope: sentence
+tokens:
+  # The first lookbehind exempts a colon when another :non-space chunk
+  # precedes it (URLs like https://Foo). The Signed-off-by/Assisted-by
+  # lookbehinds exempt the DCO trailer pair, which is otherwise flagged
+  # on commits that lack the embedded colon from "claude-code:opus-X.Y".
+  - '(?<!:[^ ]+?)(?<!Signed-off-by)(?<!Assisted-by):\s[A-Z]'
