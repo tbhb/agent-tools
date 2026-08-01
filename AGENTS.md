@@ -27,6 +27,41 @@ The prek commit-msg hook on `.git/COMMIT_EDITMSG` stays the real gate. `COMMIT_A
 
 The skill's frontmatter carries a pair of guard hooks, scoped to a commit workflow and inert outside one. One refuses whole-tree staging, an inline `-m` message, and `--no-verify`. The other records which bytes `review-commit-message` signed off on, and blocks the commit when the draft has changed since. Editing the draft after the review means running the review again.
 
+## Pull requests
+
+Run the `pr` skill. It owns drafting the description, the review, and the publish, and it routes what follows to three sibling skills. This section only summarizes them.
+
+Draft every pull request description in the repo-root file `PR_AGENTDESC.md`, which a gitignore entry keeps out of history. The commit draft dies at the commit. This one outlives the publish, remaining the working copy of the description for as long as the pull request stays open, and `merge-pr` removes it once the branch merges. A leftover draft that no open pull request stands behind has gone stale, so the `pr` preflight removes it rather than letting the next run inherit abandoned text.
+
+The file carries three things the template can't. YAML frontmatter holds the pull request properties, a level 1 heading holds the title, and the rest fills in the sections from `.github/pull_request_template.md`.
+
+1. Draft the description, with a title in the Conventional Commits shape. A squash merge turns that title into the commit subject on the default branch.
+2. Review the draft with the `review-pr-description` skill, which runs as an independent agent.
+3. Run `just lint-pr-description` and resolve whatever it reports.
+4. Confirm with the operator, then publish through `.claude/skills/pr/scripts/create-pr.sh`.
+
+`just lint-pr-description` runs a mechanical validator plus vale and cspell. The validator is offline and settles only what looking can settle:
+
+- the frontmatter shape, its known keys, and a label the pull request actually carries
+- the title's Conventional Commits form, its bounds, and whether its type appears among the commits that would land
+- the template's sections, their order, and any left empty
+- instructional comments that survived, unclosed fences, and links pointing nowhere
+- whether every path the description puts in backticks exists in the tree or the branch diff
+
+Each finding names a line and the fix, so resolving one means opening the draft at that point rather than searching it.
+
+The rest of the lifecycle splits into three skills, each usable on its own:
+
+- `watch-pr` waits for the checks. It streams one event per check through the `Monitor` tool, so a wait costs one turn rather than one per look.
+- `fix-pr` diagnoses a red pull request. One call reads the failing logs and names the local recipe reproducing each failure.
+- `merge-pr` squash merges under a message this toolchain writes. It drafts `SQUASH_AGENTMSG` from the published description. That draft then goes through `review-squash-message` and `just lint-squash-msg`, and past a confirmation, before the merge clears both drafts. It also works on a pull request nobody here authored, a dependency bump being the usual case.
+
+Left alone, GitHub writes the squash message by concatenating every commit on the branch. That text has never passed a commit-msg hook, and nothing lints it afterwards, so `merge-pr` writes the message instead.
+
+Each of these skills carries guard hooks in its frontmatter, scoped to the workflow and inert outside one. The `gh pr` guards work by allowlist: reading through `list`, `view`, `diff`, `status`, and `checks` stays open, and everything that changes a pull request goes through the wrapping script. Naming the read-only verbs rather than the mutating ones means a verb `gh` grows later arrives already covered. `watch-pr` and `fix-pr` refuse the narrower set of forms their own scripts wrap.
+
+A skill's hooks outlive the turn that invoked it, so more than one of these guards is often live at once. The `pr` and `merge-pr` guards share one allowlist so they agree wherever both run. `watch-pr` and `fix-pr` claim only the narrower forms their own scripts wrap, because a broader claim there would refuse a sibling's legitimate calls.
+
 ## Prose lint output
 
 `just lint-prose` and the prek vale hook already emit the agent output template, which this repository tracks at `.vale/config/templates/project-agent.tmpl` next to the `project` style rules. It prints one self-contained line per finding (location, severity, rule, the exact matched text, and the replacement when the rule carries one) plus a totals line, so you can fix every finding without follow-up searching. Pass `--output=project-agent.tmpl` yourself only when you invoke vale directly. Empty output means a clean run, and the exit code carries the result.

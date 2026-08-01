@@ -441,7 +441,7 @@ lint-go-arch:
 
 # Lint prose in Markdown files and source comments via vale.
 lint-prose *args:
-    vale --output=project-agent.tmpl --glob='!{LICENSE,CHANGELOG.md,.vale/*,tmp/*,vendor/*,.venv/*,.claude/worktrees/*,.pytest_cache/*,.complexipy_cache/*,COMMIT_AGENTMSG}' {{ if args == "" { "." } else { args } }}
+    vale --output=project-agent.tmpl --glob='!{LICENSE,CHANGELOG.md,.vale/*,tmp/*,vendor/*,.venv/*,.claude/worktrees/*,.pytest_cache/*,.complexipy_cache/*,COMMIT_AGENTMSG,PR_AGENTDESC.md,SQUASH_AGENTMSG}' {{ if args == "" { "." } else { args } }}
 
 # Checks against the project dictionary at .cspell-words.txt. cspell
 # ignores binaries, generated files, and the vendor/ tree via the
@@ -451,7 +451,7 @@ lint-prose *args:
 
 # Check spelling across the tree.
 lint-spelling *args:
-    cspell --config .cspell.jsonc --no-summary --no-progress --no-must-find-files --exclude COMMIT_AGENTMSG {{ if args == "" { "." } else { args } }}
+    cspell --config .cspell.jsonc --no-summary --no-progress --no-must-find-files --exclude COMMIT_AGENTMSG --exclude PR_AGENTDESC.md --exclude SQUASH_AGENTMSG {{ if args == "" { "." } else { args } }}
 
 # rumdl handles structural lints (heading style, list marker style, code
 # fence style); vale handles prose.
@@ -631,6 +631,30 @@ skill-tokens *args:
 # Pre-validate a drafted commit message against the commit-msg gates.
 lint-commit-msg:
     prek run --stage commit-msg --commit-msg-filename COMMIT_AGENTMSG
+
+# The pull request counterpart. The validator is mechanical and offline:
+# it settles the frontmatter shape, the Conventional Commits form of the
+# title, the template's sections and their order, empty sections,
+# surviving instructional comments, unclosed fences, dead links, and
+# whether every backticked path exists in the tree or the branch diff.
+# vale and cspell then read the prose, under the same [*.md] rules the
+# rest of the tree answers to. The draft is gitignored, so the tree-wide
+# recipes skip it and this one owns it.
+
+# Validate a drafted pull request description.
+lint-pr-description:
+    bash .claude/skills/pr/scripts/validate-description.sh
+    vale --output=project-agent.tmpl PR_AGENTDESC.md
+    cspell --config .cspell.jsonc --no-summary --no-progress PR_AGENTDESC.md
+
+# The squash message merge-pr writes never passes through git's
+# commit-msg hook, because GitHub authors that commit rather than this
+# machine. Running the same four hooks over the draft here is what keeps
+# a squash commit answerable to the rules every other commit meets.
+
+# Pre-validate a drafted squash commit message against the commit-msg gates.
+lint-squash-msg:
+    prek run --stage commit-msg --commit-msg-filename SQUASH_AGENTMSG
 
 # --- Test ---
 # The bare names aggregate both source languages; the -go and -py forms

@@ -1,4 +1,6 @@
+AGENTDESC
 AGENTMSG
+Backticked
 CLAUDECODE
 CLI
 CWD
@@ -258,6 +260,7 @@ retarget
 retunes
 reviewdog
 rhysd
+rollup
 rowserrcheck
 rpop
 ruleid
@@ -317,6 +320,7 @@ testpaths
 textfmt
 thelper
 tmpl
+tolower
 tombi
 toplevel
 tparallel

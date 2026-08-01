@@ -71,6 +71,7 @@ XDG
 [Aa]llowlist
 [Aa]llstar
 [Aa]tomicity
+[Bb]ackticked
 [Bb]uildType
 [Bb]uildmeta
 [Bb]uildx
@@ -103,6 +104,7 @@ XDG
 [Kk]eyless
 [Ll]ockfiles?
 [Mm]atchers?
+[Mm]ergeable
 [Mm]isconfigured
 [Nn]amespace[s]?
 [Nn]onces
@@ -126,6 +128,7 @@ XDG
 [Rr]epos?
 [Rr]estage[sd]?
 [Rr]estaging
+[Rr]ollup
 [Rr]uleset
 [Ss]emver
 [Ss]hellcheck
