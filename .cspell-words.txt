@@ -46,7 +46,6 @@ nolint
 pipefail
 pkgsite
 prek
-proofhouse
 reviewdog
 rumdl
 allstar

@@ -67,8 +67,8 @@ repos:
   # plus the commit-message scope in .vale.ini and .cspell.jsonc. Pinned by
   # SHA with a `# frozen:` tag comment so Renovate's pre-commit manager
   # tracks it, the same as the other hook repos above.
-  - repo: https://github.com/proofhouse/pre-commit-hooks
-    rev: 72e252992cbcdf4a503b7ce9145cdaf48bdc0cb9  # frozen: v0.3.0
+  - repo: https://github.com/tbhb/pre-commit-hooks
+    rev: 8ad309e61a0298394beef2b07b14ceca44b5a7e8  # frozen: v0.1.0
     hooks:
       - id: commit-trailers
       - id: commitlint
