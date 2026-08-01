@@ -3,14 +3,18 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+
 ## [v0.1.1](https://github.com/tbhb/agent-tools/compare/b0b1c9f71068f0920ab239d42681f2af34f345a9..v0.1.1) - 2026-08-01
-#### Documentation
+
+### Documentation
+
 - stop hard-wrapping the markdown prose (#4) - ([6f75183](https://github.com/tbhb/agent-tools/commit/6f75183cda5663100cdc9737970b5b8ca8c21a0f)) - [@tbhb](https://github.com/tbhb)
+
 #### Continuous Integration
+
 - source the commit-msg gates from the tbhb hook repo (#1) - ([b0b1c9f](https://github.com/tbhb/agent-tools/commit/b0b1c9f71068f0920ab239d42681f2af34f345a9)) - [@tbhb](https://github.com/tbhb)
 
 - - -
-
 
 ## [v0.1.0](https://github.com/tbhb/agent-tools/compare/049e81a012a34887cd44a1a256cdfbd5656de6d0..v0.1.0) - 2026-08-01
 
