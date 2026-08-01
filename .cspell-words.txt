@@ -7,6 +7,8 @@ ENV
 Equalf
 Errorf
 Honnef
+RLENGTH
+RSTART
 Sprintf
 TSSDK
 Tricolon
@@ -146,6 +148,7 @@ gosumdb
 govet
 govulncheck
 gremlins
+gsub
 guac
 hardwrap
 heredoc

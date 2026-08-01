@@ -35,17 +35,49 @@ deny() {
   exit 2
 }
 
-# Nothing to police unless git is being asked to stage or commit.
-case $command in
-*git*add* | *git*commit*) ;;
-*) exit 0 ;;
-esac
+# Heredoc bodies are data, not commands. A script written through a
+# heredoc can discuss git in its comments or its prose, and matching
+# that text refuses a command that never touched the index. Dropping
+# those bodies before any rule reads the string keeps the rules pointed
+# at what the shell will actually run.
+#
+# The terminator may be quoted (<<'EOF') and may be indented (<<-EOF),
+# so both spellings are recognized and the closing line is matched after
+# trimming its leading whitespace.
+command=$(printf '%s' "$command" | awk '
+  {
+    if (term != "") {
+      line = $0
+      sub(/^[ \t]+/, "", line)
+      if (line == term) { term = "" }
+      next
+    }
+    rest = $0
+    while (match(rest, /<<-?[ \t]*["'"'"']?[A-Za-z_][A-Za-z0-9_]*["'"'"']?/)) {
+      word = substr(rest, RSTART, RLENGTH)
+      rest = substr(rest, RSTART + RLENGTH)
+      gsub(/^<<-?[ \t]*|["'"'"']/, "", word)
+      term = word
+    }
+    print
+  }
+')
+
+# Nothing to police unless git is being asked to stage or commit. The
+# subcommand has to sit where a command actually starts, so a mention of
+# it inside an argument or a message reads as the prose it is.
+# The newline has to be a real one: POSIX ERE reads \n as the letter n,
+# so a spelled escape would miss a command on the second line.
+readonly AT_START=$'(^|[;&|(]|&&|\\|\\||\n)[[:space:]]*'
+if ! [[ $command =~ ${AT_START}git[[:space:]]+(-C[[:space:]]+[^[:space:]]+[[:space:]]+)?(add|commit) ]]; then
+  exit 0
+fi
 
 # Rule 1: no wildcard staging. Matches `-A`, `--all`, and a bare `.`
 # argument, while leaving a real path such as `./cmd/foo` alone.
-if [[ $command =~ git[[:space:]]+add ]]; then
-  if [[ $command =~ git[[:space:]]+add([[:space:]]+-[^[:space:]]*)*[[:space:]]+(-A|--all)([[:space:]]|$) ]] ||
-    [[ $command =~ git[[:space:]]+add([[:space:]]+-[^[:space:]]*)*[[:space:]]+\.([[:space:]]|$) ]]; then
+if [[ $command =~ ${AT_START}git[[:space:]]+add ]]; then
+  if [[ $command =~ ${AT_START}git[[:space:]]+add([[:space:]]+-[^[:space:]]*)*[[:space:]]+(-A|--all)([[:space:]]|$) ]] ||
+    [[ $command =~ ${AT_START}git[[:space:]]+add([[:space:]]+-[^[:space:]]*)*[[:space:]]+\.([[:space:]]|$) ]]; then
     deny "Whole-tree staging pulls in changes that do not belong to this commit.
 Stage the paths this commit is about, one at a time:
 
@@ -55,7 +87,7 @@ Run git status first if you need to see what is outstanding."
   fi
 fi
 
-[[ $command =~ git[[:space:]]+(-C[[:space:]]+[^[:space:]]+[[:space:]]+)?commit ]] || exit 0
+[[ $command =~ ${AT_START}git[[:space:]]+(-C[[:space:]]+[^[:space:]]+[[:space:]]+)?commit ]] || exit 0
 
 # Narrow the flag checks to the commit invocation itself, stopping at the
 # next shell separator. Reading flags off the whole command line mistakes
