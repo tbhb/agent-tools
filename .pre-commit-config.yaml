@@ -171,3 +171,38 @@ repos:
         language: system
         types: [toml]
         pass_filenames: false
+
+      # Python gates, wired like the Go and shell pairs above: the recipe
+      # owns the scope (pyproject.toml), so the hooks pass no filenames
+      # and only decide *whether* to run. The formatter runs first and
+      # rewrites in place (a modified file fails the commit, so the
+      # contributor reviews and re-stages), then the correctness linters.
+      - id: ruff-format
+        name: ruff format
+        entry: just format-py
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: ruff
+        name: ruff check
+        entry: just lint-ruff
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: pyrefly
+        name: pyrefly
+        entry: just lint-types
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      # uv.lock drift, the Python counterpart to the vendor-tidy hook
+      # above. Scoped to the files that can cause the drift.
+      - id: lock-check
+        name: uv lock --check
+        entry: just lock-check
+        language: system
+        files: ^(pyproject\.toml|uv\.lock)$
+        pass_filenames: false
