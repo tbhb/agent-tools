@@ -114,6 +114,7 @@ XDG
 [Pp]repending
 [Pp]repends?
 [Pp]rereq
+[Pp]yrefly
 [Qq]ueryable
 [Rr]eachability
 [Rr]ebase

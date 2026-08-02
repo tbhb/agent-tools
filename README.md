@@ -49,6 +49,10 @@ just build
 
 [cocogitto](https://github.com/cocogitto/cocogitto) cuts `vX.Y.Z` tags from the Conventional Commit history. One tag serves both consumer paths, with APM installs pinning `tbhb/agent-tools#vX.Y.Z` and Go installs pinning `@vX.Y.Z`.
 
+## Python
+
+[`packages/agent-tools-py`](packages/agent-tools-py) holds the Python side, kept deliberately small for now. Its gates run through `just lint-py-all` and `just cover-py`, which enforce ruff at its full ruleset, pyrefly's strict preset, and 100% branch coverage. `uv sync` provisions everything from `uv.lock`.
+
 ## License
 
 Apache-2.0. See [LICENSE](LICENSE).

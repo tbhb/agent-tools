@@ -31,6 +31,14 @@ The skill's frontmatter carries a pair of guard hooks, scoped to a commit workfl
 
 `just lint-prose` and the prek vale hook already emit the agent output template, which this repository tracks at `.vale/config/templates/project-agent.tmpl` next to the `project` style rules. It prints one self-contained line per finding (location, severity, rule, the exact matched text, and the replacement when the rule carries one) plus a totals line, so you can fix every finding without follow-up searching. Pass `--output=project-agent.tmpl` yourself only when you invoke vale directly. Empty output means a clean run, and the exit code carries the result.
 
+## Recipe naming
+
+Recipes that operate on one source language carry a `-go` or `-py` suffix, and the bare name aggregates both: `just test` runs `test-go` and `test-py`, and so do `cover`, `mutate`, and `fuzz`. Reach for the suffixed form while iterating on one language, and the bare form before pushing. Lint gates follow the same shape through `lint-go-all` and `lint-py-all`, which `just lint` composes.
+
+Python tooling covers `packages/`. It came from `proofhouse/proofhouse-python-tool`, dropping the gates that need an installable package. Because `pyproject.toml` declares a virtual project (`package = false`), `import-linter` contracts, a wheel build, and a generated build stamp have nothing to act on here. `lint-reuse` is absent for a different reason. REUSE compliance spans every file type in the tree. Adopting it needs a whole-tree sweep plus a `REUSE.toml` and `LICENSES/`, so that work belongs in its own change.
+
+The `[tool.pyrefly.errors]` table pins every diagnostic kind pyrefly knows. That catalog is version-specific, and an unknown name fails the entire config load, so regenerate the table on every pyrefly bump. Naming an unknown kind makes pyrefly print the full list of accepted values.
+
 ## Verifying Claude Code behavior
 
 The public Claude Code docs don't always match the installed version. When the behavior of a hook or harness feature matters (which events fire, in what order, whether an event can block, what its stdin payload carries), confirm it against the installed `claude` binary rather than trusting the docs or prior memory.
