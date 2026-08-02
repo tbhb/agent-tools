@@ -5,10 +5,22 @@ name: release
 # history since the last tag, computes the next semver (or takes an
 # explicit version for the first cut, where --auto has no tag to
 # diff against), syncs apm.yml's version field via the pre-bump hook
-# in cog.toml, writes CHANGELOG.md, commits, tags vX.Y.Z, and pushes
-# both back to main. One tag serves both consumer paths (APM
-# installs pin tbhb/repotools#vX.Y.Z and Go installs pin
-# @vX.Y.Z), so no artifact build runs here.
+# in cog.toml, writes CHANGELOG.md, commits, and tags vX.Y.Z. The
+# workflow then replaces cog's tag with an SSH-signed annotated one
+# and pushes commit and tag back to main. One tag serves both
+# consumer paths (APM installs pin tbhb/repotools#vX.Y.Z and Go
+# installs pin @vX.Y.Z), so no artifact build runs here.
+#
+# Two credentials, two jobs to do. The release app's installation
+# token gets the branch push past the main ruleset, where the
+# workflow token cannot go: GitHub refuses the built-in Actions app
+# as a bypass actor on a personal-account repo, while a user-owned
+# app installed here validates fine as an Integration bypass actor.
+# The signing key produces the tag signature, because nothing on
+# GitHub's side signs a tag: the API has no signed-tag path of the
+# createCommitOnBranch kind, so a Verified tag has to be signed by a
+# key the runner holds, under the tagger identity that key's account
+# verifies. The key is CI-only and revocable on its own.
 
 on:
   workflow_dispatch:
@@ -18,8 +30,10 @@ on:
         required: false
         default: ""
 
+# The workflow token pushes nothing here — the app token does — so
+# it needs no write access.
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}
@@ -34,13 +48,23 @@ jobs:
         with:
           egress-policy: audit
 
+      - name: Mint the release app token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+
       # Unlike the read-only workflows, this checkout keeps its
       # credentials: the job's whole purpose is pushing the release
-      # commit and tag back to main. Full history so cog can find the
-      # previous tag and walk the commits since.
+      # commit and tag back to main, and the app token it checks out
+      # with is what the ruleset's bypass list admits. Full history so
+      # cog can find the previous tag and walk the commits since.
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
 
       # The cocogitto action insists on a command (its install-only
@@ -48,15 +72,19 @@ jobs:
       # small step turns the optional dispatch input into the bump
       # arguments and the action runs the bump itself. The action also
       # owns the git identity configuration.
+      # --skip-ci appends "[skip ci]" to the bump commit. A GITHUB_TOKEN
+      # push never triggers workflows, but an app-token push does, so
+      # without it the release commit would wake every push-to-main
+      # workflow that the old push left quiet.
       - name: Plan bump arguments
         id: plan
         env:
           VERSION: ${{ inputs.version }}
         run: |
           if [ -n "$VERSION" ]; then
-            echo "args=--version $VERSION" >> "$GITHUB_OUTPUT"
+            echo "args=--version $VERSION --skip-ci" >> "$GITHUB_OUTPUT"
           else
-            echo "args=--auto" >> "$GITHUB_OUTPUT"
+            echo "args=--auto --skip-ci" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Bump version and tag
@@ -66,6 +94,30 @@ jobs:
           git-user-email: github-actions[bot]@users.noreply.github.com
           command: bump
           args: ${{ steps.plan.outputs.args }}
+
+      # cog drives libgit2 and can only make a lightweight tag, which
+      # `push --follow-tags` would silently leave behind: that flag
+      # pushes annotated tags alone. Replace it with the SSH-signed
+      # annotated tag the release convention expects, under the tagger
+      # identity that GitHub verifies the signing key against.
+      - name: Sign the release tag
+        env:
+          TAG_SIGNING_KEY: ${{ secrets.TAG_SIGNING_KEY }}
+        run: |
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$TAG_SIGNING_KEY" > "$HOME/.ssh/signing_key"
+          chmod 600 "$HOME/.ssh/signing_key"
+          git config gpg.format ssh
+          git config user.signingkey "$HOME/.ssh/signing_key"
+          TAG=$(git tag --points-at HEAD)
+          if [ -z "$TAG" ]; then
+            echo "::error::cog bump left no tag on HEAD"
+            exit 1
+          fi
+          git tag -d "$TAG"
+          GIT_COMMITTER_NAME="Tony Burns" \
+          GIT_COMMITTER_EMAIL="tony@tonyburns.net" \
+            git tag -s "$TAG" -m "$TAG"
 
       - name: Push release commit and tag
         run: git push --follow-tags origin main
