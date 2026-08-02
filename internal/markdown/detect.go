@@ -80,6 +80,16 @@ var (
 	listItem    = regexp.MustCompile(`^\s*([-*+]|\d+[.)])\s`)
 	quote       = regexp.MustCompile(`^\s*>+\s?`)
 
+	// alert opens a GitHub alert. The type sits alone on the block quote's
+	// first line and the alert's prose follows below it. A marker line is
+	// never prose. It closes a run and leaves the prose under it standing
+	// alone. Without that the two lines read as one wrapped paragraph and
+	// the fixer joins them into a line GitHub renders as literal text
+	// rather than an alert. Matching ignores the type's case and nothing
+	// may follow the closing bracket. Both bounds follow what GitHub
+	// itself accepts.
+	alert = regexp.MustCompile(`^\s*>+\s?\[!(?i:NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*$`)
+
 	// sentenceEnd marks a line whose author almost surely ended it on purpose.
 	sentenceEnd = regexp.MustCompile(`[.!?:;]["')\]]*$`)
 
@@ -260,7 +270,10 @@ func outsideFences(lines []string, start int) []line {
 // line reads.
 func closesRun(text string, inside bool) bool {
 	indentedCode := strings.HasPrefix(text, strings.Repeat(" ", codeIndent)) && !inside
-	return strings.TrimSpace(text) == "" || structural.MatchString(text) || indentedCode
+	return strings.TrimSpace(text) == "" ||
+		structural.MatchString(text) ||
+		alert.MatchString(text) ||
+		indentedCode
 }
 
 // Paragraphs finds every run of adjacent prose lines. Structural Markdown

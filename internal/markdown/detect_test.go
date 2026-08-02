@@ -55,6 +55,13 @@ func TestParagraphs(t *testing.T) {
 		{"two-space break closes a run", "a line ending in two spaces  \nnext line\n", 0},
 		{"backslash break closes a run", "a line ending in a backslash\\\nnext line\n", 0},
 		{"crlf is normalized", "alpha beta\r\ngamma delta\r\n", 1},
+		{"alert marker closes a run", "> [!NOTE]\n> One line of alert prose.\n", 0},
+		{"alert type case is ignored", "> [!warning]\n> One line of alert prose.\n", 0},
+		{"every alert type", "> [!TIP]\n> a\n\n> [!IMPORTANT]\n> b\n\n> [!CAUTION]\n> c\n", 0},
+		{"nested alert marker", ">> [!NOTE]\n>> One line of alert prose.\n", 0},
+		{"wrapped alert body is still a run", "> [!NOTE]\n> alpha beta\n> gamma delta\n", 1},
+		{"unknown alert type is prose", "> [!ASIDE]\n> alpha beta\n", 1},
+		{"titled marker is prose, as GitHub renders it", "> [!NOTE] A title\n> alpha beta\n", 1},
 	}
 
 	for _, tc := range cases {
@@ -208,6 +215,11 @@ func TestUnwrap(t *testing.T) {
 			"# Title\n\nalpha beta gamma delta\n\n```\ncode\n```\n",
 		},
 		{"indentation preserved", "  alpha beta\n  gamma delta\n", "  alpha beta gamma delta\n"},
+		{
+			"alert marker survives the join",
+			"> [!NOTE]\n> alpha beta\n> gamma delta\n",
+			"> [!NOTE]\n> alpha beta gamma delta\n",
+		},
 	}
 
 	for _, tc := range cases {
