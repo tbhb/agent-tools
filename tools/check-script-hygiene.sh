@@ -52,7 +52,7 @@ if [ ${#files[@]} -eq 0 ]; then
     files+=("$f")
   done < <(command git -c core.quotePath=false ls-files \
     --cached --others --exclude-standard \
-    '.apm/skills/*/scripts/*.sh' 'hooks/*.sh' 'tools/*.sh')
+    '.apm/skills/*/scripts/*.sh' 'hooks/*.sh' 'scripts/*.sh' 'tools/*.sh')
 fi
 
 for f in "${files[@]}"; do

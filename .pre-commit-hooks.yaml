@@ -7,10 +7,15 @@
 #       rev: v0.1.1
 #       hooks:
 #         - id: guard-markdown
+#         - id: commit-trailers
+#         - id: commitlint
+#         - id: vale-commit-msg
+#         - id: cspell-commit-msg
+#         - id: clear-commit-agentmsg
 #
-# language: golang, so prek builds the binary once into an isolated GOPATH
-# and reuses it; nothing compiles per commit and the consumer needs no Go
-# toolchain beyond what prek provisions.
+# guard-markdown is language: golang, so prek builds the binary once into an
+# isolated GOPATH and reuses it; nothing compiles per commit and the consumer
+# needs no Go toolchain beyond what prek provisions.
 #
 # The same binary backs the Claude PreToolUse hook this package declares
 # (see hooks/guard-markdown.json). One implementation serves both, plus a
@@ -18,6 +23,23 @@
 # two paths install separately: prek builds its own copy, while the Claude
 # hook resolves `guard-markdown` on PATH from
 # `go install github.com/tbhb/repotools/cmd/guard-markdown@vX.Y.Z`.
+#
+# The five commit-message hooks arrived here from tbhb/pre-commit-hooks, which
+# this repository replaces. Their ids are unchanged, so a consumer edits the
+# `repo:` line and its `rev:` and nothing else. Each is language: script, so
+# prek runs the checked-out script directly with no managed environment, and
+# the entry paths resolve against this repository's root.
+#
+# The first four run on the commit-msg stage and take the commit-message buffer
+# path as their single argument. clear-commit-agentmsg runs on the post-commit
+# stage instead, takes no arguments, and cleans up after the commit the other
+# four admitted. A consumer that installs it needs the stage installed too:
+# prek install -t post-commit.
+#
+# commit-trailers, commitlint, and clear-commit-agentmsg depend only on bash,
+# git, grep, and sed. vale-commit-msg and cspell-commit-msg additionally
+# require the consumer to have vale / cspell installed and a .vale.ini /
+# .cspell.jsonc that configures the commit-message scope.
 
 - id: guard-markdown
   name: guard-markdown
@@ -29,3 +51,62 @@
   entry: guard-markdown
   language: golang
   types: [markdown]
+
+- id: commit-trailers
+  name: commit-trailers
+  description: >-
+    Enforce the AI-assistant commit-trailer rules tbhb repositories
+    share: a kernel-style Assisted-by value, Assisted-by before
+    Signed-off-by, a required Signed-off-by sign-off, and no LLM
+    attribution in Co-authored-by.
+  entry: scripts/commit-trailers.sh
+  language: script
+  stages: [commit-msg]
+  always_run: true
+
+- id: commitlint
+  name: commitlint
+  description: >-
+    Lint the commit message against Conventional Commits: a recognized
+    type, header length bounds, body and footer line-length caps, and a
+    required Signed-off-by trailer.
+  entry: scripts/commitlint.sh
+  language: script
+  stages: [commit-msg]
+  always_run: true
+
+- id: vale-commit-msg
+  name: vale (commit message)
+  description: >-
+    Lint the commit message with vale under its commit-message scope,
+    after stripping git's helper comments and any verbose-diff scissors
+    block. Requires vale and a .vale.ini in the consumer repo.
+  entry: scripts/vale-commit-msg.sh
+  language: script
+  stages: [commit-msg]
+  always_run: true
+
+- id: cspell-commit-msg
+  name: cspell (commit message)
+  description: >-
+    Spell-check the commit message with cspell on a worktree-relative
+    virtual path so the right dictionary resolves. Requires cspell and a
+    .cspell.jsonc in the consumer repo.
+  entry: scripts/cspell-commit-msg.sh
+  language: script
+  stages: [commit-msg]
+  always_run: true
+
+- id: clear-commit-agentmsg
+  name: clear COMMIT_AGENTMSG
+  description: >-
+    Delete the agent commit-message draft at COMMIT_AGENTMSG once a
+    commit succeeds, so the next commit starts from an absent path rather
+    than a stale draft. Deletes rather than truncates: an agent harness
+    tracks which files it has read, and a surviving file with changed
+    contents costs the agent a re-read before it can write.
+  entry: scripts/clear-commit-agentmsg.sh
+  language: script
+  stages: [post-commit]
+  always_run: true
+  pass_filenames: false

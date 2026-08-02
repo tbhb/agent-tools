@@ -137,6 +137,23 @@ shellcheck_image := "docker.io/koalaman/shellcheck:v0.11.0@sha256:61862eba1fcf09
 
 shellcheck := 'DOCKER_CONFIG="$(mktemp -d)" PATH="$(dirname ' + container_runtime + '):$PATH" ' + container_runtime + ' run --rm -v "$(pwd):/mnt:ro" -w /mnt ' + shellcheck_image
 
+# bats version pin, backing `test-hooks`. Same Docker-pin pattern as the
+# linters above, and Renovate tracks the version + digest pair through the
+# comment marker. A container rather than a Brewfile entry because the
+# suites under test/ describe the shell hooks other repositories install,
+# so the runner they pass under should be the same one everywhere rather
+# than whichever bats a contributor happens to have.
+#
+# renovate: datasource=docker depName=bats/bats
+
+bats_version := "1.14.0"
+bats_image := "docker.io/bats/bats:1.14.0@sha256:5322b877351fda0cc435de8c6116de7d0a2ec79d7c680132a0ef329a633bc66f"
+
+# bats invocation. The mount is writable because the suites write scratch
+# files under BATS_TEST_TMPDIR, which the image places inside the mount.
+
+bats := 'DOCKER_CONFIG="$(mktemp -d)" PATH="$(dirname ' + container_runtime + '):$PATH" ' + container_runtime + ' run --rm -v "$(pwd):/code" -w /code ' + bats_image
+
 # Build metadata. `date` is the *committer date* (UTC, ISO-8601),
 # not build invocation time, so two builds of the same commit produce
 # identical binaries. `source_date_epoch` exports the same instant as
@@ -722,7 +739,7 @@ lint-squash-msg:
 # so a slow Python sweep never rides along with a Go job.
 
 # Run every test suite.
-test: test-go test-py
+test: test-go test-py test-hooks
 
 # Run the Go tests.
 test-go *args:
@@ -737,6 +754,17 @@ test-go *args:
 # Run the Python tests.
 test-py *args:
     uv run pytest "$@"
+
+# The shell hooks under scripts/ answer to bats rather than to `go test`,
+# so they get a third suite alongside the two language ones. It joins the
+# `test` aggregate because the commit-message gates every repository here
+# installs are exactly the code a regression should stop, and the run
+# costs seconds once the image is pulled. Contrast `test-guards`, which
+# builds a scratch repository per case and stays out of the aggregate.
+
+# Run the bats suites for the shell hooks under scripts/.
+test-hooks *args:
+    {{ bats }} {{ if args == "" { "test" } else { args } }}
 
 # Slower than plain `just test-go`; pairs with goroutine-bearing code as it
 # lands. Native fuzz targets discovered by the nightly workflow rerun
