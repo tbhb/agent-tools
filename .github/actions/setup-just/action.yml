@@ -1,0 +1,92 @@
+---
+# Install `just` from a SHA-pinned casey/just release archive and
+# verify it against the bundled SHA256SUMS. Every workflow that
+# needs `just` consumes this composite instead of duplicating the
+# install block, so the verification flow stays auditable in one
+# place. The default version pins the project-wide release; a
+# workflow that wants a different version passes it through the
+# `just-version` input. Renovate's github-releases datasource tracks
+# the default via the trailing marker on the literal.
+#
+# Runner dispatch covers every native release-target runner GitHub
+# offers: linux/{x64,arm64}, macOS/{x64,arm64}, windows/{x64,arm64}.
+
+name: Setup just
+description: Install just from a SHA-pinned casey/just release archive, verified against the bundled SHA256SUMS.
+
+inputs:
+  just-version:
+    description: just version to install (defaults to the project-wide pinned release).
+    required: false
+    default: '1.57.0'  # renovate: datasource=github-releases depName=casey/just
+
+runs:
+  using: composite
+  steps:
+    - name: Install just
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        JUST_VERSION: ${{ inputs.just-version }}
+      run: |
+        set -euo pipefail
+
+        case "${RUNNER_OS}-${RUNNER_ARCH}" in
+          Linux-X64)     target="x86_64-unknown-linux-musl";  ext="tar.gz" ;;
+          Linux-ARM64)   target="aarch64-unknown-linux-musl"; ext="tar.gz" ;;
+          macOS-X64)     target="x86_64-apple-darwin";        ext="tar.gz" ;;
+          macOS-ARM64)   target="aarch64-apple-darwin";       ext="tar.gz" ;;
+          Windows-X64)   target="x86_64-pc-windows-msvc";     ext="zip"    ;;
+          Windows-ARM64) target="aarch64-pc-windows-msvc";    ext="zip"    ;;
+          *) echo "unsupported runner: ${RUNNER_OS}-${RUNNER_ARCH}" >&2; exit 1 ;;
+        esac
+        asset="just-${JUST_VERSION}-${target}.${ext}"
+
+        tmp=$(mktemp -d)
+        cd "${tmp}"
+
+        gh release download "${JUST_VERSION}" \
+          --repo casey/just \
+          --pattern "${asset}" \
+          --pattern SHA256SUMS
+
+        # sha256sum (Linux/Windows) and shasum -a 256 (macOS, which
+        # ships Perl shasum not GNU coreutils) diverge on the
+        # --ignore-missing flag, so verify a single-line filtered
+        # file rather than the full SHA256SUMS.
+        grep -E "[ *]${asset}\$" SHA256SUMS > SHA256SUMS.filtered
+        if command -v sha256sum >/dev/null 2>&1; then
+          sha256sum -c SHA256SUMS.filtered
+        else
+          shasum -a 256 -c SHA256SUMS.filtered
+        fi
+
+        case "${RUNNER_OS}-${ext}" in
+          Linux-tar.gz | macOS-tar.gz)
+            tar -xzf "${asset}"
+            ;;
+          Windows-zip)
+            # GitHub-hosted Windows runners surface GNU tar (no zip
+            # support) in Git Bash's PATH ahead of the Windows-native
+            # bsdtar at C:\Windows\System32\tar.exe. PowerShell's
+            # Expand-Archive sidesteps the tar mismatch.
+            powershell -Command "Expand-Archive -Force -Path '${asset}' -DestinationPath '.'"
+            ;;
+          *) echo "unsupported archive: ${RUNNER_OS}-${ext}" >&2; exit 1 ;;
+        esac
+
+        if [[ "${RUNNER_OS}" == "Windows" ]]; then
+          install_dir="${HOME}/.local/bin"
+          mkdir -p "${install_dir}"
+          install_path="${install_dir}/just.exe"
+          mv just.exe "${install_path}"
+          # Git Bash exports $HOME as a Unix-style path (/c/Users/...);
+          # subsequent PowerShell-driven `run:` steps need the Windows
+          # form for $GITHUB_PATH entries to resolve.
+          cygpath -w "${install_dir}" >> "${GITHUB_PATH}"
+        else
+          install_path="/usr/local/bin/just"
+          install -m 0755 just "${install_path}"
+        fi
+
+        "${install_path}" --version

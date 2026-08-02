@@ -1,15 +1,22 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
 
-  // The repository-level policy comes from two shared presets in
-  // tbhb/github-actions: renovate-config.json5 carries the rules plus
-  // the Justfile and Vale custom managers used by every repo, and
-  // renovate-go-config.json5 carries the Go-module specifics (gomodTidy and
+  // The repository-level policy comes from two shared presets this repo
+  // now holds itself: renovate-config.json5 has the rules plus the
+  // Justfile and Vale custom managers used by every repo, and
+  // renovate-go-config.json5 has the Go-module specifics (gomodTidy and
   // the go-deps grouping) shared by every Go repo. Both resolve after
   // platform initialization, with token auth.
+  //
+  // The references stay in the remote `github>` form even though the
+  // files sit beside this one. Renovate resolves `extends` over the
+  // platform API rather than off a checkout, and it has no plain relative
+  // file form, so a path here would not resolve at all. The remote form
+  // is also exactly what every consuming repo writes, which keeps one
+  // shape to reason about.
   extends: [
-    "github>tbhb/github-actions//.github/renovate-config.json5",
-    "github>tbhb/github-actions//.github/renovate-go-config.json5",
+    "github>tbhb/repotools//.github/renovate-config.json5",
+    "github>tbhb/repotools//.github/renovate-go-config.json5",
   ],
 
   // Global-only identity, rate limits, and requireConfig. These previously
@@ -27,4 +34,79 @@
   // Single-repo scope. Global-only and different per repo, so it stays here
   // as the only genuinely local setting left.
   repositories: ["tbhb/repotools"],
+
+  packageRules: [
+    // The Renovate engine is pinned twice: the release tag renovate.yaml
+    // passes as `renovate-version`, and the validator's Docker image in
+    // renovate-config-validator.yaml. Separate PRs let the two skew, and
+    // the validator should run the same engine version the cron workflow
+    // does, so group them into one PR. Repo-level rules append after the
+    // shared preset's and later rules win, so this takes the two out of
+    // the generic github-actions group.
+    {
+      groupName: "renovate",
+      matchDepNames: [
+        "renovatebot/renovate",
+        "ghcr.io/renovatebot/renovate",
+      ],
+    },
+  ],
+
+  // Managers for the pins inside the composite actions and workflows this
+  // repo defines. The shared preset covers the Justfile and .vale.ini
+  // markers every repo has; these three read files only a repo hosting
+  // the shared workflows and actions contains. `customManagers` is a
+  // mergeable array, so these append to the preset's rather than
+  // replacing them.
+  customManagers: [
+    // .github/actions/*/action.yml. Each version input default has the
+    // marker inline, after the value, so the regex reads the value first
+    // and the marker second.
+    //
+    //   default: '1.57.0'  # renovate: datasource=github-releases depName=casey/just
+    {
+      customType: "regex",
+      managerFilePatterns: [
+        "/^\\.github/actions/[^/]+/action\\.ya?ml$/",
+      ],
+      matchStrings: [
+        "default: '(?<currentValue>.*?)'\\s+# renovate: datasource=(?<datasource>.*?) depName=(?<depName>\\S+)",
+      ],
+    },
+
+    // Workflow `run:` steps pinning a Docker image to a
+    // `<NAME>_IMAGE="reg/name:tag@sha256:..."` shell assignment, with the
+    // marker on the line above. Covers the Renovate engine image in
+    // renovate-config-validator.yaml and the actionlint image in
+    // lint-workflows.yml; the `\S+_IMAGE` variable name keeps one matcher
+    // serving every such pin.
+    //
+    //   # renovate: datasource=docker depName=rhysd/actionlint
+    //   ACTIONLINT_IMAGE="docker.io/rhysd/actionlint:1.7.12@sha256:..."
+    {
+      customType: "regex",
+      managerFilePatterns: [
+        "/^\\.github/workflows/[^/]+\\.ya?ml$/",
+      ],
+      matchStrings: [
+        "# renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+\\S+_IMAGE=\"[^:]+:(?<currentValue>[^@]+)@(?<currentDigest>sha256:[a-f0-9]+)\"",
+      ],
+    },
+
+    // .github/workflows/renovate.yaml. Pins the Renovate engine version
+    // the self-hosted action downloads at runtime. No digest — the
+    // github-action input takes a release tag, not a container ref.
+    //
+    //   # renovate: datasource=github-releases depName=renovatebot/renovate
+    //   renovate-version: 43.281.1
+    {
+      customType: "regex",
+      managerFilePatterns: [
+        "/^\\.github/workflows/renovate\\.yaml$/",
+      ],
+      matchStrings: [
+        "# renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+renovate-version:\\s+(?<currentValue>\\S+)",
+      ],
+    },
+  ],
 }

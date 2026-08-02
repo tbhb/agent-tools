@@ -1,18 +1,19 @@
 ---
-# Self-hosted Renovate, delegated to the shared reusable workflow in
-# tbhb/github-actions. That workflow mints a tbhb-renovate[bot]
-# GitHub App token, checks out this repo's tree, and runs Renovate against
-# .github/renovate.json5; `secrets: inherit` hands it the
-# RENOVATE_CLIENT_ID / RENOVATE_PRIVATE_KEY App credentials.
+# Self-hosted Renovate. Authenticates as the tbhb-renovate[bot]
+# GitHub App so commits carry a DCO sign-off matching the committer (the
+# stock Mend hosted App commits as renovate[bot], which can't match this
+# repo's gitAuthor + gitSignOff pair).
 #
-# The schedule and workflow_dispatch triggers live here because a reusable
-# workflow can't carry its own caller-side triggers. gomodTidy now runs
-# under the shared workflow's install-based Go toolchain rather than a
-# docker-socket sidecar, so this repo no longer needs a local action or
-# custom entrypoint.
+# This workflow also exposes a `workflow_call` trigger so other tbhb
+# repositories can run self-hosted Renovate through it instead of each
+# carrying this setup. A caller passes the App credentials as the
+# `RENOVATE_CLIENT_ID` and `RENOVATE_PRIVATE_KEY` secrets (or
+# `secrets: inherit`); checkout and the renovate action run against the
+# caller's tree, so the job needs no local action or `just` recipe to stay
+# self-contained.
 #
-# Execution depends on the tbhb-renovate App credentials reaching the
-# run: this repository carries RENOVATE_CLIENT_ID and
+# Execution depends on the tbhb-renovate App credentials reaching the run:
+# every repository that uses this workflow carries RENOVATE_CLIENT_ID and
 # RENOVATE_PRIVATE_KEY as its own Actions secrets.
 name: Renovate
 
@@ -29,6 +30,17 @@ on:
         type: boolean
         description: "Run Renovate with debug log levels"
         default: true
+  workflow_call:
+    inputs:
+      renovate_log_level_debug:
+        type: boolean
+        description: "Run Renovate with debug log levels"
+        default: true
+    secrets:
+      RENOVATE_CLIENT_ID:
+        required: true
+      RENOVATE_PRIVATE_KEY:
+        required: true
 
 permissions:
   contents: read
@@ -36,12 +48,47 @@ permissions:
 jobs:
   renovate:
     name: Run self-hosted Renovate
-    uses: tbhb/github-actions/.github/workflows/renovate.yaml@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
     permissions:
       contents: read
-    # On a scheduled run the shared workflow already forces DEBUG, so the
-    # forwarded value only changes a manual dispatch (where it can drop to
-    # INFO). The guard keeps the expression a real boolean on schedule.
-    with:
-      renovate_log_level_debug: ${{ github.event_name != 'workflow_dispatch' || inputs.renovate_log_level_debug }}
-    secrets: inherit
+    steps:
+      # GITHUB_TOKEN can't satisfy this repo's Renovate scope (Issues +
+      # Pull requests + Workflows R/W) and can't push workflow files. Mint
+      # a short-lived installation token from the tbhb-renovate App
+      # credentials instead. Output is `token` (the older Cilium fork
+      # cilium/actions-app-token exposed `app_token`).
+      - name: Get token
+        id: get_token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.RENOVATE_CLIENT_ID }}
+          private-key: ${{ secrets.RENOVATE_PRIVATE_KEY }}
+
+      # Renovate re-clones the repo inside its own container, but the
+      # action needs the config file on the runner filesystem to bind
+      # into the container.
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # GITHUB_COM_TOKEN authenticates Renovate's reads of github.com:
+      # preset lookups against the public tbhb/repotools repo
+      # and changelog fetches. Without it those reads are anonymous and
+      # share the 60/hr per-IP limit, which intermittently fails preset
+      # resolution with config-presets-invalid. The minted installation
+      # token is a valid github.com credential, so Renovate turns it into
+      # a github.com host rule and the reads get the 5000/hr authenticated
+      # limit. The action forwards GITHUB_COM_TOKEN by default (it is in
+      # its env-regex allowlist alongside LOG_LEVEL).
+      - name: Self-hosted Renovate
+        uses: renovatebot/github-action@3064367f740a1a91cca218698a63902689cce200 # v46.1.20
+        env:
+          LOG_LEVEL: ${{ (github.event_name == 'schedule' || inputs.renovate_log_level_debug) && 'DEBUG' || 'INFO' }}
+          GITHUB_COM_TOKEN: ${{ steps.get_token.outputs.token }}
+        with:
+          # renovate: datasource=github-releases depName=renovatebot/renovate
+          renovate-version: 43.281.1
+          configurationFile: .github/renovate.json5
+          token: ${{ steps.get_token.outputs.token }}

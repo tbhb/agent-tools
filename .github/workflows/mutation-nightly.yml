@@ -66,7 +66,7 @@ jobs:
           check-latest: false
 
       - name: Set up just
-        uses: tbhb/github-actions/.github/actions/setup-just@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
+        uses: ./.github/actions/setup-just
 
       - name: Run mutation sweep
         env:

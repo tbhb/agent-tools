@@ -1,0 +1,40 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+
+  // Shared Go-specific repository-level Renovate policy for the tbhb Go
+  // repositories. Every Go repo extends this through its own
+  // `.github/renovate.json5`, alongside the general repo-level preset:
+  //
+  //   extends: ["github>tbhb/repotools//.github/renovate-go-config.json5"]
+  //
+  // This preset deliberately does not itself extend renovate-config.json5.
+  // Consumers list both presets explicitly, so preset resolution stays one
+  // hop deep. Each hop is a separate network fetch, and reducing fetches is
+  // the same concern that drove the globalExtends removal: a preset chain
+  // multiplies the requests a single run makes to GitHub.
+  //
+  // The `.json5` suffix in the reference is required: Renovate's preset
+  // resolver only keeps a custom filename verbatim when it already ends in
+  // `.json`/`.json5`/`.jsonc`, otherwise it appends `.json` and the lookup
+  // misses.
+  //
+  // `packageRules` is a mergeable array, so the go-deps rule below appends
+  // to whatever the consuming repo and the general preset define rather
+  // than replacing them.
+
+  // `gomodTidy` runs `go mod tidy` after a Go-module update so go.sum and
+  // the indirect graph stay coherent in the same PR. Self-hosting means the
+  // project picks the Go toolchain version the sidecar uses (matches
+  // go.mod's toolchain pin, not whatever the hosted Mend App ships).
+  postUpdateOptions: ["gomodTidy"],
+
+  packageRules: [
+    // One review surface for every Go-module bump. Bundling avoids the
+    // "twelve tiny PRs" failure mode and makes the vendor/ diff easier to
+    // read as a single unit.
+    {
+      groupName: "go-deps",
+      matchManagers: ["gomod"],
+    },
+  ],
+}

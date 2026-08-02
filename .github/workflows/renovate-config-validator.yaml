@@ -1,9 +1,23 @@
 ---
-# PR gate that catches broken Renovate config before it lands on main,
-# delegated to the shared reusable workflow in tbhb/github-actions.
-# That workflow runs renovate-config-validator from the same SHA-pinned
-# Renovate image the cron workflow uses, keeping the two in lockstep.
-# `config_path` points it at this repo's config.
+# PR gate that catches broken Renovate config before it lands on main.
+# The cron Renovate workflow only runs on schedule, so a malformed config
+# on main can sit unnoticed until the next firing. Running the validator
+# from the same SHA-pinned image the actual Renovate workflow uses keeps
+# the two in lockstep.
+#
+# This workflow also exposes a `workflow_call` trigger so other tbhb
+# repositories can validate their Renovate config through it instead of
+# each carrying this setup. The job runs the pinned image directly against
+# the tree `actions/checkout` lays down — no local action or `just` recipe
+# to drag in. The `config_path` input points it at the file to validate and
+# defaults to `.github/renovate.json5`; a repo that keeps its config at the
+# root passes `config_path: renovate.json5`.
+#
+# Two checks run, because the validator alone is not enough. It reports a
+# config as valid without ever resolving the presets named in `extends`, so
+# a second step verifies each `github>owner/repo//path` reference actually
+# exists. Without it a broken reference lands green and only surfaces later,
+# when Renovate fails at runtime and quietly stops opening PRs.
 name: Validate Renovate configuration
 
 on:
@@ -11,6 +25,21 @@ on:
     paths:
       # Catch nested renovate configs too if/when subprojects appear.
       - "**renovate.json5"
+      # Shared preset files consumed by tbhb repositories through extends.
+      # Neither ends in `renovate.json5`, so each needs its own pattern —
+      # and `**renovate-config.json5` does not match the Go preset either,
+      # since `renovate-go-config.json5` differs before the `-config` part.
+      - "**renovate-config.json5"
+      - "**renovate-go-config.json5"
+      # Self-test: a change to this workflow re-runs it, so no step lands
+      # here without having run against a real config first.
+      - ".github/workflows/renovate-config-validator.yaml"
+  workflow_call:
+    inputs:
+      config_path:
+        type: string
+        description: "Path to the Renovate config to validate, relative to the repo root"
+        default: ".github/renovate.json5"
 
 permissions:
   contents: read
@@ -18,12 +47,133 @@ permissions:
 jobs:
   validate:
     name: Validate Renovate configuration
-    # Pinned reusable-workflow path + 40-char SHA + tag comment overruns
-    # yamllint's 120-col limit and can't be wrapped; Renovate keeps the
-    # SHA and tag in sync inline.
-    # yamllint disable-line rule:line-length
-    uses: tbhb/github-actions/.github/workflows/renovate-config-validator.yaml@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     permissions:
       contents: read
-    with:
-      config_path: .github/renovate.json5
+    steps:
+      - name: Checkout configuration
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Validate configuration
+        env:
+          CONFIG_PATH: ${{ inputs.config_path || '.github/renovate.json5' }}
+        run: |
+          # renovate: datasource=docker depName=ghcr.io/renovatebot/renovate
+          RENOVATE_IMAGE="ghcr.io/renovatebot/renovate:43.214.2@sha256:94ea97399b0dfba2e42b9571fc5bca6e1fbf5e72ecf6062cfe6aba5bec76b19e"
+          # Hand the pin to the preset-reference step so both run the same
+          # engine and only this one marker ever needs bumping.
+          echo "RENOVATE_IMAGE=${RENOVATE_IMAGE}" >> "${GITHUB_ENV}"
+          # Validate the repo config plus whichever shared preset files are
+          # present. The presets live only in this repo; workflow_call
+          # callers pass their own config_path and carry no presets, so the
+          # loop adds nothing there and the original single-file behavior is
+          # kept.
+          configs=("${CONFIG_PATH}")
+          for preset in .github/renovate-config.json5 .github/renovate-go-config.json5; do
+            [ -f "${preset}" ] && configs+=("${preset}")
+          done
+          docker run --rm --entrypoint renovate-config-validator \
+            -v "${{ github.workspace }}:/repo" -w /repo \
+            "${RENOVATE_IMAGE}" "${configs[@]}"
+
+      - name: Verify preset references resolve
+        env:
+          CONFIG_PATH: ${{ inputs.config_path || '.github/renovate.json5' }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # renovate-config-validator does not resolve remote presets. A config
+          # whose `extends` names a preset that does not exist still validates
+          # successfully, so a typo, a rename, or a consumer merging ahead of the
+          # preset it references all pass this gate. Renovate then fails at
+          # runtime with config-presets-invalid and silently stops opening PRs on
+          # the repo until someone notices. This step closes that gap.
+          #
+          # The script is inlined rather than committed as a file because
+          # workflow_call runs against the *caller's* checkout, where a script
+          # living in this repo would not exist.
+          cat > "${RUNNER_TEMP}/check-preset-refs.mjs" <<'MJS'
+          import { existsSync, readFileSync } from "node:fs";
+          import { createRequire } from "node:module";
+
+          // json5 ships inside the Renovate image but is not resolvable from the
+          // default module paths, so reach it through the image's node_modules.
+          const JSON5 = createRequire("/usr/local/renovate/").call(null, "json5");
+
+          const selfRepo = process.env.GITHUB_REPOSITORY;
+          const token = process.env.GH_TOKEN;
+
+          const refs = new Set();
+          for (const file of process.argv.slice(2)) {
+            const config = JSON5.parse(readFileSync(file, "utf8"));
+            for (const key of ["extends", "globalExtends"]) {
+              for (const entry of config[key] ?? []) {
+                if (typeof entry === "string" && entry.startsWith("github>")) {
+                  refs.add(entry);
+                }
+              }
+            }
+          }
+
+          let failed = 0;
+          for (const ref of [...refs].sort()) {
+            // Only the `github>owner/repo//path` form appears in these repos.
+            // Anything else fails rather than being skipped: a silently ignored
+            // reference is the exact failure this check exists to prevent.
+            const match = /^github>([^/#:]+)\/([^/#:]+)\/\/([^#:]+)$/.exec(ref);
+            if (!match) {
+              console.log(`FAIL  ${ref} (unrecognized reference shape)`);
+              failed += 1;
+              continue;
+            }
+            const [, owner, repo, path] = match;
+            const slug = `${owner}/${repo}`;
+
+            if (slug === selfRepo) {
+              // Self-reference: check this PR's tree rather than the default
+              // branch, so a preset added or renamed in this same PR resolves
+              // against what will actually land.
+              if (existsSync(path)) {
+                console.log(`ok    ${slug}//${path} (this repo, PR tree)`);
+              } else {
+                console.log(`FAIL  ${slug}//${path} (not in this PR's tree)`);
+                failed += 1;
+              }
+              continue;
+            }
+
+            const response = await fetch(
+              `https://api.github.com/repos/${slug}/contents/${path}`,
+              {
+                headers: {
+                  accept: "application/vnd.github+json",
+                  ...(token ? { authorization: `Bearer ${token}` } : {}),
+                },
+              },
+            );
+            if (response.ok) {
+              console.log(`ok    ${slug}//${path} (default branch)`);
+            } else {
+              console.log(`FAIL  ${slug}//${path} (HTTP ${response.status})`);
+              failed += 1;
+            }
+          }
+
+          if (refs.size === 0) console.log("no github> preset references to check");
+          if (failed > 0) {
+            console.log(`\n${failed} preset reference(s) did not resolve.`);
+            process.exit(1);
+          }
+          MJS
+          configs=("${CONFIG_PATH}")
+          for preset in .github/renovate-config.json5 .github/renovate-go-config.json5; do
+            [ -f "${preset}" ] && configs+=("${preset}")
+          done
+          docker run --rm --entrypoint node \
+            -e GITHUB_REPOSITORY -e GH_TOKEN \
+            -v "${{ github.workspace }}:/repo" \
+            -v "${RUNNER_TEMP}/check-preset-refs.mjs:/check-preset-refs.mjs:ro" \
+            -w /repo "${RENOVATE_IMAGE}" \
+            /check-preset-refs.mjs "${configs[@]}"

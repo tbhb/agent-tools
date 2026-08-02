@@ -95,8 +95,8 @@ go_arch_lint := 'DOCKER_CONFIG="$(mktemp -d)" PATH="$(dirname ' + container_runt
 # actionlint version pin. Same Docker-pin pattern as golangci-lint and
 # go-arch-lint: the upstream image bundles actionlint (plus shellcheck) at
 # a known version, and Renovate tracks the version + digest pair via the
-# customManager in renovate.json5. This is the same image the reusable
-# lint-workflows.yml in tbhb/github-actions runs, so `just
+# customManager in renovate.json5. This is the same image
+# `.github/workflows/lint-workflows.yml` in this repo runs, so `just
 # lint-workflows` and CI share one actionlint.
 #
 # The tombi release this repo's config and committed formatting are
@@ -522,8 +522,8 @@ lint-yaml *args:
 # checks YAML structure) with workflow-shape rules yamllint can't see.
 # Runs from the SHA-pinned Docker image above (which bundles shellcheck),
 # the same image the reusable `.github/workflows/lint-workflows.yml`
-# delegates to in tbhb/github-actions, so this local entrypoint and
-# the CI gate run one actionlint, both bumped by Renovate.
+# in this repo runs, so this local entrypoint and the CI gate run one
+# actionlint, both bumped by Renovate.
 
 # Lint GitHub Actions workflow files via actionlint.
 lint-workflows:

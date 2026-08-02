@@ -1,0 +1,104 @@
+---
+# Install `tombi` from a pinned tombi-toml/tombi release archive and
+# verify it against a checksum recorded here.
+#
+# This differs from setup-just and setup-vale on purpose. Those verify
+# against a checksums file the upstream project publishes. tombi ships
+# no checksums, no signatures, and no attestations, so there is nothing
+# upstream to verify against. Recording the digest here keeps the
+# integrity property those actions have, at the cost of a manual
+# refresh whenever the version moves.
+#
+# That refresh is deliberate rather than an oversight. A Renovate bump
+# changes `tombi-version` and leaves these digests untouched, so the
+# download stops matching and the job fails. Loud failure beats
+# installing an unverified binary because a bot moved a version string.
+#
+# To refresh after a bump, for each target below:
+#
+#   gh release download "v<version>" --repo tombi-toml/tombi \
+#     --pattern "tombi-cli-<version>-<target>.tar.gz"
+#   shasum -a 256 tombi-cli-<version>-<target>.tar.gz
+#
+# Targets carry a recorded digest only where these repos actually run
+# tombi. Anything else exits rather than installing unverified, so a new
+# runner platform is a conscious addition instead of a silent hole.
+
+name: Setup tombi
+description: Install tombi from a pinned release archive, verified against a digest recorded in this action.
+
+inputs:
+  tombi-version:
+    description: tombi version to install (defaults to the project-wide pinned release).
+    required: false
+    default: '1.2.5'  # renovate: datasource=github-releases depName=tombi-toml/tombi
+
+runs:
+  using: composite
+  steps:
+    - name: Install tombi
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        TOMBI_VERSION: ${{ inputs.tombi-version }}
+      run: |
+        set -euo pipefail
+
+        case "${RUNNER_OS}-${RUNNER_ARCH}" in
+          Linux-X64)   target="x86_64-unknown-linux-musl" ;;
+          Linux-ARM64) target="aarch64-unknown-linux-musl" ;;
+          macOS-X64)   target="x86_64-apple-darwin" ;;
+          macOS-ARM64) target="aarch64-apple-darwin" ;;
+          *) echo "no recorded digest for ${RUNNER_OS}-${RUNNER_ARCH}; add one before using tombi here" >&2; exit 1 ;;
+        esac
+
+        # Digests for the pinned version above. Refresh together with it.
+        case "${TOMBI_VERSION}-${target}" in
+          1.2.5-x86_64-unknown-linux-musl)  digest="05385bdf47d10828c1fc27190ee0ad44b777a57f56ea95c9ef568c845e3b7872" ;;
+          1.2.5-aarch64-unknown-linux-musl) digest="0fa62b48aba40759e88a77e86ed20871819f0c15d9566cd56b17b71ece8b836b" ;;
+          1.2.5-x86_64-apple-darwin)        digest="b020e2daba5c563842578d164b66340251d5c1fac67106f496af4a4d30625f1e" ;;
+          1.2.5-aarch64-apple-darwin)       digest="e4c3dd5346650b80afa516b851e0bffb4ea8a8b51ced974712fd0dd10cb893ee" ;;
+          *)
+            echo "no recorded digest for tombi ${TOMBI_VERSION} on ${target}." >&2
+            echo "A version bump needs its digests refreshed; see the header of this action." >&2
+            exit 1
+            ;;
+        esac
+
+        asset="tombi-cli-${TOMBI_VERSION}-${target}.tar.gz"
+
+        tmp=$(mktemp -d)
+        cd "${tmp}"
+
+        gh release download "v${TOMBI_VERSION}" \
+          --repo tombi-toml/tombi \
+          --pattern "${asset}"
+
+        # sha256sum (Linux) and shasum -a 256 (macOS, which ships Perl
+        # shasum rather than GNU coreutils) both read this format.
+        printf '%s  %s\n' "${digest}" "${asset}" > digest.txt
+        if command -v sha256sum >/dev/null 2>&1; then
+          sha256sum -c digest.txt
+        else
+          shasum -a 256 -c digest.txt
+        fi
+
+        tar -xzf "${asset}"
+
+        # The archive carries the binary at its root or under a
+        # target-named directory depending on the release; find it
+        # rather than assuming either layout.
+        binary=$(find . -type f -name tombi -perm -u+x | head -1)
+        if [[ -z "${binary}" ]]; then
+          echo "no tombi binary found in ${asset}" >&2
+          exit 1
+        fi
+
+        # Its own directory on PATH, ahead of Homebrew's prefix, so a
+        # Brewfile-installed tombi cannot shadow the pinned binary.
+        install_dir="${HOME}/.local/tombi-pinned"
+        mkdir -p "${install_dir}"
+        install -m 0755 "${binary}" "${install_dir}/tombi"
+        echo "${install_dir}" >> "${GITHUB_PATH}"
+
+        "${install_dir}/tombi" --version

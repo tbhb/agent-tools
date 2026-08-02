@@ -56,7 +56,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up just
-        uses: tbhb/github-actions/.github/actions/setup-just@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
+        uses: ./.github/actions/setup-just
 
       # The ubuntu-24.04 image ships Homebrew but leaves its prefix off
       # the PATH, so expose the bin and sbin directories before any brew
@@ -117,7 +117,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up just
-        uses: tbhb/github-actions/.github/actions/setup-just@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
+        uses: ./.github/actions/setup-just
 
       # Installs the interpreter named in .python-version and restores the
       # locked dependency closure from uv.lock.
@@ -171,7 +171,7 @@ jobs:
           check-latest: false
 
       - name: Set up just
-        uses: tbhb/github-actions/.github/actions/setup-just@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
+        uses: ./.github/actions/setup-just
 
       - name: Run tests with coverage
         run: just cover-go-binary
@@ -226,7 +226,7 @@ jobs:
           check-latest: false
 
       - name: Set up just
-        uses: tbhb/github-actions/.github/actions/setup-just@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
+        uses: ./.github/actions/setup-just
 
       - name: Download per-slot coverage data
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -266,7 +266,7 @@ jobs:
           check-latest: false
 
       - name: Set up just
-        uses: tbhb/github-actions/.github/actions/setup-just@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
+        uses: ./.github/actions/setup-just
 
       - name: Run govulncheck
         run: just vuln
@@ -292,7 +292,7 @@ jobs:
           check-latest: false
 
       - name: Set up just
-        uses: tbhb/github-actions/.github/actions/setup-just@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
+        uses: ./.github/actions/setup-just
 
       - name: Check vendor drift
         run: just vendor-check

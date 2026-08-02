@@ -1,15 +1,33 @@
 ---
-# PR gate that validates `.github/CODEOWNERS` before a broken rule lands
-# on main, delegated to the shared reusable workflow in
-# tbhb/github-actions. That workflow checks owners and syntax via
-# GitHub's own CODEOWNERS validator and confirms every rule's pattern
-# still matches a tracked path, running both checks against this PR's
-# tree.
+# Validate `.github/CODEOWNERS` on every pull request, so a broken rule
+# fails review instead of quietly sending reviews to the wrong owners
+# once it lands on `main`. The workflow self-tests: it validates the
+# CODEOWNERS file that arrives in this very PR, the same way
+# renovate-config-validator and codeql validated themselves on arrival.
 #
-# The pull_request trigger lives here because a reusable workflow can't
-# carry its own caller-side triggers. The '**' path filter runs the gate
-# on every PR, so a deletion anywhere re-triggers the path-existence
-# check and the gate can be required without ever skipping.
+# This workflow also exposes a `workflow_call` trigger so other tbhb
+# repositories can validate their CODEOWNERS through it instead of each
+# carrying this setup. Both checks already run against whatever tree
+# `actions/checkout` lays down, and each reads the caller's context on a
+# call: `GITHUB_REPOSITORY` and `github.event.pull_request.head.sha`
+# resolve to the caller, so the job stays self-contained with no local
+# action or `just` recipe to drag in.
+#
+# Two checks, both satisfied by the default read-only token:
+#
+#   1. Owners and syntax, via GitHub's own CODEOWNERS validator (the
+#      `codeowners/errors` REST endpoint). GitHub computes this
+#      server-side from its account and team knowledge, so it flags an
+#      unknown owner or an owner without write access without the
+#      workflow ever holding a `read:org` token. The repository is
+#      public, so the endpoint needs no elevated scope.
+#
+#   2. Path existence, via a local tree walk: every rule's pattern must
+#      still match a tracked path, which catches a PR that deletes a
+#      file a rule references. The `'**'` path filter runs the workflow
+#      on every PR, so a deletion anywhere re-triggers the check and the
+#      gate can be required without ever skipping.
+
 name: lint-codeowners
 
 on:
@@ -17,17 +35,67 @@ on:
     paths:
       - .github/CODEOWNERS
       - '**'
+  workflow_call:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   lint-codeowners:
     name: lint-codeowners
-    # Pinned reusable-workflow path + 40-char SHA + tag comment overruns
-    # yamllint's 120-col limit and can't be wrapped; Renovate keeps the
-    # SHA and tag in sync inline.
-    # yamllint disable-line rule:line-length
-    uses: tbhb/github-actions/.github/workflows/lint-codeowners.yml@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
-    permissions:
-      contents: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check owners and syntax
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          errors="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/codeowners/errors?ref=${HEAD_SHA}" \
+            --jq '.errors')"
+          count="$(printf '%s' "${errors}" | jq 'length')"
+          if [ "${count}" -ne 0 ]; then
+            echo "::error::CODEOWNERS has ${count} owner or syntax error(s):"
+            printf '%s' "${errors}" |
+              jq -r '.[] | "  line \(.line): \(.kind) — \(.message)"'
+            exit 1
+          fi
+          echo "CODEOWNERS owners and syntax: OK"
+
+      - name: Check rule paths exist
+        run: |
+          codeowners=".github/CODEOWNERS"
+          rc=0
+          patterns="$(awk '{ sub(/#.*/, "") } NF { print $1 }' "${codeowners}")"
+          while IFS= read -r pattern; do
+            [ -n "${pattern}" ] || continue
+            case "${pattern}" in
+              '*' | '**') continue ;;
+            esac
+            matches="$(git ls-files -- "${pattern#/}")"
+            if [ -z "${matches}" ]; then
+              echo "::error file=${codeowners}::pattern '${pattern}' matches no tracked path"
+              rc=1
+            fi
+          done <<EOF
+          ${patterns}
+          EOF
+          if [ "${rc}" -eq 0 ]; then
+            echo "CODEOWNERS rule paths: OK"
+          fi
+          exit "${rc}"

@@ -1,36 +1,59 @@
 ---
+# Lint every workflow under `.github/workflows/` via actionlint, run from
+# its SHA-pinned Docker image (which bundles shellcheck). The job fires on
+# every PR that touches a workflow file and on every push to `main`, so the
+# lint gate guards both ends of the integration path.
+#
+# This workflow also exposes a `workflow_call` trigger so other tbhb
+# repositories can lint their workflows through it instead of each
+# carrying its own actionlint setup. A reusable workflow has to be
+# self-contained: in a called workflow a `uses: ./...` local action and any
+# bare `just`/`Justfile` reference resolve against the *caller's* checkout,
+# not this repo, so the job can't lean on the `setup-just` composite or the
+# `just lint-workflows` recipe.
+# It invokes the pinned Docker image directly against whatever tree
+# `actions/checkout` lays down — this repo's on push/PR, the caller's on
+# `workflow_call`.
+#
+# The image pin is duplicated from the `actionlint_image` literal in the
+# Justfile (the local entrypoint); Renovate's docker datasource keeps both in
+# lockstep via the `# renovate:` marker on each.
+
 name: lint-workflows
 
-# Lint every workflow under `.github/workflows/` with actionlint, delegated to
-# the shared reusable workflow in tbhb/github-actions so the gate runs
-# the same SHA-pinned actionlint image everywhere instead of each repository
-# carrying its own setup.
-#
-# The triggers live here because a reusable workflow can't carry its own
-# caller-side triggers. The path filter and a read-only token are all the
-# shared entry point needs: it takes no inputs or secrets and runs actionlint
-# against the caller's tree, guarding both the pull-request and push-to-main
-# ends of the integration path.
-
 on:
-  pull_request:
-    paths:
-      - .github/workflows/**
   push:
     branches: [main]
-    paths:
-      - .github/workflows/**
+    paths: ['.github/workflows/**']
+  pull_request:
+    paths: ['.github/workflows/**']
+  workflow_call:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  lint-workflows:
-    name: lint-workflows
-    # Pinned reusable-workflow path + 40-char SHA + tag comment overruns
-    # yamllint's 120-col limit and can't be wrapped; Renovate keeps the
-    # SHA and tag in sync inline.
-    # yamllint disable-line rule:line-length
-    uses: tbhb/github-actions/.github/workflows/lint-workflows.yml@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
-    permissions:
-      contents: read
+  actionlint:
+    name: actionlint
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run actionlint
+        run: |
+          # renovate: datasource=docker depName=rhysd/actionlint
+          ACTIONLINT_IMAGE="docker.io/rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667"
+          docker run --rm -v "${{ github.workspace }}:/repo:ro" -w /repo \
+            "${ACTIONLINT_IMAGE}"

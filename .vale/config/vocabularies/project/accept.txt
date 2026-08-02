@@ -1,6 +1,7 @@
 API
 APM|apm
 BSD
+Brewfile
 CHANGELOG|[Cc]hangelog
 CII
 CISA
@@ -250,6 +251,7 @@ passthrough
 pluggable
 preToolUse|PreToolUse
 printf
+pull_request
 queryCase
 queryRequest
 queryResponse
@@ -302,6 +304,8 @@ vendormod
 versionsCase
 versionsClient
 vulnsClient
+workflow_call
+workflow_dispatch
 worktreeinclude
 wrapcheck
 writeErr
