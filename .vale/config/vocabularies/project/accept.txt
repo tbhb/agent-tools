@@ -298,6 +298,7 @@ toolchain
 uniqueid
 untracked
 uv
+vale_version
 variadic
 vendoredModule
 vendormod

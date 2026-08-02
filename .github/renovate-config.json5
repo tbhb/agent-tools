@@ -96,16 +96,6 @@
       matchManagers: ["pre-commit"],
     },
 
-    // The vale binary is pinned in two places that must move together:
-    // the setup-vale composite's input default (what CI installs) and the
-    // `vale_version` Justfile variable (what the local drift check
-    // compares against). Separate PRs would let the two skew and make the
-    // check warn about a difference that isn't real.
-    {
-      groupName: "vale",
-      matchDepNames: ["vale-cli/vale"],
-    },
-
     // One review surface for every Vale style package bump in `.vale.ini`.
     // Grouped by file rather than manager: the custom regex manager below
     // shares the `regex` manager name with the others, so `matchFileNames`
@@ -117,10 +107,11 @@
   ],
 
   // Renovate has built-in managers for GitHub Actions and Dockerfile FROM
-  // lines — those don't need customManagers. The two markers below appear
-  // in every tbhb repository, so they live in the shared preset; managers
-  // for repo-specific files (composite-action defaults, workflow image
-  // pins, Go module groupings) stay inline in the repo that needs them.
+  // lines — those don't need customManagers. The markers below appear
+  // across the tbhb repositories, so they live in the shared preset;
+  // managers for repo-specific files (composite-action defaults, workflow
+  // image pins, Go module groupings) stay inline in the repo that needs
+  // them.
   customManagers: [
     // Justfile docker-image pins. Each marker pairs a tag-form version
     // with a tag@sha256:digest image string on the immediately following
@@ -137,21 +128,6 @@
       managerFilePatterns: ["/^Justfile$/"],
       matchStrings: [
         "# renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+\\S+_version := \"(?<currentValue>.*?)\"\\s+\\S+_image := \".*?@(?<currentDigest>sha256:[a-f0-9]+)\"",
-      ],
-    },
-
-    // Justfile `vale_version` variable. The shared docker matcher above
-    // requires a following `_image` line, so a bare version pin needs its
-    // own matcher. Keyed on the `vale_version` name rather than a generic
-    // `\S+_version`, which would double-match the docker blocks.
-    //
-    //   # renovate: datasource=github-releases depName=vale-cli/vale
-    //   vale_version := "3.17.0"
-    {
-      customType: "regex",
-      managerFilePatterns: ["/^Justfile$/"],
-      matchStrings: [
-        "# renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+vale_version := \"(?<currentValue>.*?)\"",
       ],
     },
 
