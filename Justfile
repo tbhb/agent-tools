@@ -722,7 +722,7 @@ fuzz-go path="./...":
 
 # Run the Python property tests under coverage-guided fuzzing.
 fuzz-py *args:
-    uv run hypothesis fuzz {{ args }} -- tests/property
+    uv run hypothesis fuzz {{ args }} -- packages/*/tests/property
 
 # The inner-loop coverage gate. Pair with `just mutate-go <path>` when
 # adding tests against survivor mutants. The total threshold remains
