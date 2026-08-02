@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "check-markdown --hook",
+            "command": "guard-markdown --hook",
             "timeout": 10
           }
         ]

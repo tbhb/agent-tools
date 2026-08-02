@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright Tony Burns
 
-// Command check-markdown refuses Markdown whose paragraphs span more than
+// Command guard-markdown refuses Markdown whose paragraphs span more than
 // one line.
 //
 // One check, three callers. A Claude PreToolUse hook runs it in hook mode,

@@ -35,13 +35,13 @@ The skill's frontmatter carries a pair of guard hooks, scoped to a commit workfl
 
 Every Markdown paragraph in this repository occupies one line, leaving the renderer to decide where prose breaks. Hard wrapping belongs to commit messages and to comments in code or config, each with its own gate.
 
-`cmd/check-markdown` enforces it. A prek hook runs it over `*.md`. A Claude `PreToolUse` hook runs it against a `Write` or `Edit` and denies the call before wrapped prose reaches disk. `just lint-markdown-wrap` runs it in the verification stack, and `just fix-markdown-wrap` collapses paragraphs someone already wrapped.
+`cmd/guard-markdown` enforces it. A prek hook runs it over `*.md`. A Claude `PreToolUse` hook runs it against a `Write` or `Edit` and denies the call before wrapped prose reaches disk. `just lint-markdown-wrap` runs it in the verification stack, and `just fix-markdown-wrap` collapses paragraphs someone already wrapped.
 
 Copy this shape for the next rule.
 
-`internal/markdown` holds the rule itself, `internal/hookio` the payload decoding and deny envelope every check shares, and `cmd/check-markdown` a thin layer of glue over the two. Keep the glue thin for a concrete reason. `.testcoverage.yml` excludes `main.go` and nothing else, so logic placed there goes unmeasured. Shared plumbing living in its own package also means a second check writes only its own rule. Give each check a standalone binary, and `agenthooks` stays a dispatcher instead of accumulating one subcommand per rule.
+`internal/markdown` holds the rule itself, `internal/hookio` the payload decoding and deny envelope every check shares, and `cmd/guard-markdown` a thin layer of glue over the two. Keep the glue thin for a concrete reason. `.testcoverage.yml` excludes `main.go` and nothing else, so logic placed there goes unmeasured. Shared plumbing living in its own package also means a second check writes only its own rule. Give each check a standalone binary, and `agenthooks` stays a dispatcher instead of accumulating one subcommand per rule.
 
-APM can deploy a hook's executable. A package-root `hooks/` directory lands under `.claude/hooks/<package>/hooks/`, which a declaration then references through `${CLAUDE_PLUGIN_ROOT}`. The `go-lint` hook reaches consumers that way. `check-markdown` takes the other route on purpose: `go install` puts it on PATH, so the declaration names a bare command and no file has to travel beside it.
+APM can deploy a hook's executable. A package-root `hooks/` directory lands under `.claude/hooks/<package>/hooks/`, which a declaration then references through `${CLAUDE_PLUGIN_ROOT}`. The `go-lint` hook reaches consumers that way. `guard-markdown` takes the other route on purpose: `go install` puts it on PATH, so the declaration names a bare command and no file has to travel beside it.
 
 ## Recipe naming
 

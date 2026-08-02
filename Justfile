@@ -465,7 +465,7 @@ lint-markdown *args:
 # detector is judged by the detector as changed, not by the last release.
 # The build cache makes every run after the first cheap. Consumers get the
 # same check through .pre-commit-hooks.yaml, where prek builds it once, or
-# by running `check-markdown` from `go install`.
+# by running `guard-markdown` from `go install`.
 #
 # Scope comes from git rather than a shell glob so the file list matches
 # what the other tree-wide gates see, minus the vendored Markdown that
@@ -475,7 +475,7 @@ lint-markdown *args:
 [script]
 lint-markdown-wrap *args:
     files=$(git ls-files '*.md' ':!:vendor/**')
-    if [ -n "$files" ]; then go run ./cmd/check-markdown {{ args }} $files; fi
+    if [ -n "$files" ]; then go run ./cmd/guard-markdown {{ args }} $files; fi
 
 # Join every hard-wrapped Markdown paragraph back into one line.
 fix-markdown-wrap:

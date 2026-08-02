@@ -418,7 +418,7 @@ func Describe(path string, report Report) []string {
 	out := make([]string, 0, len(report.Paragraphs))
 	for _, p := range report.Paragraphs {
 		out = append(out, fmt.Sprintf(
-			"%s:%d: error: check-markdown: paragraph spans %d lines (%s); join lines %d-%d into one line",
+			"%s:%d: error: guard-markdown: paragraph spans %d lines (%s); join lines %d-%d into one line",
 			path, p.Start, len(p.Lines), report.Cause(), p.Start, p.End(),
 		))
 	}

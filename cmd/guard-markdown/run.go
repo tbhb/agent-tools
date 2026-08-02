@@ -54,7 +54,7 @@ func Run(args []string, s streams) int {
 	case errors.Is(err, errFindings):
 		return exitFindings
 	default:
-		fmt.Fprintln(s.err, "check-markdown:", err)
+		fmt.Fprintln(s.err, "guard-markdown:", err)
 		return exitError
 	}
 }
@@ -63,7 +63,7 @@ func newRootCmd(s streams) *cobra.Command {
 	var hook, fix bool
 
 	root := &cobra.Command{
-		Use:   "check-markdown [flags] [paths...]",
+		Use:   "guard-markdown [flags] [paths...]",
 		Short: "Refuse Markdown whose paragraphs span more than one line",
 		Long: "Markdown in tbhb repositories is never hard-wrapped: every paragraph is\n" +
 			"a single line and the renderer decides where it breaks.\n\n" +

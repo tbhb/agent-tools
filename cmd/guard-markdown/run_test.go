@@ -71,7 +71,7 @@ func TestCheckMode(t *testing.T) {
 		t.Parallel()
 		got := exec(t, "", write(t, "a.md", wrapped))
 		assert.Equal(t, exitFindings, got.code)
-		assert.Contains(t, got.stdout, "check-markdown:")
+		assert.Contains(t, got.stdout, "guard-markdown:")
 		assert.Contains(t, got.stdout, "join lines 1-5 into one line")
 	})
 
@@ -90,7 +90,7 @@ func TestCheckMode(t *testing.T) {
 		t.Parallel()
 		got := exec(t, "", filepath.Join(t.TempDir(), "absent.md"))
 		assert.Equal(t, exitError, got.code)
-		assert.Contains(t, got.stderr, "check-markdown:")
+		assert.Contains(t, got.stderr, "guard-markdown:")
 	})
 }
 
@@ -204,5 +204,5 @@ func TestUnknownFlag(t *testing.T) {
 
 	got := exec(t, "", "--nope")
 	assert.Equal(t, exitError, got.code)
-	assert.Contains(t, got.stderr, "check-markdown:")
+	assert.Contains(t, got.stderr, "guard-markdown:")
 }

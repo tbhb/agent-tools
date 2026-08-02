@@ -35,6 +35,18 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "guard-markdown --hook",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }

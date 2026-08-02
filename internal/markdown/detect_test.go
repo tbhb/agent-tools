@@ -247,7 +247,7 @@ func TestDescribe(t *testing.T) {
 
 	lines := markdown.Describe("a.md", markdown.Analyze(wrapped))
 	require.Len(t, lines, 1)
-	assert.Contains(t, lines[0], "a.md:1: error: check-markdown:")
+	assert.Contains(t, lines[0], "a.md:1: error: guard-markdown:")
 	assert.Contains(t, lines[0], "join lines 1-5 into one line")
 }
 
