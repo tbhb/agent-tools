@@ -108,5 +108,46 @@
         "# renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+renovate-version:\\s+(?<currentValue>\\S+)",
       ],
     },
+
+    // go:-backend pins in the mise config that name a cmd/ subpackage.
+    // The built-in mise manager extracts these but the go datasource
+    // expects a *module* path, so a `go:` pin naming a package inside
+    // the module returns no updates — silently, with no skipReason.
+    // Stripping the /cmd/<name> suffix (keeping the /vN major-version
+    // segment, which is part of the module path) restores resolution.
+    // The built-in manager's duplicate extraction of the same pin stays
+    // inert: it never produces an update for these.
+    //
+    //   "go:github.com/editorconfig-checker/editorconfig-checker/v3/cmd/editorconfig-checker" = "v3.9.0"
+    {
+      customType: "regex",
+      managerFilePatterns: [
+        "/^mise\\.toml$/",
+        "/^\\.config/mise/conf\\.d/[^/]+\\.toml$/",
+      ],
+      matchStrings: [
+        "\"go:(?<depName>[^\"]+)/cmd/[^\"]+\"\\s*=\\s*\"(?<currentValue>[^\"]+)\"",
+      ],
+      datasourceTemplate: "go",
+    },
+
+    // The mise version the SHA-pinned jdx/mise-action installs in every
+    // workflow job, marked inline the same way the composite-action
+    // version inputs above are. The committed tools/mise-bootstrap shim
+    // embeds the same version; regenerate it with
+    // `mise generate bootstrap -V <version> -w tools/mise-bootstrap`
+    // when this pin moves.
+    //
+    //   # renovate: datasource=github-releases depName=jdx/mise
+    //   version: 2026.8.0
+    {
+      customType: "regex",
+      managerFilePatterns: [
+        "/^\\.github/workflows/[^/]+\\.ya?ml$/",
+      ],
+      matchStrings: [
+        "# renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+version:\\s+(?<currentValue>\\S+)",
+      ],
+    },
   ],
 }
