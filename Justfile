@@ -1046,15 +1046,30 @@ prek-all:
 prek-install:
     prek install -t commit-msg -t pre-commit -t pre-push -t post-commit
 
-# `cog changelog` emits Markdown without an H1; the pipeline prepends one,
-# writes the file, then lints it in place so the CHANGELOG.md
-# per-file-ignores in .rumdl.toml apply (rumdl matches those globs against
-# on-disk paths, not stdin). MD024 (duplicate headings) lives there.
+# `cog changelog` emits the release sections and nothing else. The preamble
+# it splices at — the H1, the pointer to the spec, and the `- - -` line that
+# `cog bump` splits the file on — has to be written here, and the byte-level
+# shape matters: the marker line opening the newest section sits directly
+# under `- - -`, with no blank between, because that is where `cog bump`
+# writes it. See .cog/changelog.tera. Emitting only the H1 leaves a file
+# every future bump aborts on, which is what b0aa3de had to repair by hand.
+#
+# The trailing trim exists because `cog changelog` closes its output with two
+# blank lines. No `rumdl --fix` pass follows: .cog/changelog.tera emits
+# conforming Markdown, and a fixer here would paper over a regression in it.
+# `just lint-markdown` is the gate.
 
 # Generate the full CHANGELOG.md from Conventional Commit history.
+[script]
 generate-changelog:
-    cog changelog | { echo "# Changelog"; cat; } > CHANGELOG.md
-    rumdl check --fix CHANGELOG.md
+    {
+      echo "# Changelog"
+      echo
+      echo "All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines."
+      echo
+      echo "- - -"
+      cog changelog | perl -0pe 's/\n+\z/\n/'
+    } > CHANGELOG.md
 
 # Useful during release prep to see what `cog changelog` will emit before
 # committing the regeneration.

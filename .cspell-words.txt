@@ -87,7 +87,9 @@ dunder
 dupl
 dupword
 durationcheck
+elif
 embeddedstructfieldcheck
+endfor
 enisa
 errcheck
 errchkjson
@@ -317,6 +319,7 @@ tagalign
 tbhb
 teammate
 teammates
+tera
 testableexamples
 testcoverage
 testdata

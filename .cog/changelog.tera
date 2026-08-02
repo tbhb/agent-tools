@@ -1,0 +1,43 @@
+{#- Release section for CHANGELOG.md, replacing cog's built-in `remote`
+    template. That one emits a version heading at level 2 and commit-type
+    headings at level 4, with no blank line anywhere, so every release lands
+    on MD001 for the heading jump, MD022 around every heading, MD032 around
+    every list, and MD012 at the splice.
+
+    `cog bump` writes this block into CHANGELOG.md by splitting the file at
+    its first `- - -` line, then writing `- - -\n`, this block, `- - -\n`, and
+    the rest of the old file. The rest still starts with the newline that
+    closed the old separator line, so the newest release sits directly under
+    its separator while every older one sits one blank line under its own.
+
+    A leading blank line here would therefore be right at the top of the file
+    and doubled at every older boundary, and MD012 rejects the double. The
+    marker below takes that first line instead: it is legal both directly
+    under a thematic break and one blank line under one, and it supplies the
+    blank line MD022 wants above the version heading. It renders to nothing.
+    Widening the CHANGELOG.md entry in .rumdl.toml is the alternative, and it
+    would blind the file to the structural breakage these rules exist for. -#}
+{%- import "macros" as macros -%}
+<!-- release -->
+
+{% if version.tag and from.tag -%}
+## [{{ version.tag }}]({{ repository_url ~ "/compare/" ~ from.tag ~ ".." ~ version.tag }}) - {{ date | date(format="%Y-%m-%d") }}
+{% elif version.tag and from.id -%}
+## [{{ version.tag }}]({{ repository_url ~ "/compare/" ~ from.id ~ ".." ~ version.tag }}) - {{ date | date(format="%Y-%m-%d") }}
+{% else -%}
+{% set from_shorthand = from.id | truncate(length=7, end="") -%}
+{% set to_shorthand = version.id | truncate(length=7, end="") -%}
+## Unreleased ([{{ from_shorthand ~ ".." ~ to_shorthand }}]({{ repository_url ~ "/compare/" ~ from_shorthand ~ ".." ~ to_shorthand }}))
+{% endif -%}
+{% for value in commits | group_by_type %}
+### {{ value.0 | upper_first }}
+
+{% for scope, scoped_commits in value.1 | group_by(attribute="scope") -%}
+{% for commit in scoped_commits | sort(attribute="scope") -%}
+{{ macros::remote(commit=commit) }}
+{% endfor -%}
+{% endfor -%}
+{% for commit in value.1 | unscoped -%}
+{{ macros::remote(commit=commit) }}
+{% endfor -%}
+{% endfor -%}
