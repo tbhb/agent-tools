@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file. See [conven
 - - -
 <!-- release -->
 
+## [v0.3.0](https://github.com/tbhb/repotools/compare/3be10c4ea0eb708758f44f45345b6a90b940ba7d..v0.3.0) - 2026-08-02
+
+### Features
+
+- import the shared workflows, actions, and Renovate presets - ([29ae048](https://github.com/tbhb/repotools/commit/29ae048a69f9079d480fe5a8463592d1137c2723)) - [@tbhb](https://github.com/tbhb)
+- import the shared commit-msg hooks from tbhb/pre-commit-hooks - ([c6999ed](https://github.com/tbhb/repotools/commit/c6999edffe6fb59dfb40665174aa9f2605122880)) - [@tbhb](https://github.com/tbhb)
+- clear a draft's prose findings in a subagent - ([d7e0da0](https://github.com/tbhb/repotools/commit/d7e0da0e9526728e9438ef00bb3715a5a75b5c61)) - [@tbhb](https://github.com/tbhb)
+- apply the corrections vale already wrote - ([2f817fb](https://github.com/tbhb/repotools/commit/2f817fb75fe274349871298455e3efcdc6f97106)) - [@tbhb](https://github.com/tbhb)
+- judge a whole draft in one call - ([3478b0e](https://github.com/tbhb/repotools/commit/3478b0e9b219909218b4951beda0ca7aa7a25cb0)) - [@tbhb](https://github.com/tbhb)
+- analyze a past session into a retrospective - ([0142bda](https://github.com/tbhb/repotools/commit/0142bdac6461f06829cb41e4e8ad249c97bf456d)) - [@tbhb](https://github.com/tbhb)
+- settle a rebase without reading the markers - ([47a3315](https://github.com/tbhb/repotools/commit/47a3315a56c268e97e47279dec82bcfb2ac425c7)) - [@tbhb](https://github.com/tbhb)
+- write a squash message from the commits it collapses - ([4fca3d3](https://github.com/tbhb/repotools/commit/4fca3d3ecf438fff4190158da0e84520a6990267)) - [@tbhb](https://github.com/tbhb)
+- redeploy APM primitives from a cleared hook state - ([51343b9](https://github.com/tbhb/repotools/commit/51343b9bf585b509a0e88a1aa7740ace322634f2)) - [@tbhb](https://github.com/tbhb)
+- ![BREAKING](https://img.shields.io/badge/BREAKING-red) drop the go-lint hook from the package - ([2efb7ce](https://github.com/tbhb/repotools/commit/2efb7ce34f56efd733ee9861433f6f89a0e1bc44)) - [@tbhb](https://github.com/tbhb)
+- check a commit against what the index held - ([da96951](https://github.com/tbhb/repotools/commit/da969519a75d8d0585f93f1889639d87ac0a80b5)) - [@tbhb](https://github.com/tbhb)
+
+### Bug Fixes
+
+- hash the vale tree without find -exec - ([427faae](https://github.com/tbhb/repotools/commit/427faaebb432953111486ce93d8d76b73e69c5d8)) - [@tbhb](https://github.com/tbhb)
+- give the squash message a vale scope - ([9a50c31](https://github.com/tbhb/repotools/commit/9a50c3114b324b2c284b4e9594e2eae846f01725)) - [@tbhb](https://github.com/tbhb)
+- stop the wrap check refusing a GitHub alert - ([e7f7352](https://github.com/tbhb/repotools/commit/e7f735254fc81569c59a28632d427df7c6891c39)) - [@tbhb](https://github.com/tbhb)
+- stamp an amend review the caller asked for - ([778790d](https://github.com/tbhb/repotools/commit/778790d94ddfe68f5a47487c8b1324bfa15bf0db)) - [@tbhb](https://github.com/tbhb)
+- stop the token count recording what it never measured - ([e5043ab](https://github.com/tbhb/repotools/commit/e5043abf2b419cde5ab71bf521dcb2798a144432)) - [@tbhb](https://github.com/tbhb)
+- exempt the generated changelog from the wrap rule - ([69c0821](https://github.com/tbhb/repotools/commit/69c0821d0c14cb9f9a20f3a1d7aa150d11c22097)) - [@tbhb](https://github.com/tbhb)
+- let a sibling skill start its own rebase - ([eadde56](https://github.com/tbhb/repotools/commit/eadde562ea4404070c252c21f22d6a8e4e45fc56)) - [@tbhb](https://github.com/tbhb)
+- fail a secret scan that walked no commits - ([efa1838](https://github.com/tbhb/repotools/commit/efa1838d9ef29091338bba326ea966c8c661018b)) - [@tbhb](https://github.com/tbhb)
+- hold the whitespace gate to files git tracks - ([b5db2f8](https://github.com/tbhb/repotools/commit/b5db2f83624845ea4d78cb06392bfcc33b0d7655)) - [@tbhb](https://github.com/tbhb)
+- read the wider script list in the hygiene check - ([63ea838](https://github.com/tbhb/repotools/commit/63ea8382f0cab9955783de6d59d5b81c88ef867d)) - [@tbhb](https://github.com/tbhb)
+- leave one way to commit - ([b4d1dd5](https://github.com/tbhb/repotools/commit/b4d1dd5c69c1db504f2eeafe93d716258625878d)) - [@tbhb](https://github.com/tbhb)
+- format the scripts git isn't tracking yet - ([09be789](https://github.com/tbhb/repotools/commit/09be789a836c7d58c6cc51d8f1c14126016a7bfb)) - [@tbhb](https://github.com/tbhb)
+- restore vocabulary casing checks in Go source - ([78c1a18](https://github.com/tbhb/repotools/commit/78c1a189d9f8fe2378bcc07536a6b78523e278ef)) - [@tbhb](https://github.com/tbhb)
+- stand the commit guard down when its work is done - ([15abe71](https://github.com/tbhb/repotools/commit/15abe711eb99e9e619ca61a87620883ed28347cc)) - [@tbhb](https://github.com/tbhb)
+- read a cd target the way the shell does - ([2faf047](https://github.com/tbhb/repotools/commit/2faf04724a081b8caaa158043f6b0ac9758c0807)) - [@tbhb](https://github.com/tbhb)
+- lint the scripts git isn't tracking yet - ([38896a5](https://github.com/tbhb/repotools/commit/38896a55044eb8c4dc457282596aa1cd5310734e)) - [@tbhb](https://github.com/tbhb)
+- stop the vocabulary capitalizing a common noun - ([10666ee](https://github.com/tbhb/repotools/commit/10666eef0b2b1dd61ab39924a4efd4a6f337ef69)) - [@tbhb](https://github.com/tbhb)
+- unblock the Windows test arm and the description gate (#5) - ([3be10c4](https://github.com/tbhb/repotools/commit/3be10c4ea0eb708758f44f45345b6a90b940ba7d)) - [@tbhb](https://github.com/tbhb)
+
+### Documentation
+
+- clear the findings the ai-tells bump surfaced - ([c6ea9d6](https://github.com/tbhb/repotools/commit/c6ea9d6eb66d8fcf52a4f3adab708450ff2a08ba)) - [@tbhb](https://github.com/tbhb)
+- correct the version the hook bugs were found on - ([723fc4f](https://github.com/tbhb/repotools/commit/723fc4f81d6dd0dc3482d4e2c56ee71f42210c03)) - [@tbhb](https://github.com/tbhb)
+- measure a skill before deploying it - ([50e96cf](https://github.com/tbhb/repotools/commit/50e96cf6867376f1b49f3041e1d758c9138bcc62)) - [@tbhb](https://github.com/tbhb)
+- put the remaining skill descriptions on one line - ([4ff1596](https://github.com/tbhb/repotools/commit/4ff159639a52656f4f65280251061aa60dd3c8ba)) - [@tbhb](https://github.com/tbhb)
+
+### Build system
+
+- generate a changelog the Markdown gate accepts - ([94cbd75](https://github.com/tbhb/repotools/commit/94cbd751443312a763f13c07d73eb06f16e87fad)) - [@tbhb](https://github.com/tbhb)
+
+### Refactoring
+
+- ![BREAKING](https://img.shields.io/badge/BREAKING-red) rename the APM package to repotools - ([d422df1](https://github.com/tbhb/repotools/commit/d422df1f8576ba63ade2596f64daddc2863353e8)) - [@tbhb](https://github.com/tbhb)
+- ![BREAKING](https://img.shields.io/badge/BREAKING-red) rename the Python distribution to repotools - ([9e1e4d8](https://github.com/tbhb/repotools/commit/9e1e4d895084934ec7f134f74d3ec6186f0612ed)) - [@tbhb](https://github.com/tbhb)
+- ![BREAKING](https://img.shields.io/badge/BREAKING-red) move the Go module to github.com/tbhb/repotools - ([607c4ad](https://github.com/tbhb/repotools/commit/607c4ade56929d993ddd24efee1cbc040973fb71)) - [@tbhb](https://github.com/tbhb)
+
+- - -
+
+<!-- release -->
+
 ## [v0.2.0](https://github.com/tbhb/agent-tools/compare/ef1a589925a9fa434c9867021ddc76da9766b69e..v0.2.0) - 2026-08-02
 
 ### Features
