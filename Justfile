@@ -587,9 +587,12 @@ lint-just:
 # Enforces the whitespace contract in .editorconfig (charset, line endings,
 # final newline, trailing whitespace, indentation) across every tracked
 # file, catching the file types no other gate here reads: the Justfile
-# itself, .gitignore, .editorconfig, the Brewfile, and plain text. With no
-# path arguments the checker walks the git index, so scope lives entirely in
-# .editorconfig-checker.json — whose Exclude list mirrors the top-level
+# itself, .gitignore, .editorconfig, the Brewfile, and plain text. The paths
+# come from `git ls-files` rather than from the checker's own discovery:
+# invoked bare it walks `--cached --others --exclude-standard`, so any
+# untracked scratch file sitting in the worktree fails the gate and blocks a
+# commit it has nothing to do with. Explicit paths still run through the
+# Exclude list in .editorconfig-checker.json — whose entries mirror the top-level
 # `exclude:` in .pre-commit-config.yaml (vendored code, Vale's synced style
 # packages, and build output) plus CHANGELOG.md, which `cog changelog`
 # regenerates wholesale and which the vale hook and the prose recipes
@@ -604,7 +607,7 @@ lint-just:
 
 # Check every tracked file against .editorconfig via editorconfig-checker.
 lint-editorconfig:
-    editorconfig-checker
+    git ls-files -z | xargs -0 editorconfig-checker
 
 # The platform rejects a skill whose name or description breaks these
 # bounds, and it does so at upload, far from the edit that caused it.

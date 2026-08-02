@@ -136,7 +136,7 @@ repos:
         files: ^Justfile$
         pass_filenames: false
 
-      # Whole-tree run on every commit. editorconfig-checker walks the git
+      # Whole-tree run on every commit. The recipe feeds the checker the git
       # index itself and finishes in well under a second, and its scope
       # lives in .editorconfig-checker.json, so passing filenames here would
       # only give the hook a second, drifting copy of that scope.
