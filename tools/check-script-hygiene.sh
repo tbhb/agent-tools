@@ -44,10 +44,14 @@ report() {
 
 files=("$@")
 if [ ${#files[@]} -eq 0 ]; then
-  # Tracked files only, matching how lint-shell scopes itself.
+  # Whatever git can see, matching how lint-shell scopes itself. A new
+  # script is the one this check exists for, and reading the index
+  # alone would reach it only once somebody staged it. Gitignored
+  # scratch scripts stay out through --exclude-standard.
   while IFS= read -r f; do
     files+=("$f")
   done < <(command git -c core.quotePath=false ls-files \
+    --cached --others --exclude-standard \
     '.apm/skills/*/scripts/*.sh' 'hooks/*.sh' 'tools/*.sh')
 fi
 
