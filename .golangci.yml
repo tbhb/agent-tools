@@ -18,18 +18,18 @@ formatters:
       sections:
         - standard
         - default
-        - prefix(github.com/tbhb/agent-tools)
+        - prefix(github.com/tbhb/repotools)
         - blank
         - dot
         - alias
         - localmodule
       custom-order: true
     gofumpt:
-      module-path: github.com/tbhb/agent-tools
+      module-path: github.com/tbhb/repotools
       extra-rules: true
     goimports:
       local-prefixes:
-        - github.com/tbhb/agent-tools
+        - github.com/tbhb/repotools
     golines:
       max-len: 120
 

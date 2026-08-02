@@ -268,6 +268,7 @@ relitigates
 relpath
 renovatebot
 repofile
+repotools
 rerere
 retarget
 retargets

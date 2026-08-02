@@ -1,4 +1,4 @@
-module github.com/tbhb/agent-tools
+module github.com/tbhb/repotools
 
 go 1.26
 

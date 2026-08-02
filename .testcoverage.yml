@@ -7,7 +7,7 @@
 # here guards against new code shipping with no test reach at all.
 
 profile: coverage.out
-local-prefix: github.com/tbhb/agent-tools
+local-prefix: github.com/tbhb/repotools
 
 threshold:
   file: 75

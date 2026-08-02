@@ -256,6 +256,7 @@ quoteValue
 realMain
 recurse
 regexes
+repotools
 rerere
 resolveVersion
 reviewdog

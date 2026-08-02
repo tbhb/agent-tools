@@ -10,7 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/tbhb/agent-tools/internal/buildmeta"
+	"github.com/tbhb/repotools/internal/buildmeta"
 )
 
 func main() {

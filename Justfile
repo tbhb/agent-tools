@@ -13,7 +13,7 @@ set script-interpreter := ['bash', '-eu']
 
 # Go project metadata
 
-module := "github.com/tbhb/agent-tools"
+module := "github.com/tbhb/repotools"
 bin_dir := "bin"
 
 # golangci-lint version pin. golangci-lint is distributed as pre-built
