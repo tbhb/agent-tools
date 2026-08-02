@@ -10,9 +10,11 @@
 # Only a clean verdict signs; a finding erases any earlier signature, so
 # a draft that once passed cannot ride an old stamp into a commit.
 #
-# guard-git.sh compares the signature against the draft on disk when the
-# commit is attempted, so a draft edited after review reads as unreviewed
-# rather than as reviewed.
+# commit.sh compares the signature against the draft on disk before it
+# commits, so a draft edited after review reads as unreviewed rather
+# than as reviewed. That comparison sits there rather than in
+# guard-git.sh because a PreToolUse hook reads the Bash tool call, and
+# the `git commit` inside a script is not one.
 #
 # The signature lives in the per-worktree git directory of the repository
 # the reviewer actually read, which the skill argument names. Parallel

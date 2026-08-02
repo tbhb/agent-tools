@@ -18,7 +18,7 @@ hooks:
 
 # Commit workflow
 
-Work the steps in order. A pair of hooks runs alongside them and refuses the shortcuts: whole-tree staging, an inline `-m` message, `--no-verify`, and any commit whose draft the reviewer hasn't seen in its current form.
+Work the steps in order. A guard hook runs alongside them and refuses whole-tree staging along with any `git commit` you write out yourself. Step 8 names the one script that commits, and that script refuses an inline `-m` message, a `--no-verify`, and a draft the reviewer hasn't seen in its current form.
 
 Those hooks stay registered for the rest of the session so they carry a scope. Preflight arms the guard at the commit `HEAD` sits on now. Step 8 moves `HEAD` past that mark and stands the guard down. Work later in the session is none of the guard's business. A second commit means invoking this skill again rather than carrying on from here.
 
@@ -117,7 +117,7 @@ Hard wrap the body at the width preflight reported. Wrap trailers at the footer 
 
 Invoke the `review-commit-message` skill, passing the repo root from preflight as its argument. It runs as an independent agent that hasn't watched you work, which is the point: it reads the draft against the staged diff with no memory of what you meant to write.
 
-This step is mandatory, and the guard hook enforces it. A clean verdict signs the exact bytes of the draft, and a finding erases any earlier signature, so the commit stays blocked until a review clears the text as it stands. Editing the draft afterward voids the signature the same way.
+This step is mandatory, and the script in step 8 enforces it. A clean verdict signs the exact bytes of the draft, and a finding erases any earlier signature, so the commit stays blocked until a review clears the text as it stands. Editing the draft afterward voids the signature the same way.
 
 Fix everything it returns. Push back only when it's demonstrably wrong about the diff, and say why.
 
@@ -167,11 +167,13 @@ Follow the answer. Revising or restaging sends you back through the review, beca
 bash .claude/skills/commit/scripts/commit.sh
 ```
 
-That script records what the index holds, commits the drafted message, then reads the commit back and compares. prek stashes and restores the worktree around the pre-commit hooks, so a failed run can hand back an index short of what it took, and the retry then commits part of the group without saying so. Here the script says so: it names the missing paths and fails. Its output is the check, so nothing needs a `git show --stat` after it.
+Nothing else commits. The guard hook refuses a `git commit` you write out yourself whatever flags it carries, because every gate named below lives in the script and a hook on the tool call can't reach inside one.
+
+That script checks the review signature and records what the index holds before it commits, then reads the commit back and compares. prek stashes and restores the worktree around the pre-commit hooks. A failed run can leave a path unstaged that you staged before the attempt, and the retry then commits part of the group without reporting it. The script prints every path it expected and didn't find and then fails. Its output is the check, so nothing needs a `git show --stat` after it.
 
 The script pins `commit.cleanup=whitespace` for you. At the default of `strip`, git drops every body line opening with a number sign, and it does so after `review-commit-message` has hashed the file, so the bytes the reviewer cleared stop matching the bytes git records.
 
-Only `--amend` passes through, which is the form `fix-pr` routes here for. The script refuses every other flag, because the guard hook reads the tool call rather than the flags underneath it.
+Only `--amend` passes through, which is the form `fix-pr` routes here for. The script refuses every other flag, because a hook reading the tool call sees `bash commit.sh` and none of the flags underneath it.
 
 Then rebase onto the base from step 1, without asking:
 
@@ -196,4 +198,4 @@ This skill assumes the shared tbhb toolchain:
 
 Preflight checks each. When one is missing, tell the operator rather than improvising a substitute.
 
-The workflow commits the repository holding the session. `review-commit-message` reads its draft and its diff from that same root, so pointing this skill at a sibling checkout reviews the wrong tree and signs the wrong bytes. The guard catches the mismatch and refuses the commit. To commit a different repository, open a session there.
+The workflow commits the repository holding the session. `review-commit-message` reads its draft and its diff from that root, and step 8's script reads the draft and the signature from whichever repository it runs in. A sibling checkout carries no signature of its own, so the script stops there rather than committing on a review that read another tree. To commit a different repository, open a session there.

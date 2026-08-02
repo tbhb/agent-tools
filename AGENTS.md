@@ -6,13 +6,13 @@ Guidance for AI coding agents working in this repository. Read it alongside the 
 
 Run the `commit` skill. It owns the whole sequence, from choosing the rebase base through the commit and the rebase that follows, and this section only summarizes it.
 
-Draft every commit message in the repo-root file `COMMIT_AGENTMSG` before you run `git commit`. A gitignore entry keeps that file out of history, and the post-commit hook deletes it after the commit succeeds, so each commit starts from a blank scratchpad.
+Draft every commit message in the repo-root file `COMMIT_AGENTMSG` before you commit. A gitignore entry keeps that file out of history, and the post-commit hook deletes it after the commit succeeds, so each commit starts from a blank scratchpad.
 
 1. Group the outstanding work into atomic commits, and stage the paths for one of them by name. Never `git add -A` or `git add .`.
 2. Write the full message (subject, body, and trailers) to `COMMIT_AGENTMSG`. The body explains why the change exists, because the diff already says what changed.
 3. Review the draft with the `review-commit-message` skill, which runs as an independent agent.
 4. Run `just lint-commit-msg` and resolve whatever it reports.
-5. Confirm the message with the operator, then commit the validated draft with `git commit -F COMMIT_AGENTMSG`.
+5. Confirm the message with the operator, then commit the validated draft through `.claude/skills/commit/scripts/commit.sh`.
 
 `just lint-commit-msg` mirrors the commit-msg hook:
 
@@ -25,7 +25,9 @@ Running it while drafting surfaces problems early, rather than at the commit-msg
 
 The prek commit-msg hook on `.git/COMMIT_EDITMSG` stays the real gate. `COMMIT_AGENTMSG` and its recipe only preview that gate, so a clean recipe run predicts a clean commit but never replaces the hook.
 
-The skill's frontmatter carries a pair of guard hooks, scoped to a commit workflow and inert outside one. One refuses whole-tree staging, an inline `-m` message, and `--no-verify`. The other records which bytes `review-commit-message` signed off on, and blocks the commit when the draft has changed since. Editing the draft after the review means running the review again.
+That script is the only thing here that commits. It checks the review signature, records what the index holds, commits, then reads the commit back and prints any staged path missing from it. prek stashes and restores the worktree around the pre-commit hooks, so a failed attempt can leave a path unstaged that you staged before it, and without that comparison the retry commits part of the group and reports nothing.
+
+The skill's frontmatter carries a pair of hooks, scoped to a commit workflow and inert outside one. Preflight arms them at the commit `HEAD` sits on, and the commit that ends the workflow moves `HEAD` past that mark and stands them down. One refuses whole-tree staging along with any `git commit` written out by hand, which is what keeps the script the only entry point. The other records which bytes `review-commit-message` signed off on. Editing the draft after the review means running the review again.
 
 ## Pull requests
 

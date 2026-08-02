@@ -8,18 +8,26 @@
 # the workflow scope below keeps it out of the rest of a session that
 # did.
 #
-# Three rules, in order of how they fire:
+# Two rules, in order of how they fire:
 #
 #   1. Whole-tree staging (`git add -A`, `git add .`) is refused. An
 #      atomic commit names its paths; a wildcard sweeps in whatever else
 #      the worktree happens to be carrying.
-#   2. `git commit -m`, `-am`, and `--no-verify` are refused. The message
-#      comes from COMMIT_AGENTMSG so it passes the same gates twice, and
-#      the hooks are the gate rather than an obstacle.
-#   3. `git commit` is refused unless review-commit-message has signed
-#      off on the exact bytes now in COMMIT_AGENTMSG. Editing the draft
-#      after the review invalidates the signature, which is the point:
-#      the reviewed text and the committed text are the same text.
+#   2. A direct `git commit` is refused whatever flags it carries. The
+#      workflow commits through scripts/commit.sh, and an inline -m or
+#      a --no-verify is refused with its own reason before the general
+#      one, because those two are wrong for reasons of their own.
+#
+# The review-signature check used to sit here and now sits in that
+# script. A PreToolUse hook reads the Bash tool call, and the
+# `git commit` inside a script is not one, so a gate placed here would
+# go unread on the path the workflow actually takes. The script is also
+# the only place that can compare the finished commit against what was
+# staged for it, which a hook running before the commit cannot do.
+#
+# One entry point is what makes that split hold. Leaving a second,
+# hook-gated way to commit would mean keeping both copies of the
+# signature check in step with each other forever.
 #
 # Exit 2 blocks and hands stderr back as the reason. Exit 0 defers to the
 # normal permission flow. Verified against Claude Code 2.1.220: a
@@ -156,122 +164,17 @@ nothing reviews it. Write the message to COMMIT_AGENTMSG, then:
   bash .claude/skills/commit/scripts/commit.sh"
 fi
 
-if [[ ! $invocation =~ (--file|[[:space:]]-F)([[:space:]]|=) ]]; then
-  deny "This workflow commits the drafted file, so the editor never opens:
+# Every other spelling lands here, including the sanctioned flags. The
+# script is the entry point, so a hand-written git commit is refused
+# even when its flags are the right ones.
+deny "This workflow commits through one script, which is where the gates a
+hook on the tool call cannot reach live:
 
   bash .claude/skills/commit/scripts/commit.sh
 
-That script also reads the commit back and says so when it landed short
-of what was staged, which a bare git commit cannot."
-fi
+That script checks that review-commit-message signed the exact bytes now
+in COMMIT_AGENTMSG, records what is staged, commits, then reads the
+commit back and names any staged path that did not land in it.
 
-# Rule 3: the reviewed bytes and the committed bytes must match.
-#
-# Resolve the repository the command acts on rather than the one this
-# hook happens to run in. A command can retarget git with `git -C` or a
-# leading `cd`, and reading that target keeps the gate pointed at the
-# repository about to receive the commit. Skipping this step fails open:
-# a draft and signature sitting in the hook's own repository would clear
-# a commit in some other one, which nothing reviewed.
-#
-# The target is read the way the shell reads it, which means reading the
-# quotes. Taking the first run of non-whitespace out of
-# `cd "$(git rev-parse --show-toplevel)"` yields `"$(git`, a path no
-# repository sits at, and the commit is then refused over a target
-# nobody wrote. Same class as the heredoc bodies dropped above: text the
-# hook cannot interpret is text it must not act on.
-#
-# A path argument in any of the three spellings a shell accepts. The
-# quoted forms come first so a quoted path arrives whole rather than as
-# its opening fragment.
-readonly PATH_ARG='("[^"]*"|'\''[^'\'']*'\''|[^[:space:];&|]+)'
-
-# unquote strips one surrounding pair of quotes, leaving a bare word be.
-unquote() {
-  local value=$1
-  case $value in
-  \"*\")
-    value=${value#\"}
-    value=${value%\"}
-    ;;
-  \'*\')
-    value=${value#\'}
-    value=${value%\'}
-    ;;
-  esac
-  printf '%s' "$value"
-}
-
-target=""
-if [[ $command =~ git[[:space:]]+-C[[:space:]]+${PATH_ARG} ]]; then
-  target=$(unquote "${BASH_REMATCH[1]}")
-elif [[ $command =~ ^[[:space:]]*cd[[:space:]]+${PATH_ARG} ]]; then
-  target=$(unquote "${BASH_REMATCH[1]}")
-fi
-
-# A substitution or a variable resolves in a shell this hook never runs,
-# so the text alone does not say where the command lands. The one
-# exception is the house idiom for the repository root, which lands in
-# the repository this hook already runs in and so retargets nothing.
-# shellcheck disable=SC2016  # the substitution is the pattern, not a call
-case $target in
-'$(git rev-parse --show-toplevel)' | '`git rev-parse --show-toplevel`')
-  target=""
-  ;;
-*'$'* | *'`'*)
-  deny "This guard cannot read where the command changes directory to, so it
-cannot tell which repository is about to receive the commit, and it will
-not guess at one.
-
-Commit from the repository holding the session:
-
-  git commit -F COMMIT_AGENTMSG
-
-or name the repository as a literal path:
-
-  git -C /path/to/repo commit -F COMMIT_AGENTMSG"
-  ;;
-esac
-
-if [ -n "$target" ]; then
-  root=$(git -C "$target" rev-parse --show-toplevel 2>/dev/null) ||
-    deny "Cannot resolve a git repository at ${target}."
-  git_dir=$(git -C "$target" rev-parse --absolute-git-dir 2>/dev/null)
-else
-  root=$(git rev-parse --show-toplevel)
-  git_dir=$(git rev-parse --absolute-git-dir)
-fi
-
-draft="$root/COMMIT_AGENTMSG"
-stamp="$git_dir/commit-agentmsg.reviewed"
-
-[ -s "$draft" ] || deny "COMMIT_AGENTMSG is empty or missing. Draft the message first."
-
-# sha256 of $1, portable across the coreutils and BSD spellings.
-digest() {
-  if command -v sha256sum >/dev/null 2>&1; then
-    sha256sum "$1" | cut -d' ' -f1
-  else
-    shasum -a 256 "$1" | cut -d' ' -f1
-  fi
-}
-
-current=$(digest "$draft")
-
-if [ ! -f "$stamp" ]; then
-  deny "review-commit-message has not run against this draft.
-
-That review is the only gate on the things linting cannot see: claims the
-diff does not support, restating the diff instead of explaining it, and
-whether the staged change is really one logical change. Invoke the
-review-commit-message skill, resolve what it returns, then commit."
-fi
-
-if [ "$(cat "$stamp")" != "$current" ]; then
-  deny "COMMIT_AGENTMSG changed after review-commit-message signed off, so the
-reviewed text and the text about to be committed are no longer the same.
-
-Run review-commit-message again against the current draft, then commit."
-fi
-
-exit 0
+Add --amend to fold the staged change into the commit already there. No
+other flag passes through."

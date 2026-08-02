@@ -37,7 +37,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:78bda86b9e1635829153bf364fd34bf537b98704e0d73a173f01e85d2717a4bd
+  content_hash: sha256:4824db4b92411a473798fb858b45ab3bcc60feb961be178bbdebd3f939aa4595
 - kind: project-relative
   target: claude
   value: .claude/skills/commit/scripts/commit.sh
@@ -55,7 +55,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:4b0d6c9b94229ebe174c21751e030e7ece662142d616b51b3542b97d7548ea15
+  content_hash: sha256:ac7965a1f42ac73e6e2e43210db708157d5e0080a7ba67dba88d89ca20f06924
 - kind: project-relative
   target: claude
   value: .claude/skills/commit/scripts/preflight.sh
@@ -73,7 +73,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:389438eb7d6317c54ca275e36180a803d5fcafce6abf8878abc51e47c53d1780
+  content_hash: sha256:c670377ae5dec34b564a99e0845e35bd0d228812f3df4e3c797444a411fbeff3
 - kind: project-relative
   target: claude
   value: .claude/skills/commit/tokens.json
@@ -82,7 +82,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:3fbd3fb7312719fdab2fd3fcb4b76753e085049cdf5cd4157fccb429b9f11936
+  content_hash: sha256:87285964fc57ddac197daf9291ce9bd79be0f5b1d3acaaa3fd8a4322d25b42e5
 - kind: project-relative
   target: claude
   value: .claude/skills/fix-pr
@@ -526,12 +526,12 @@ local_deployed_files:
 local_deployed_file_hashes:
   .claude/hooks/agent-tools/hooks/go-lint.sh: sha256:43246da28ccda66e17acafae220197c6c95403292b342b44d7fc437453438f6c
   .claude/rules/worktree-wip.md: sha256:0204082643d1ea505ae20eaf93e7d94dd52b65046f3e4f290ec7bbc5c6093634
-  .claude/skills/commit/SKILL.md: sha256:78bda86b9e1635829153bf364fd34bf537b98704e0d73a173f01e85d2717a4bd
+  .claude/skills/commit/SKILL.md: sha256:4824db4b92411a473798fb858b45ab3bcc60feb961be178bbdebd3f939aa4595
   .claude/skills/commit/scripts/commit.sh: sha256:5d60d85e655062fd7c63dfac3d4b0615c2aac8f166a41833bc248db1e3ddeb36
-  .claude/skills/commit/scripts/guard-git.sh: sha256:4b0d6c9b94229ebe174c21751e030e7ece662142d616b51b3542b97d7548ea15
+  .claude/skills/commit/scripts/guard-git.sh: sha256:ac7965a1f42ac73e6e2e43210db708157d5e0080a7ba67dba88d89ca20f06924
   .claude/skills/commit/scripts/preflight.sh: sha256:aa86398adae53090838087b2556d7514cd27b11ec0a6faaa118d3fac2318e1e3
-  .claude/skills/commit/scripts/stamp-review.sh: sha256:389438eb7d6317c54ca275e36180a803d5fcafce6abf8878abc51e47c53d1780
-  .claude/skills/commit/tokens.json: sha256:3fbd3fb7312719fdab2fd3fcb4b76753e085049cdf5cd4157fccb429b9f11936
+  .claude/skills/commit/scripts/stamp-review.sh: sha256:c670377ae5dec34b564a99e0845e35bd0d228812f3df4e3c797444a411fbeff3
+  .claude/skills/commit/tokens.json: sha256:87285964fc57ddac197daf9291ce9bd79be0f5b1d3acaaa3fd8a4322d25b42e5
   .claude/skills/fix-pr/SKILL.md: sha256:60174efb3ad3727a937c6e7e66de73bc05b1fd7bcd4f7fbe46f7f1c0f732373d
   .claude/skills/fix-pr/scripts/diagnose.sh: sha256:767cb1d690577d182be7c2f80b62ba4259c08cc8d5125838c2ed0926cadcd60a
   .claude/skills/fix-pr/scripts/guard-fix.sh: sha256:051720bb9d98d43d8a84176b4a5a01cb35c119973aba896df77785c5044af848
