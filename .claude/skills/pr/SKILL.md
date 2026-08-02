@@ -2,9 +2,13 @@
 name: pr
 license: Apache-2.0
 description: >-
-  Open a pull request for the current branch. The title and the pull request properties and the template's sections draft into PR_AGENTDESC.md. That draft then goes through an independent review plus a mechanical validator, and publishes once the operator confirms. Whatever follows routes to the watch-pr and fix-pr and merge-pr skills. Use this whenever the user asks to open or draft a pull request in a tbhb repo, and whenever a task ends in one.
+  Open a pull request for the current branch. A forked writer drafts the title and the pull request properties and the template's sections into PR_AGENTDESC.md. An independent reviewer then reads that draft against the branch, and a mechanical validator checks it against the template. The operator confirms before anything publishes. Whatever follows routes to the watch-pr and fix-pr and merge-pr skills. Use this whenever the user asks to open or draft a pull request in a tbhb repo, and whenever a task ends in one.
 hooks:
   PreToolUse:
+    - matcher: Write|Edit
+      hooks:
+        - type: command
+          command: "${CLAUDE_PROJECT_DIR}/.claude/skills/write-pr-description/scripts/guard-draft.sh"
     - matcher: Bash
       hooks:
         - type: command
@@ -49,53 +53,28 @@ Preflight answered each of these, so read rather than re-run:
 - Uncommitted changes stay out of the pull request. Where preflight listed some, say so and let the operator decide before going on.
 - A pull request may already exist. Where one is open, publishing updates it rather than opening a second.
 
-Preflight also removed a stale `PR_AGENTDESC.md` where no open pull request stood behind it, so an absent draft at this point is the expected state.
+Preflight also settled the draft on disk. It removed a stale `PR_AGENTDESC.md` where no open pull request stood behind it, then scaffolded a fresh one from the template. That scaffold carries the frontmatter keys, a placeholder title, and every section the template declares, so nothing downstream reproduces the template's shape from memory. It fails the validator until something fills it, which is the point.
 
 ## Step 2: draft the description
 
-Write `PR_AGENTDESC.md` at the repository root. A gitignore entry keeps it out of history, and `merge-pr` removes it once the branch merges. Preflight printed the exact skeleton, the repository's label set, and the template's sections.
+Invoke the `write-pr-description` skill, passing the repository root from preflight as its argument.
 
-### Frontmatter
+It runs forked, which keeps the branch diff in its context rather than this one, and it clears the mechanical validator before returning. It comes back with `DRAFT: WRITTEN` plus what it changed, or with `DRAFT: BLOCKED` plus what stopped it. Where it reports a block, say what it found and hand back, because this workflow has nothing left to publish.
 
-```text
----
-base: <branch this merges into>
-draft: <true or false>
-labels: [<one or more from the set preflight printed>]
-reviewers: []
-assignees: []
-milestone:
----
-```
+Don't write `PR_AGENTDESC.md` yourself. A guard hook refuses it, because editing the draft here means reading the diff here, which spends the whole point of forking the writer.
 
-Those keys and no others. Labels take a flow sequence, and an empty one fails the validator, because nobody's filter finds an unlabelled pull request.
+## Step 3: review the draft, and loop
 
-### Title
+Invoke the `review-pr-description` skill, passing the repository root. It runs as an independent agent that watched neither the work nor the drafting, so it reads the description against the branch with no memory of what anyone meant to write.
 
-A level 1 heading, immediately after the frontmatter, in the Conventional Commits shape `<type>(<scope>)?(!)?: <description>`. A squash merge turns this into the commit subject on the default branch, so the type has to be one the landing commits use, and the description names what the whole branch does rather than what the last commit did.
+Its verdict drives a loop:
 
-### Sections
+- `VERDICT: PASS` ends the loop. Go on to step 4.
+- `VERDICT: CHANGES REQUIRED` sends the findings back to `write-pr-description`, verbatim, in its arguments. Then review again.
 
-Fill every section the template declares, in the template's order, with prose. Replace each instructional comment rather than leaving it in place: a surviving comment reads as an unfilled section, and the validator treats it that way.
+Bound it at three rounds. Past that, stop, and report which findings keep coming back, because a fourth pass at the same objection rarely settles it.
 
-The sections answer different questions, so don't let them repeat each other. Summary says what changes. Why says what problem made it necessary. Verification names the commands you actually ran, in backticks. Risk says what breaks if this is wrong and how to back it out. Related points at issues, or says `None`.
-
-Avoid:
-
-- Restating the diff. A reviewer reads the diff already.
-- Counting. No file, line, test, or commit counts.
-- Provenance filler. Nothing about requests, sessions, prompts, models, or tools.
-- Claims you haven't checked, including verification you didn't run.
-- Selling it. Drop `robust`, `comprehensive`, `significantly`, and their neighbors.
-- Paths that don't exist. The validator resolves every backticked path against the tree and the diff.
-
-## Step 3: review the draft
-
-Invoke the `review-pr-description` skill, passing the repository root from preflight as its argument. It runs as an independent agent that hasn't watched you work, so it reads the description against the branch with no memory of what you meant to write.
-
-This step is mandatory, and `create-pr.sh` enforces it. A clean verdict signs the exact bytes of the draft, a finding erases any earlier signature, and editing the draft afterward voids it the same way.
-
-Fix everything it returns. Push back only where it's demonstrably wrong about the diff, and say why.
+This step is mandatory, and `create-pr.sh` enforces it. A clean verdict signs the exact bytes of the draft, a finding erases any earlier signature, and a later edit voids it the same way.
 
 ## Step 4: run the validator and the prose gates
 

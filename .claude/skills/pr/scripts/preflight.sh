@@ -319,17 +319,14 @@ else
   fi
 fi
 
-section "draft skeleton"
-printf 'Write %s at the repository root, in exactly this shape:\n\n' "$DRAFT"
-printf -- '---\n'
-printf 'base: %s\n' "$default_branch"
-printf 'draft: false\n'
-printf 'labels: [pick, from, the, list, above]\n'
-printf 'reviewers: []\n'
-printf 'assignees: []\n'
-printf 'milestone:\n'
-printf -- '---\n\n'
-printf '# <type>(<scope>)?: <description>\n\n'
-if [ -f "$template" ]; then
-  grep '^## ' "$template" | awk '{ print $0 "\n\n<prose>\n" }'
+section "draft"
+# Scaffolding here rather than in an instruction keeps the sections
+# matching the template as it stands, and leaves write-pr-description a
+# file to fill instead of a shape to reproduce from memory. It runs
+# after the sweep above, which decides what should be on disk at all.
+scaffold="$(dirname -- "$0")/scaffold-description.sh"
+if [ -f "$scaffold" ]; then
+  bash "$scaffold" "$default_branch"
+else
+  printf '(scaffold-description.sh missing; run apm install)\n'
 fi

@@ -37,7 +37,7 @@ A missing or empty draft, or a branch with nothing to land, is itself a finding.
 
 ## What's already settled
 
-A validator runs before you and again after you, so leave its rules alone. It has already settled:
+The writer clears a mechanical validator before handing you anything, and the caller runs it again afterwards, so leave its rules alone. It has already settled:
 
 - the frontmatter shape, and the title's length and Conventional Commits form
 - section presence, section order, and sections left empty
@@ -115,3 +115,5 @@ VERDICT: CHANGES REQUIRED
 Tag each finding `truthfulness`, `substance`, `fit`, or `coherence`.
 
 Return `PASS` when the draft holds up. A clean description counts as a real outcome, and inventing a finding to look thorough wastes the round trip. Report only what you can point at in the draft or the diff.
+
+Your findings go straight back to `write-pr-description` as its next instructions, so write each one so that agent can act on it without seeing this conversation. Name the section and quote the offending text, then give the replacement.

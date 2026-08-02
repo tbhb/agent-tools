@@ -130,6 +130,7 @@ XDG
 [Rr]estaging
 [Rr]ollup
 [Rr]uleset
+[Ss]caffold(s|ed|ing)?
 [Ss]emver
 [Ss]hellcheck
 [Ss]hfmt

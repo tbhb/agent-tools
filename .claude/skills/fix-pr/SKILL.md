@@ -2,9 +2,13 @@
 name: fix-pr
 license: Apache-2.0
 description: >-
-  Diagnose the failing checks on a pull request and fix them. One call reads the failing logs and names the local recipe that reproduces each failure. The correction itself goes through the commit skill and out with a push. Use this whenever a pull request is red, whenever the user asks to fix CI, and whenever watch-pr comes back with failures.
+  Diagnose the failing checks on a pull request and fix them. One call reads the failing logs and names the local recipe that reproduces each failure, so the work starts from a reproduction rather than a guess. The correction goes through the commit skill. Use this whenever a pull request is red, whenever the user asks to fix CI, and whenever watch-pr comes back with failures.
 hooks:
   PreToolUse:
+    - matcher: Write|Edit
+      hooks:
+        - type: command
+          command: "${CLAUDE_PROJECT_DIR}/.claude/skills/write-pr-description/scripts/guard-draft.sh"
     - matcher: Bash
       hooks:
         - type: command
@@ -29,7 +33,8 @@ Create these with `TaskCreate`, then move each through `in_progress` and `comple
 2. Reproduce each one locally
 3. Fix the cause
 4. Commit through the commit skill
-5. Push and hand back
+5. Bring the description forward
+6. Push and hand back
 
 ## Step 1: diagnose
 
@@ -69,7 +74,25 @@ Run the `commit` skill. It owns the message, the review, and the gates, and this
 
 Where the fix splits into unrelated groups, the commit skill says so and takes them one at a time.
 
-## Step 5: push and hand back
+## Step 5: bring the description forward
+
+The description lives on GitHub at this point, and often nothing sits on disk. Fetch it back before revising it:
+
+```text
+bash .claude/skills/fix-pr/scripts/populate-description.sh <number>
+```
+
+That rebuilds `PR_AGENTDESC.md` from what the pull request currently says, reassembling the frontmatter from the properties it carries. It refuses to overwrite an existing draft without `--force`, because a `pr` workflow further up the stack may have one in flight.
+
+A fix changes what the branch does, so the published description now describes a branch that has moved. Where the change is worth a reader's attention, invoke `write-pr-description` with the repository root and a note saying which commits arrived since the last publish.
+
+Then invoke `review-pr-description` and loop on its verdict the same way the `pr` skill does, bounded at three rounds. Publish the result with `bash .claude/skills/pr/scripts/create-pr.sh`, which updates the open pull request rather than opening another.
+
+Skip this where the fix left the description accurate. A typo in a lint rule rarely changes what the branch is for. Say which way you judged it.
+
+Don't edit `PR_AGENTDESC.md` here. A guard hook refuses it, and the writer owes the validator a clean run that hand-editing skips.
+
+## Step 6: push and hand back
 
 ```text
 git push origin HEAD

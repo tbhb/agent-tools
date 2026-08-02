@@ -5,6 +5,10 @@ description: >-
   Squash merge a pull request under a commit message this workflow writes rather than one GitHub concatenates. Drafts that message in SQUASH_AGENTMSG from the published description, then puts it through an independent review plus the commit-msg gates and an operator confirmation before merging and cleaning up. Use this whenever the user asks to merge or land a pull request, including one nobody here authored such as a dependency bump.
 hooks:
   PreToolUse:
+    - matcher: Write|Edit
+      hooks:
+        - type: command
+          command: "${CLAUDE_PROJECT_DIR}/.claude/skills/write-pr-description/scripts/guard-draft.sh"
     - matcher: Bash
       hooks:
         - type: command
@@ -31,11 +35,12 @@ Left alone, GitHub writes the squash message by concatenating every commit on th
 Create these with `TaskCreate`, then move each through `in_progress` and `completed`.
 
 1. Confirm the pull request is mergeable
-2. Draft the squash message in SQUASH_AGENTMSG
-3. Review the draft with review-squash-message
-4. Run the commit-msg gates
-5. Confirm the message with the operator
-6. Merge and clean up
+2. Settle the published description
+3. Draft the squash message in SQUASH_AGENTMSG
+4. Review the draft with review-squash-message
+5. Run the commit-msg gates
+6. Confirm the message with the operator
+7. Merge and clean up
 
 Stop before any of it where preflight reports a missing precondition, a draft pull request, or a failing check. Say what's wrong and hand back.
 
@@ -47,7 +52,23 @@ A failing check goes to `fix-pr`, and a running one goes to `watch-pr`. Neither 
 
 Where the repository requires a review decision, respect it. `CHANGES_REQUESTED` means the merge waits, whatever the checks say.
 
-## Step 2: draft the squash message
+## Step 2: settle the description first
+
+The description lives on GitHub at this point, and often nothing sits on disk. Fetch it back before revising it:
+
+```text
+bash .claude/skills/merge-pr/scripts/populate-description.sh <number>
+```
+
+That rebuilds `PR_AGENTDESC.md` from what the pull request currently says, reassembling the frontmatter from the properties it carries. It refuses to overwrite an existing draft without `--force`, because a `pr` workflow further up the stack may have one in flight.
+
+Merging is the last moment the description can change, and the squash message gets written from it, so a description carrying something wrong propagates that into history.
+
+Read what preflight printed under `== description as published ==` against the commits it collapses. Where it no longer describes the branch, invoke `write-pr-description` with the repository root and a note on what drifted, then `review-pr-description`, then republish with `bash .claude/skills/pr/scripts/create-pr.sh`.
+
+Most merges skip this. A description that still fits needs no pass, and a pull request nobody here authored has none of this machinery behind it, so take its description as it stands.
+
+## Step 3: draft the squash message
 
 ```text
 bash .claude/skills/merge-pr/scripts/squash-message.sh <number>
@@ -81,7 +102,7 @@ Avoid:
 
 Hard wrap the body at 72 characters and the trailers at 100.
 
-## Step 3: review the draft
+## Step 4: review the draft
 
 Invoke the `review-squash-message` skill, passing the repository root as its argument. It runs as an independent agent that hasn't watched you work, so it reads the message against the diff with no memory of what you meant to write.
 
@@ -89,7 +110,7 @@ This step is mandatory, and the merge script enforces it. A clean verdict signs 
 
 Fix everything it returns. Push back only where it's demonstrably wrong about the diff, and say why.
 
-## Step 4: run the commit-msg gates
+## Step 5: run the commit-msg gates
 
 ```text
 just lint-squash-msg
@@ -102,9 +123,9 @@ The same four hooks a commit answers to:
 - commitlint for the Conventional Commits shape
 - commit-trailers for trailer order
 
-Resolve every finding. Edited the draft to clear them? Then step 3 runs again, because the gate compares bytes rather than intentions.
+Resolve every finding. Edited the draft to clear them? Then step 4 runs again, because the gate compares bytes rather than intentions.
 
-## Step 5: confirm with the operator
+## Step 6: confirm with the operator
 
 `AskUserQuestion` truncates its options, so the operator reads the message in your message text rather than in the widget. Print this first, verbatim:
 
@@ -127,7 +148,7 @@ Now call `AskUserQuestion` with `question` set to `Squash merge with this messag
 
 Follow the answer. Revising sends you back through the review, because the gate compares bytes.
 
-## Step 6: merge and clean up
+## Step 7: merge and clean up
 
 ```text
 bash .claude/skills/merge-pr/scripts/squash-merge.sh <number>
