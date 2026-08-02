@@ -188,6 +188,7 @@ depscan
 devFallback
 devel
 devs
+diffstat
 embedpg
 env
 errFindings

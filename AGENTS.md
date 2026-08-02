@@ -56,7 +56,7 @@ The rest of the lifecycle splits into three skills, each usable on its own:
 
 - `watch-pr` waits for the checks. It streams one event per check through the `Monitor` tool, so a wait costs one turn rather than one per look.
 - `fix-pr` diagnoses a red pull request. One call reads the failing logs and names the local recipe reproducing each failure.
-- `merge-pr` squash merges under a message this toolchain writes. It drafts `SQUASH_AGENTMSG` from the published description. That draft then goes through `review-squash-message` and `just lint-squash-msg`, and past a confirmation, before the merge clears both drafts. It also works on a pull request nobody here authored, a dependency bump being the usual case.
+- `merge-pr` squash merges under a message this toolchain writes. Its briefing script prints the published description, every commit the squash collapses, and the diffstat, then leaves a `SQUASH_AGENTMSG` skeleton whose body the agent writes. That message then goes through `review-squash-message` and `just lint-squash-msg`, and past a confirmation, before the merge clears both drafts. It also works on a pull request nobody here authored, a dependency bump being the usual case.
 
 Left alone, GitHub writes the squash message by concatenating every commit on the branch. That text has never passed a commit-msg hook, and nothing lints it afterwards, so `merge-pr` writes the message instead.
 
