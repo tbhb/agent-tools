@@ -55,7 +55,14 @@ for dir in "${dirs[@]}"; do
   # Read the two fields out of the frontmatter. The description is a
   # folded block, so it needs unfolding before its length means
   # anything.
-  eval "$(
+  #
+  # Cleared first, and the exit status checked. Without both, a python
+  # block that fails evaluates to nothing and the variables keep the
+  # previous iteration's values, so this reports a clean pass for a
+  # skill it never read.
+  skill_name=""
+  skill_desc=""
+  fields=$(
     python3 - "$manifest" <<'PY'
 import pathlib, re, shlex, sys
 text = pathlib.Path(sys.argv[1]).read_text()
@@ -76,7 +83,11 @@ else:
 print("skill_name=" + shlex.quote(name))
 print("skill_desc=" + shlex.quote(desc))
 PY
-  )"
+  ) || {
+    report "$manifest:1" unreadable "could not parse the frontmatter"
+    continue
+  }
+  eval "$fields"
 
   if [ -z "$skill_name" ]; then
     report "$manifest:1" name-missing "the frontmatter sets no name"
