@@ -1045,7 +1045,10 @@ audit:
 # and records the entries it owns in .claude/apm-hooks.json. Both merges run
 # additively against whatever those files already hold, so the deployed state
 # accumulates history that `apm install` alone never reconciles. Two ways that
-# goes wrong, both reproduced against apm 0.26.0 and 0.27.0:
+# goes wrong, both on a version this comment can no longer name: a stale apm
+# 0.20.0 in ~/.local/bin shadowed the current install until 2026-08-02, so
+# every shell-driven reproduction before then ran 0.20.0 whatever it claimed.
+# Re-confirm against 0.26.0 before treating either as current:
 #
 #   * A declaration file whose name sorts ahead of an existing one and carries
 #     an event type the merged config lacks lands last on disk (install appends
