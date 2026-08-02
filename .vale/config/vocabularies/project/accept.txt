@@ -1,13 +1,13 @@
 API
 APM|apm
 BSD
+CHANGELOG|[Cc]hangelog
 CII
 CISA
 CLI
 CLIs
 CRA
 CVE[s]?
-Changelog
 Cilium
 CodeQL
 Codecov
