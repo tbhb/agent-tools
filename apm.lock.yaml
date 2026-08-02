@@ -271,7 +271,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:d595670ec3ccbd9559a7875b0079e3bcd791d079975c0fed5b292cba6875cdd7
+  content_hash: sha256:037ffa7ad42ec224e1ab51961a07dc3f555bc526082b8d4705f7fceae4abffa5
 - kind: project-relative
   target: claude
   value: .claude/skills/fix-prose/scripts/guard-target.sh
@@ -979,7 +979,7 @@ local_deployed_file_hashes:
   .claude/skills/fix-pr/tokens.json: sha256:77629266b5b84e194c4701a57832a44198bba6c10c5eb2c7228602dbd1c47e4d
   .claude/skills/fix-prose/SKILL.md: sha256:ddc759424ef24a29eae573b2e7129d13bf43d283ad1d5a4960e462cdd349d24e
   .claude/skills/fix-prose/scripts/arm-guard.sh: sha256:3ce428c3846103b58ecd8e45249f7ea7dd46bc7d313f30a69ee5ee68a08c47ad
-  .claude/skills/fix-prose/scripts/check-suppressions.sh: sha256:d595670ec3ccbd9559a7875b0079e3bcd791d079975c0fed5b292cba6875cdd7
+  .claude/skills/fix-prose/scripts/check-suppressions.sh: sha256:037ffa7ad42ec224e1ab51961a07dc3f555bc526082b8d4705f7fceae4abffa5
   .claude/skills/fix-prose/scripts/guard-target.sh: sha256:3b037b7f3dd0533619a86d1309eed86cfdd1a191e8cc0577e69af59e120a376a
   .claude/skills/fix-prose/scripts/preflight.sh: sha256:7833798bf2c3e5ca489f5594d678d889431acaf9da19090ee64f5891fbf33361
   .claude/skills/fix-prose/tokens.json: sha256:bc3a1ff8fde6cfdcd8b6540c3a4fb6307781d723fe780c85e5390f4532ccb79d
