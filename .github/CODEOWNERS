@@ -1,4 +1,4 @@
-# Review routing for agent-tools. GitHub applies the last matching
+# Review routing for repotools. GitHub applies the last matching
 # rule, so the supply-chain rules below override the default for the
 # paths they name.
 

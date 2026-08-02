@@ -3,7 +3,7 @@
 # .pre-commit-config.yaml with:
 #
 #   repos:
-#     - repo: https://github.com/tbhb/agent-tools
+#     - repo: https://github.com/tbhb/repotools
 #       rev: v0.1.1
 #       hooks:
 #         - id: guard-markdown
@@ -17,7 +17,7 @@
 # repo's own verification stack via `guard-markdown <paths>`. Note that the
 # two paths install separately: prek builds its own copy, while the Claude
 # hook resolves `guard-markdown` on PATH from
-# `go install github.com/tbhb/agent-tools/cmd/guard-markdown@vX.Y.Z`.
+# `go install github.com/tbhb/repotools/cmd/guard-markdown@vX.Y.Z`.
 
 - id: guard-markdown
   name: guard-markdown

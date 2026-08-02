@@ -14,7 +14,7 @@ pre_bump_hooks = [
 path = "CHANGELOG.md"
 template = ".cog/changelog.tera"
 remote = "github.com"
-repository = "agent-tools"
+repository = "repotools"
 owner = "tbhb"
 authors = [{ username = "tbhb", signature = "Tony Burns" }]
 

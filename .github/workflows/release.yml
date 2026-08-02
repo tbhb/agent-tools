@@ -7,7 +7,7 @@ name: release
 # diff against), syncs apm.yml's version field via the pre-bump hook
 # in cog.toml, writes CHANGELOG.md, commits, tags vX.Y.Z, and pushes
 # both back to main. One tag serves both consumer paths (APM
-# installs pin tbhb/agent-tools#vX.Y.Z and Go installs pin
+# installs pin tbhb/repotools#vX.Y.Z and Go installs pin
 # @vX.Y.Z), so no artifact build runs here.
 
 on:

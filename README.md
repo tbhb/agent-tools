@@ -1,4 +1,4 @@
-# agent-tools
+# repotools
 
 Shared agent tooling for tbhb repositories. The repo provides Go command-line tools for agent harnesses, plus the shared [APM](https://microsoft.github.io/apm) package of agent primitives.
 
@@ -7,7 +7,7 @@ Shared agent tooling for tbhb repositories. The repo provides Go command-line to
 Repositories across tbhb install the shared primitives with the [APM CLI](https://microsoft.github.io/apm/quickstart/):
 
 ```bash
-apm install tbhb/agent-tools#v0.1.0
+apm install tbhb/repotools#v0.1.0
 ```
 
 The package deploys these primitives from [`.apm/`](.apm/):
@@ -35,7 +35,7 @@ A check is one rule enforced everywhere it matters. The same binary answers to a
 
 ```yaml
 repos:
-  - repo: https://github.com/tbhb/agent-tools
+  - repo: https://github.com/tbhb/repotools
     rev: v0.1.1
     hooks:
       - id: guard-markdown
@@ -57,7 +57,7 @@ Each tool under [`cmd/`](cmd/) builds as a standalone binary:
 Install one directly:
 
 ```bash
-go install github.com/tbhb/agent-tools/cmd/agenthooks@latest
+go install github.com/tbhb/repotools/cmd/agenthooks@latest
 ```
 
 Or build everything from a checkout:
@@ -72,11 +72,11 @@ just build
 
 ## Releases
 
-[cocogitto](https://github.com/cocogitto/cocogitto) cuts `vX.Y.Z` tags from the Conventional Commit history. One tag serves both consumer paths, with APM installs pinning `tbhb/agent-tools#vX.Y.Z` and Go installs pinning `@vX.Y.Z`.
+[cocogitto](https://github.com/cocogitto/cocogitto) cuts `vX.Y.Z` tags from the Conventional Commit history. One tag serves both consumer paths, with APM installs pinning `tbhb/repotools#vX.Y.Z` and Go installs pinning `@vX.Y.Z`.
 
 ## Python
 
-[`packages/agent-tools-py`](packages/agent-tools-py) holds the Python side, kept deliberately small for now. Its gates run through `just lint-py-all` and `just cover-py`, which enforce ruff at its full ruleset, pyrefly's strict preset, and 100% branch coverage. `uv sync` provisions everything from `uv.lock`.
+[`packages/repotools`](packages/repotools) holds the Python side, kept deliberately small for now. Its gates run through `just lint-py-all` and `just cover-py`, which enforce ruff at its full ruleset, pyrefly's strict preset, and 100% branch coverage. `uv sync` provisions everything from `uv.lock`.
 
 ## License
 

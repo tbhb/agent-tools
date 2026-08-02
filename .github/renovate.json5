@@ -26,5 +26,5 @@
 
   // Single-repo scope. Global-only and different per repo, so it stays here
   // as the only genuinely local setting left.
-  repositories: ["tbhb/agent-tools"],
+  repositories: ["tbhb/repotools"],
 }
