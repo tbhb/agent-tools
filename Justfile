@@ -637,6 +637,18 @@ lint-script-hygiene *args:
 skill-tokens *args:
     bash tools/skill-tokens.sh {{ args }}
 
+# Regression cases for the fix-prose hook scripts. The retrospective
+# behind that skill found four of five guard blocks in one session were
+# wrong, so each behavior gets a case here rather than a memory of how
+# it used to work. Runs against a scratch git repository, never the
+# working tree, because the checks walk .vale/ and compare file hashes.
+# Out of `just lint` for the same reason as skill-tokens: it is slower
+# than a gate should be.
+
+# Run the fix-prose guard regression cases.
+test-guards:
+    bash tools/test-guards.sh
+
 # Surfaces message problems while iterating rather than at commit time.
 # Reads the draft from the repo-root COMMIT_AGENTMSG file (gitignored;
 # see AGENTS.md for the workflow) and runs the commit-msg stage through

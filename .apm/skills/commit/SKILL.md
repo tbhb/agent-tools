@@ -34,10 +34,11 @@ Create these tasks with `TaskCreate`, then move each to `in_progress` and `compl
 2. Group the changes into atomic commits
 3. Stage the paths for this commit
 4. Draft the message in COMMIT_AGENTMSG
-5. Review the draft with review-commit-message
-6. Run the commit-msg gates
-7. Confirm the message with the operator
-8. Commit and rebase
+5. Clear the prose gates with fix-prose
+6. Review the draft with review-commit-message
+7. Run the commit-msg gates
+8. Confirm the message with the operator
+9. Commit and rebase
 
 Stop before any of it if preflight reports a rebase, merge, or cherry-pick in progress, or a missing precondition. Say what's wrong and hand back.
 
@@ -48,7 +49,7 @@ Preflight computed this under `== rebase base ==`. Take its recommendation:
 - Local default branch carries everything the remote has, so rebase onto the local branch.
 - Local default branch sits behind the remote, so rebase onto `origin/<default>` and skip the stale local copy.
 
-Record the base now. Step 8 rebases onto it without asking again. Worktrees under `.claude/worktrees` are the usual layout here, and each one carries its own checkout of the branch.
+Record the base now. Step 9 rebases onto it without asking again. Worktrees under `.claude/worktrees` are the usual layout here, and each one carries its own checkout of the branch.
 
 ## Step 2: group the changes into atomic commits
 
@@ -75,7 +76,7 @@ Name every path:
 git add -- path/one path/two
 ```
 
-Never `git add -A`, `git add .`, or `git add --all`. They sweep in whatever else the worktree carries, which is how an atomic commit stops being atomic. The guard hook refuses all three.
+Never `git add -A`, `git add .`, or `git add --all`. They sweep in whatever else is uncommitted, which is how an atomic commit stops being atomic. The guard hook refuses all three.
 
 Confirm the result with `git diff --cached --stat` and `git status --short`. The staged set matches the group from step 2, and anything left unstaged belongs to a later commit.
 
@@ -85,7 +86,7 @@ Write the whole message to `COMMIT_AGENTMSG` at the repo root. A gitignore entry
 
 ### Subject
 
-`<type>(<scope>)?(!)?: <description>`, with the type drawn from the list preflight printed. Imperative mood, present tense, lowercase after the colon, no trailing period, and the whole line within the bounds preflight reported. Write the description as the instruction the commit carries out: `explain the tools`, not `explains` and not `explained`.
+`<type>(<scope>)?(!)?: <description>`, with the type drawn from the list preflight printed. Imperative mood, present tense, lowercase after the colon, no trailing period, and the whole line inside the bounds preflight reported. Write the description as the instruction the commit carries out: `explain the tools`, not `explains` and not `explained`.
 
 ### Body
 
@@ -113,7 +114,21 @@ Hard wrap the body at the width preflight reported. Wrap trailers at the footer 
 
 `Assisted-by` before `Signed-off-by`, matching the format and the sign-off identity preflight printed. Never credit a model through `Co-authored-by`.
 
-## Step 5: review the draft
+## Step 5: clear the prose gates
+
+Invoke the `fix-prose` skill before the review, passing the draft and the recipe that judges it:
+
+```text
+Skill(fix-prose, args: "COMMIT_AGENTMSG just lint-commit-msg")
+```
+
+It runs the lint rounds in a subagent, so the findings and the retries stay out of this session. The commit scope is stricter than the repository-wide one, and a message copied verbatim out of the diff still fails it, so this is rarely a no-op.
+
+Order matters here. The review in the next step signs the exact bytes it cleared, and a lint fix landing afterwards voids that signature and costs another review round over a comma. Clearing the gates first is what keeps the loop to one pass.
+
+Where it returns `PROSE: PARTIAL`, a finding needs a decision rather than another round. Read the short list, settle it, and send the answer back in the arguments.
+
+## Step 6: review the draft
 
 Invoke the `review-commit-message` skill, passing the repo root from preflight as its argument. It runs as an independent agent that hasn't watched you work, which is the point: it reads the draft against the staged diff with no memory of what you meant to write.
 
@@ -121,7 +136,7 @@ This step is mandatory, and the script in step 8 enforces it. A clean verdict si
 
 Fix everything it returns. Push back only when it's demonstrably wrong about the diff, and say why.
 
-## Step 6: run the commit-msg gates
+## Step 7: run the commit-msg gates
 
 ```text
 just lint-commit-msg
@@ -134,13 +149,13 @@ That recipe mirrors the commit-msg hook:
 - commitlint for the Conventional Commits shape
 - commit-trailers for trailer order
 
-Resolve every finding.
+Step 5 should have left this clean. Where it hasn't, send the findings back to `fix-prose` rather than editing the draft here, because a hand-edit spends the context that skill exists to save.
 
-Edited the draft to clear the linters? Then step 5 runs again before you commit, because the gate compares bytes rather than intentions.
+Edited the draft to clear the linters? Then step 6 runs again before you commit, because the gate compares bytes rather than intentions.
 
 Whatever this recipe reports, `.git/COMMIT_EDITMSG` and its commit-msg hook stay the real gate. A clean run here only predicts that hook's verdict.
 
-## Step 7: confirm with the operator
+## Step 8: confirm with the operator
 
 `AskUserQuestion` truncates its options, so the operator reads the message in your message text rather than in the widget. Print this first, verbatim:
 
@@ -161,7 +176,7 @@ Now call `AskUserQuestion` with `question` set to `Commit this message?`, `heade
 
 Follow the answer. Revising or restaging sends you back through the review, because the gate compares bytes.
 
-## Step 8: commit and rebase
+## Step 9: commit and rebase
 
 ```text
 bash .claude/skills/commit/scripts/commit.sh
@@ -169,7 +184,7 @@ bash .claude/skills/commit/scripts/commit.sh
 
 Nothing else commits. The guard hook refuses a `git commit` you write out yourself whatever flags it carries, because every gate named below lives in the script and a hook on the tool call can't reach inside one.
 
-That script checks the review signature and records what the index holds before it commits, then reads the commit back and compares. prek stashes and restores the worktree around the pre-commit hooks. A failed run can leave a path unstaged that you staged before the attempt, and the retry then commits part of the group without reporting it. The script prints every path it expected and didn't find and then fails. Its output is the check, so nothing needs a `git show --stat` after it.
+That script checks the review signature and records what the staging area holds before it commits, then reads the commit back and compares. prek stashes and restores the worktree around the pre-commit hooks. A failed run can leave a path unstaged that you staged before the attempt, and the retry then commits part of the group without reporting it. The script prints every path it expected and didn't find and then fails. Its output is the check, so nothing needs a `git show --stat` after it.
 
 The script pins `commit.cleanup=whitespace` for you. At the default of `strip`, git drops every body line opening with a number sign, and it does so after `review-commit-message` has hashed the file, so the bytes the reviewer cleared stop matching the bytes git records.
 
@@ -196,7 +211,7 @@ This skill assumes the shared tbhb toolchain:
 - a `just lint-commit-msg` recipe
 - a gitignore entry for `COMMIT_AGENTMSG`
 - the prek hooks installed, including the post-commit stage
-- the `review-commit-message` skill deployed alongside this one
+- the `review-commit-message` and `fix-prose` skills deployed alongside this one
 
 Preflight checks each. When one is missing, tell the operator rather than improvising a substitute.
 
