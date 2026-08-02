@@ -144,12 +144,65 @@ fi
 # repository about to receive the commit. Skipping this step fails open:
 # a draft and signature sitting in the hook's own repository would clear
 # a commit in some other one, which nothing reviewed.
+#
+# The target is read the way the shell reads it, which means reading the
+# quotes. Taking the first run of non-whitespace out of
+# `cd "$(git rev-parse --show-toplevel)"` yields `"$(git`, a path no
+# repository sits at, and the commit is then refused over a target
+# nobody wrote. Same class as the heredoc bodies dropped above: text the
+# hook cannot interpret is text it must not act on.
+#
+# A path argument in any of the three spellings a shell accepts. The
+# quoted forms come first so a quoted path arrives whole rather than as
+# its opening fragment.
+readonly PATH_ARG='("[^"]*"|'\''[^'\'']*'\''|[^[:space:];&|]+)'
+
+# unquote strips one surrounding pair of quotes, leaving a bare word be.
+unquote() {
+  local value=$1
+  case $value in
+  \"*\")
+    value=${value#\"}
+    value=${value%\"}
+    ;;
+  \'*\')
+    value=${value#\'}
+    value=${value%\'}
+    ;;
+  esac
+  printf '%s' "$value"
+}
+
 target=""
-if [[ $command =~ git[[:space:]]+-C[[:space:]]+([^[:space:]]+) ]]; then
-  target=${BASH_REMATCH[1]}
-elif [[ $command =~ ^[[:space:]]*cd[[:space:]]+([^[:space:]\;\&\|]+) ]]; then
-  target=${BASH_REMATCH[1]}
+if [[ $command =~ git[[:space:]]+-C[[:space:]]+${PATH_ARG} ]]; then
+  target=$(unquote "${BASH_REMATCH[1]}")
+elif [[ $command =~ ^[[:space:]]*cd[[:space:]]+${PATH_ARG} ]]; then
+  target=$(unquote "${BASH_REMATCH[1]}")
 fi
+
+# A substitution or a variable resolves in a shell this hook never runs,
+# so the text alone does not say where the command lands. The one
+# exception is the house idiom for the repository root, which lands in
+# the repository this hook already runs in and so retargets nothing.
+# shellcheck disable=SC2016  # the substitution is the pattern, not a call
+case $target in
+'$(git rev-parse --show-toplevel)' | '`git rev-parse --show-toplevel`')
+  target=""
+  ;;
+*'$'* | *'`'*)
+  deny "This guard cannot read where the command changes directory to, so it
+cannot tell which repository is about to receive the commit, and it will
+not guess at one.
+
+Commit from the repository holding the session:
+
+  git commit -F COMMIT_AGENTMSG
+
+or name the repository as a literal path:
+
+  git -C /path/to/repo commit -F COMMIT_AGENTMSG"
+  ;;
+esac
 
 if [ -n "$target" ]; then
   root=$(git -C "$target" rev-parse --show-toplevel 2>/dev/null) ||

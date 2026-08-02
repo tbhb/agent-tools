@@ -46,7 +46,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:07c00ed86f574535a823dc36a9a59f7a05b23fbd4aedd2af078a068786e8fe2d
+  content_hash: sha256:702b3f8e1165c5916467131d5d6b314d8ec43c4d3105c6da93170e53ec5dfcb5
 - kind: project-relative
   target: claude
   value: .claude/skills/commit/scripts/preflight.sh
@@ -517,7 +517,7 @@ local_deployed_file_hashes:
   .claude/hooks/agent-tools/hooks/go-lint.sh: sha256:43246da28ccda66e17acafae220197c6c95403292b342b44d7fc437453438f6c
   .claude/rules/worktree-wip.md: sha256:0204082643d1ea505ae20eaf93e7d94dd52b65046f3e4f290ec7bbc5c6093634
   .claude/skills/commit/SKILL.md: sha256:b3552cbf25bc0cc25a478f7c6997303f4e8956e92794f40ca633b546830e1578
-  .claude/skills/commit/scripts/guard-git.sh: sha256:07c00ed86f574535a823dc36a9a59f7a05b23fbd4aedd2af078a068786e8fe2d
+  .claude/skills/commit/scripts/guard-git.sh: sha256:702b3f8e1165c5916467131d5d6b314d8ec43c4d3105c6da93170e53ec5dfcb5
   .claude/skills/commit/scripts/preflight.sh: sha256:b4556945e6ca78cf1c8bd34026c9dbafab812e66077b2a02f435440128407b2b
   .claude/skills/commit/scripts/stamp-review.sh: sha256:389438eb7d6317c54ca275e36180a803d5fcafce6abf8878abc51e47c53d1780
   .claude/skills/commit/tokens.json: sha256:194edbc6a415f3c2d318541304789b8d4b8a7f0df89265117fecd0c05e785288
