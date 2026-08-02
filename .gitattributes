@@ -11,3 +11,15 @@
 vendor/** linguist-vendored -text
 go.sum -diff
 *.lock -diff
+
+# Conflict resolution policy, read by the resolve-rebase-conflicts skill
+# through `git check-attr rebase-resolve`. apm regenerates this lockfile
+# wholesale, so merging two versions of it produces something neither
+# side wrote. The skill takes one side, and `apm install` after the
+# rebase writes the real answer.
+apm.lock.yaml rebase-resolve=regenerate
+
+# tools/skill-tokens.sh writes these, and two branches that both touched
+# a skill body produce two different measurements of it. Neither is the
+# answer; re-running the recipe is.
+**/skills/*/tokens.json rebase-resolve=regenerate

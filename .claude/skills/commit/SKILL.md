@@ -185,6 +185,8 @@ Same reasoning, two more knobs. `rebase.updateRefs` quietly moves other local br
 
 `--autostash` scopes the save to the rebase itself. Never a bare `git stash pop`: worktrees share one stash stack, so a bare pop can take another session's entry.
 
+Where that rebase stops on a conflict, hand it to the `rebase` skill rather than resolving it here. That skill owns the classification, the resolution, and the check on what the replay did to each commit.
+
 Report the resulting commit, then the groups still waiting from step 2, if any.
 
 ## Preconditions

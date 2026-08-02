@@ -77,6 +77,7 @@ decr
 dedupe
 depguard
 depscan
+difflib
 diffstat
 difftool
 distroless
@@ -90,6 +91,7 @@ durationcheck
 elif
 embeddedstructfieldcheck
 endfor
+endswith
 enisa
 errcheck
 errchkjson
@@ -184,6 +186,7 @@ lockfiles
 logfmt
 loggercheck
 lpop
+lstrip
 makezero
 malscan
 maratori
@@ -200,6 +203,7 @@ modernize
 modload
 modroot
 mset
+msgnum
 msvc
 mtimes
 musttag
@@ -262,6 +266,7 @@ relitigates
 relpath
 renovatebot
 repofile
+rerere
 retarget
 retargets
 retunes
@@ -295,6 +300,7 @@ sloglint
 slotsdir
 slsa
 smembers
+sortedness
 spancheck
 spdxjson
 sqlclosecheck
@@ -357,3 +363,4 @@ xdg
 xdist
 xhigh
 yamllintignore
+zdiff

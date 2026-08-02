@@ -64,6 +64,27 @@ Each of these skills carries guard hooks in its frontmatter, scoped to the workf
 
 A skill's hooks outlive the turn that invoked it, so more than one of these guards is often live at once. The `pr` and `merge-pr` guards share one allowlist so they agree wherever both run. `watch-pr` and `fix-pr` claim only the narrower forms their own scripts wrap, because a broader claim there would refuse a sibling's legitimate calls.
 
+## Moving a branch onto its base
+
+Run the `rebase` skill. It picks the base the way the commit preflight does, then replays the branch under pinned settings and checks what came out.
+
+Conflicts route to `resolve-rebase-conflicts`, which classifies each path before anything edits it. The commit skill rebases at the end of its own run, and for a clean replay that's the whole story. Reach for these two when that rebase stops, when the branch needs moving without a commit in hand, or when `pr`, `fix-pr`, or `merge-pr` reports the branch behind its base.
+
+A rebase that ends without complaint has proved that every commit applied and nothing else. A resolution can drop a hunk. The commit still applies under a message describing work it no longer does, and no gate notices. Comparing the branch against its pre-rebase self through `range-diff` is what catches it. Another failure mode leaves every commit intact and breaks the tree anyway: main adds a gate while the branch adds a file that gate rejects. Neither side was red alone. Since that combination first exists after the rebase, verification runs the gates against the finished tree.
+
+Most conflicts here need no judgement. `.cspell-words.txt` and the vale vocabulary are append-only sorted lists where the union of both sides is the answer every time, so the skill settles them and then proves the result is exactly that union. Generated files declare themselves in `.gitattributes`:
+
+```text
+apm.lock.yaml rebase-resolve=regenerate
+**/skills/*/tokens.json rebase-resolve=regenerate
+```
+
+A path marked that way resolves by taking one side whole, because the generator overwrites it afterwards. Run `apm install` and `just skill-tokens` once the rebase finishes, then commit what they change.
+
+`conflict-markers=documented` is the companion attribute, for a file carrying marker-shaped lines as its subject rather than its damage. The resolve skill's own `SKILL.md` carries a built-in exemption, so no consumer meets that false alarm.
+
+Never a bare `git stash pop` around any of this. `.claude/rules/worktree-wip.md` explains why, and the guard hook refuses it.
+
 ## Prose lint output
 
 `just lint-prose` and the prek vale hook already emit the agent output template, which this repository tracks at `.vale/config/templates/project-agent.tmpl` next to the `project` style rules. It prints one self-contained line per finding (location, severity, rule, the exact matched text, and the replacement when the rule carries one) plus a totals line, so you can fix every finding without follow-up searching. Pass `--output=project-agent.tmpl` yourself only when you invoke vale directly. Empty output means a clean run, and the exit code carries the result.

@@ -149,6 +149,7 @@ XDG
 [Tt]ombi
 [Tt]oolchains?
 [Tt]op-?level
+[Uu]nmerged
 [Uu]nstaged
 [Uu]ntrusted
 [Vv]alidator[s]?
@@ -254,6 +255,7 @@ quoteValue
 realMain
 recurse
 regexes
+rerere
 resolveVersion
 reviewdog
 rewriteErr
