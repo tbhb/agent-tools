@@ -902,9 +902,32 @@ vuln-sarif file:
 # rule set advances with `brew upgrade gitleaks`. A later workflow under
 # `.github/workflows/` re-runs the same scan on every PR.
 
+# gitleaks exits 0 when the underlying git invocation fails: it logs the
+# error, reports "0 commits scanned", then prints "no leaks found". A
+# repository it cannot resolve therefore reads as a clean scan, and any
+# future breakage of the walk returns silently to green. Assert the walk
+# reached at least one commit so an empty scan fails loudly instead.
+#
+# Capture the output to a file rather than piping it into grep. These
+# recipes run without `set -o pipefail`, so a pipe would discard
+# gitleaks' own exit code and a real leak would stop failing the recipe.
+
 # Scan the working tree and full git history for committed secrets.
+[script]
 gitleaks:
-    gitleaks git --verbose .
+    log=$(mktemp)
+    trap 'rm -f "$log"' EXIT
+
+    status=0
+    gitleaks git --verbose . >"$log" 2>&1 || status=$?
+    cat "$log"
+
+    if ! grep -qE '[1-9][0-9]* commits scanned' "$log"; then
+        echo "gitleaks walked 0 commits, so this scan proves nothing." >&2
+        echo "Check that the repository resolves from $(pwd)." >&2
+        exit 1
+    fi
+    exit "$status"
 
 # Uses the external gomodscan tool (extracted from this repo's former
 # tools/depscan and tools/malscan) to flag two supply-chain concerns:
