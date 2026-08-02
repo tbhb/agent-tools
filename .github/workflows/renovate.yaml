@@ -87,6 +87,16 @@ jobs:
         env:
           LOG_LEVEL: ${{ (github.event_name == 'schedule' || inputs.renovate_log_level_debug) && 'DEBUG' || 'INFO' }}
           GITHUB_COM_TOKEN: ${{ steps.get_token.outputs.token }}
+          # Permit the implicit `mise lock` the mise manager runs after
+          # moving a pin, so a toolchain PR carries the refreshed
+          # mise.lock instead of arriving red against a MISE_LOCKED CI
+          # gate. `allowedUnsafeExecutions` is globalOnly, so it cannot
+          # come from the shared preset; this env entry reaches Renovate
+          # through the action's RENOVATE_\w+ forwarding and covers every
+          # caller at once. That grant extends to callers with no mise at
+          # all, which is inert: the manager only runs `mise lock` where
+          # a mise.lock file already exists.
+          RENOVATE_ALLOWED_UNSAFE_EXECUTIONS: mise
         with:
           # renovate: datasource=github-releases depName=renovatebot/renovate
           renovate-version: 43.281.1
