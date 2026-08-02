@@ -370,6 +370,12 @@ max-complexity = 15
 # boolean-trap rule has nothing to warn about at these call sites.
 "packages/*/tests/**" = ["S101", "PLR2004", "INP001", "FBT001"]
 
+# T201: a skill script is a command-line tool whose output is the
+# product. print is the interface, not a stray debug statement, so the
+# rule that catches one catches the other here. Every other rule still
+# applies, because these scripts ship to consumer repositories.
+"**/skills/*/scripts/*.py" = ["T201"]
+
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 

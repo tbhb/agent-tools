@@ -236,6 +236,7 @@ paralleltest
 passthrough
 pathlib
 pathspec
+pdir
 perfsprint
 pflag
 pgregory
@@ -262,6 +263,7 @@ pyrefly
 pytest
 recompiles
 recvcheck
+relint
 relitigates
 relpath
 renovatebot
@@ -293,6 +295,7 @@ setnx
 shellcheck
 shfmt
 shlex
+sidechain
 sigstore
 singledispatch
 sismember
@@ -342,8 +345,10 @@ tparallel
 trimpath
 typesscopes
 unconvert
+undercounts
 underef
 unparam
+unparseable
 unreviewed
 unsets
 usestdlibvars

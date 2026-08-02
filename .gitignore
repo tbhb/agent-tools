@@ -82,3 +82,6 @@ gremlins-report.json
 
 # APM dependencies
 apm_modules/
+
+# Session retrospectives. Local working notes, never committed.
+.claude/retros/

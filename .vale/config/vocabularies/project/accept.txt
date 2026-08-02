@@ -176,6 +176,7 @@ checkOrder
 closesRun
 codeIndent
 collectFindings
+configs
 cooldown
 cooldowns?
 coreutils
@@ -268,6 +269,7 @@ sed
 sentenceEnd
 setext
 shellQuote
+sidechain
 signedAt
 skipFrontMatter
 splitLines
@@ -289,6 +291,7 @@ tabWidth
 tbhb
 toolchain
 uniqueid
+untracked
 uv
 variadic
 vendoredModule

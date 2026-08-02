@@ -13,6 +13,114 @@ deployments:
   content_hash: sha256:0204082643d1ea505ae20eaf93e7d94dd52b65046f3e4f290ec7bbc5c6093634
 - kind: project-relative
   target: claude
+  value: .claude/skills/analyze-session
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/analyze-session/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:c5c028c3044eb7696f325d5159c98f9390a4fb3285e6a25dfb1f4b9c8ce35755
+- kind: project-relative
+  target: claude
+  value: .claude/skills/analyze-session/references/FIX_SURFACES.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:23e0959d80ec494ae065faed8be1204fe5642d3b0abd0f0fdc9c24b1874e9ff0
+- kind: project-relative
+  target: claude
+  value: .claude/skills/analyze-session/references/LOCATE_SESSION.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:b060c50fb6d90fd537bd894f011d9bfac5ff61a313e96d817adfafa565f20263
+- kind: project-relative
+  target: claude
+  value: .claude/skills/analyze-session/references/SESSION_CLI.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:0aeee7e7efcfe395e1d784ccaa184187d9c142ac3324e35cda1382c8b02541dc
+- kind: project-relative
+  target: claude
+  value: .claude/skills/analyze-session/references/VERIFY_FIGURES.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:05cfbca669e4e446819a1099c7e20309b2a480db6f8f6bdd2a94662ad5f8180d
+- kind: project-relative
+  target: claude
+  value: .claude/skills/analyze-session/references/WRITING_THE_RETRO.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:6b40ccc7b76da3522ad2ddff7ef2f229da24e197906a0df3191b9320a672f999
+- kind: project-relative
+  target: claude
+  value: .claude/skills/analyze-session/scripts/new-retro.sh
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:7e47481644dcb13467539920f496207e928c170657baf3dcd85fcd47d121ccfe
+- kind: project-relative
+  target: claude
+  value: .claude/skills/analyze-session/scripts/preflight.sh
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:ad11430b0d896026c419802ffbdb198589c239cbabf74e0f1eb59a36fde5594b
+- kind: project-relative
+  target: claude
+  value: .claude/skills/analyze-session/scripts/session.py
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:e95b3104d4e83e5f2b6eda7ad3b3da471cd16eb28a847b55459aa8866f5ca049
+- kind: project-relative
+  target: claude
+  value: .claude/skills/analyze-session/templates/RETRO.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:41986025d5a6277fbe32bf35e78baf77ffbbbb19ff623621bb9bf3915867e1d9
+- kind: project-relative
+  target: claude
+  value: .claude/skills/analyze-session/tokens.json
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:b1ebade2f14d382f1afe25956defe55964e045ce73b5b1f0f5a1376b840ad586
+- kind: project-relative
+  target: claude
   value: .claude/skills/commit
   runtime: null
   scope: project
@@ -625,6 +733,18 @@ deployments:
   content_hash: sha256:c27073b0132f9288e7169af6c432c9ef7e0abeaa2d67f371ea8fcd8355a0181c
 local_deployed_files:
 - .claude/rules/worktree-wip.md
+- .claude/skills/analyze-session
+- .claude/skills/analyze-session/SKILL.md
+- .claude/skills/analyze-session/references/FIX_SURFACES.md
+- .claude/skills/analyze-session/references/LOCATE_SESSION.md
+- .claude/skills/analyze-session/references/SESSION_CLI.md
+- .claude/skills/analyze-session/references/VERIFY_FIGURES.md
+- .claude/skills/analyze-session/references/WRITING_THE_RETRO.md
+- .claude/skills/analyze-session/scripts/new-retro.sh
+- .claude/skills/analyze-session/scripts/preflight.sh
+- .claude/skills/analyze-session/scripts/session.py
+- .claude/skills/analyze-session/templates/RETRO.md
+- .claude/skills/analyze-session/tokens.json
 - .claude/skills/commit
 - .claude/skills/commit/SKILL.md
 - .claude/skills/commit/scripts/commit.sh
@@ -695,6 +815,17 @@ local_deployed_files:
 - .claude/skills/write-pr-description/tokens.json
 local_deployed_file_hashes:
   .claude/rules/worktree-wip.md: sha256:0204082643d1ea505ae20eaf93e7d94dd52b65046f3e4f290ec7bbc5c6093634
+  .claude/skills/analyze-session/SKILL.md: sha256:c5c028c3044eb7696f325d5159c98f9390a4fb3285e6a25dfb1f4b9c8ce35755
+  .claude/skills/analyze-session/references/FIX_SURFACES.md: sha256:23e0959d80ec494ae065faed8be1204fe5642d3b0abd0f0fdc9c24b1874e9ff0
+  .claude/skills/analyze-session/references/LOCATE_SESSION.md: sha256:b060c50fb6d90fd537bd894f011d9bfac5ff61a313e96d817adfafa565f20263
+  .claude/skills/analyze-session/references/SESSION_CLI.md: sha256:0aeee7e7efcfe395e1d784ccaa184187d9c142ac3324e35cda1382c8b02541dc
+  .claude/skills/analyze-session/references/VERIFY_FIGURES.md: sha256:05cfbca669e4e446819a1099c7e20309b2a480db6f8f6bdd2a94662ad5f8180d
+  .claude/skills/analyze-session/references/WRITING_THE_RETRO.md: sha256:6b40ccc7b76da3522ad2ddff7ef2f229da24e197906a0df3191b9320a672f999
+  .claude/skills/analyze-session/scripts/new-retro.sh: sha256:7e47481644dcb13467539920f496207e928c170657baf3dcd85fcd47d121ccfe
+  .claude/skills/analyze-session/scripts/preflight.sh: sha256:ad11430b0d896026c419802ffbdb198589c239cbabf74e0f1eb59a36fde5594b
+  .claude/skills/analyze-session/scripts/session.py: sha256:e95b3104d4e83e5f2b6eda7ad3b3da471cd16eb28a847b55459aa8866f5ca049
+  .claude/skills/analyze-session/templates/RETRO.md: sha256:41986025d5a6277fbe32bf35e78baf77ffbbbb19ff623621bb9bf3915867e1d9
+  .claude/skills/analyze-session/tokens.json: sha256:b1ebade2f14d382f1afe25956defe55964e045ce73b5b1f0f5a1376b840ad586
   .claude/skills/commit/SKILL.md: sha256:5498d75e95cc816c4abf57e7dcdfa2c95dcbf6102f3bde7ac4dcbabdaa9caf3c
   .claude/skills/commit/scripts/commit.sh: sha256:5d60d85e655062fd7c63dfac3d4b0615c2aac8f166a41833bc248db1e3ddeb36
   .claude/skills/commit/scripts/guard-git.sh: sha256:ac7965a1f42ac73e6e2e43210db708157d5e0080a7ba67dba88d89ca20f06924
