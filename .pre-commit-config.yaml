@@ -198,6 +198,23 @@ repos:
         types: [python]
         pass_filenames: false
 
+      # APM's hook merge is additive and never reconciles a declaration that
+      # was removed or that sorts ahead of an existing one, so .claude/ can
+      # disagree with .apm/ while every file involved looks reasonable. The
+      # apm-package workflow already catches it, but only after a push, and
+      # `apm install` is not the fix — `just apm-sync` is. This hook moves
+      # that finding to the commit.
+      #
+      # Scoped to the inputs that can change the deployed set. apm.lock.yaml
+      # is deliberately absent: it never records hook declarations, so it
+      # stays byte-identical across a hook add or delete.
+      - id: apm-audit
+        name: apm audit
+        entry: just lint-apm
+        language: system
+        files: ^(\.apm/|apm\.yml$|\.claude/(settings|apm-hooks)\.json$)
+        pass_filenames: false
+
       # uv.lock drift, the Python counterpart to the vendor-tidy hook
       # above. Scoped to the files that can cause the drift.
       - id: lock-check

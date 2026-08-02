@@ -1039,6 +1039,55 @@ audit:
     uv export --quiet --format pylock.toml --no-emit-project -o "$work/pylock.toml"
     uv run pip-audit --cache-dir "$work/cache" --locked "$work"
 
+# --- APM ---
+
+# APM merges every package's hook declarations into one .claude/settings.json
+# and records the entries it owns in .claude/apm-hooks.json. Both merges run
+# additively against whatever those files already hold, so the deployed state
+# accumulates history that `apm install` alone never reconciles. Two ways that
+# goes wrong, both reproduced against apm 0.26.0 and 0.27.0:
+#
+#   * A declaration file whose name sorts ahead of an existing one and carries
+#     an event type the merged config lacks lands last on disk (install appends
+#     to the loaded file) but first in the audit's replay (which rebuilds from
+#     an empty tree in filename order). The two orders never converge, and
+#     `apm audit --ci` reports the byte difference as drift forever.
+#   * A declaration file that is deleted leaves its hook entries in place, still
+#     executing. The merge loop only clears entries for events some surviving
+#     file still declares, so an event nobody declares anymore is never visited.
+#     No apm command removes it, and the entry is committed like any other.
+#
+# Clearing APM's own keys first hands the merge an empty slate, so what lands
+# matches what a from-scratch install would produce. The jq filter drops only
+# `hooks`, leaving hand-authored settings alone.
+#
+# Reach for this on any change under .apm/hooks/ and on any dependency bump.
+# apm.lock.yaml never records hook declarations, so a hook change leaves no
+# trace there — the lockfile is not the signal.
+
+# Redeploy APM primitives from a cleared hook state.
+[script]
+apm-sync: && lint-apm
+    if [[ -f .claude/settings.json ]]; then
+        jq 'del(.hooks)' .claude/settings.json > .claude/settings.json.tmp
+        mv .claude/settings.json.tmp .claude/settings.json
+    fi
+    rm -f .claude/apm-hooks.json
+    apm install
+
+# `apm audit --ci` replays the install into a scratch tree and diffs it against
+# the deployed files, which catches both hook-merge failures above along with
+# lockfile and content drift. It is the direct check on the invariant, so
+# nothing here has to detect whether someone remembered to run `just apm-sync`.
+#
+# --no-policy keeps the gate offline. Org policy discovery reaches for the git
+# remote, and a pre-commit hook has no business making a network call. The
+# apm-package workflow runs the full `apm audit --ci` with policy enabled.
+
+# Check deployed APM primitives against the lockfile.
+lint-apm:
+    apm audit --ci --no-policy
+
 # --- Utilities ---
 
 # Print version information

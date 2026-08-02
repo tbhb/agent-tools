@@ -95,7 +95,7 @@ jobs:
           status=$(git status --porcelain)
           if [ -n "$status" ]; then
             echo "$status"
-            echo "::error::apm install changed the tree; run apm install locally and commit the result"
+            echo "::error::apm install changed the tree; run 'just apm-sync' locally and commit the result"
             exit 1
           fi
 
