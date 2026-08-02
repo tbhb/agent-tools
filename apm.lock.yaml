@@ -82,7 +82,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:194edbc6a415f3c2d318541304789b8d4b8a7f0df89265117fecd0c05e785288
+  content_hash: sha256:3fbd3fb7312719fdab2fd3fcb4b76753e085049cdf5cd4157fccb429b9f11936
 - kind: project-relative
   target: claude
   value: .claude/skills/fix-pr
@@ -325,7 +325,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:b1ab897377d46f77b4d654c9cc75c8939d0cbdded3303b58cb5f313788e9ce33
+  content_hash: sha256:97d50df77eb89bbba01e7c17408ba6fd228ad036d6c27537660c566d3e77fa05
 - kind: project-relative
   target: claude
   value: .claude/skills/review-pr-description
@@ -531,7 +531,7 @@ local_deployed_file_hashes:
   .claude/skills/commit/scripts/guard-git.sh: sha256:4b0d6c9b94229ebe174c21751e030e7ece662142d616b51b3542b97d7548ea15
   .claude/skills/commit/scripts/preflight.sh: sha256:aa86398adae53090838087b2556d7514cd27b11ec0a6faaa118d3fac2318e1e3
   .claude/skills/commit/scripts/stamp-review.sh: sha256:389438eb7d6317c54ca275e36180a803d5fcafce6abf8878abc51e47c53d1780
-  .claude/skills/commit/tokens.json: sha256:194edbc6a415f3c2d318541304789b8d4b8a7f0df89265117fecd0c05e785288
+  .claude/skills/commit/tokens.json: sha256:3fbd3fb7312719fdab2fd3fcb4b76753e085049cdf5cd4157fccb429b9f11936
   .claude/skills/fix-pr/SKILL.md: sha256:60174efb3ad3727a937c6e7e66de73bc05b1fd7bcd4f7fbe46f7f1c0f732373d
   .claude/skills/fix-pr/scripts/diagnose.sh: sha256:767cb1d690577d182be7c2f80b62ba4259c08cc8d5125838c2ed0926cadcd60a
   .claude/skills/fix-pr/scripts/guard-fix.sh: sha256:051720bb9d98d43d8a84176b4a5a01cb35c119973aba896df77785c5044af848
@@ -554,7 +554,7 @@ local_deployed_file_hashes:
   .claude/skills/pr/scripts/validate-description.sh: sha256:024882b913c0e42ea39a667b99d7e3932f1e575e4ac3b002ebd64d3306d63861
   .claude/skills/pr/tokens.json: sha256:147ae919f75cb1d1b3e7cb4ffa1c4a016671cb33c1690634d8ccda9d8f368d60
   .claude/skills/review-commit-message/SKILL.md: sha256:5a02ff2ee3419a12dc71b2e298ee97f9d02928e51f92eb769a75762a5866414c
-  .claude/skills/review-commit-message/tokens.json: sha256:b1ab897377d46f77b4d654c9cc75c8939d0cbdded3303b58cb5f313788e9ce33
+  .claude/skills/review-commit-message/tokens.json: sha256:97d50df77eb89bbba01e7c17408ba6fd228ad036d6c27537660c566d3e77fa05
   .claude/skills/review-pr-description/SKILL.md: sha256:b73e53c7011fbd9f16d922b2fe7482bbc2ba13628c8d53d9f897625a202aaeb7
   .claude/skills/review-pr-description/tokens.json: sha256:44eb0e93c0e155142f79b8101fab86ac6cba62c6d451fc9ac68006d8f955f9c2
   .claude/skills/review-squash-message/SKILL.md: sha256:9db35c03690aea83c48e78b8395a0d9cd59e3799727d916b31dc645d5c11f11f
