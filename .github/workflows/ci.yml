@@ -9,11 +9,12 @@
 # code coverage API, and a downstream `coverage` job merges the slots
 # into one combined report.
 #
-# Every job installs `just` from a SHA-pinned casey/just release
-# tarball, verifies the bundled SHA256SUMS, and then invokes the
-# matching `just <recipe>` so the recipe is the single source of
-# truth for what the gate runs. The local `just check` and
-# `just check-all` aggregators stay in lockstep with this workflow.
+# The toolchain comes from a SHA-pinned jdx/mise-action reading
+# mise.toml, the conf.d drop-ins, and the committed lockfiles, so every
+# job runs the pinned binaries. Each job then invokes the matching mise
+# task or `just` recipe so the task stays the single source of truth for
+# what the gate runs. The local `check` and `check-all` aggregators stay
+# in lockstep with this workflow.
 
 name: ci
 
@@ -25,22 +26,25 @@ on:
 permissions:
   contents: read
 
+# A lockfile only binds a version it has already seen: moving a pin in
+# mise.toml while leaving mise.lock alone would make mise fetch the new
+# version and rewrite the lockfile in place, so a Renovate PR could pass
+# while the committed digests drifted from the pins under review.
+# MISE_LOCKED makes that a hard failure instead.
+env:
+  MISE_LOCKED: "1"
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # Invokes only the `lint` aggregator recipe, so the job stays
-  # unchanged as new gates land — each gate appends itself to the
-  # aggregator in the Justfile instead. `lint` and not `lint-go-all`:
-  # the text-quality gates (prose, spelling, Markdown, config, YAML,
-  # TOML, shell, Justfile formatting, .editorconfig) used to run only
-  # through the local pre-commit hooks, which `git commit --no-verify`
-  # walks straight past, so nothing on the merge path read them. The
-  # tools those gates need are not Go modules, so the job installs the
-  # Brewfile toolchain and syncs the Vale styles first. That makes this
-  # job meaningfully longer than the old Go-only one; the coverage is
-  # worth the minutes.
+  # Invokes only the `lint` aggregator task, so the job stays unchanged
+  # as new gates come in — each gate appends itself to the aggregator
+  # instead. The full toolchain installs from the lockfiles, go
+  # included: the mise pin matches go.mod's toolchain directive, and
+  # GOTOOLCHAIN=auto fetches the directive's version if the two ever
+  # skew.
   lint:
     name: lint
     runs-on: ubuntu-24.04
@@ -55,46 +59,20 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up just
-        uses: ./.github/actions/setup-just
-
-      # The ubuntu-24.04 image ships Homebrew but leaves its prefix off
-      # the PATH, so expose the bin and sbin directories before any brew
-      # invocation.
-      - name: Put Homebrew on the PATH
-        run: echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> "$GITHUB_PATH"
-
-      # The image pins an older Homebrew and sets HOMEBREW_NO_AUTO_UPDATE,
-      # but `brew bundle` reads formula metadata from the JSON API, which
-      # serves current definitions. ca-certificates now declares a `run`
-      # install step that the pinned Homebrew cannot parse, failing every
-      # formula that depends on it. Update Homebrew itself first.
-      - name: Update Homebrew
-        run: brew update
-
-      # Brings in vale, cspell, rumdl, biome, yamllint, tombi, shfmt, and
-      # editorconfig-checker. The Brewfile also names just, which the step
-      # above already installed; brew reinstalling it is cheaper than
-      # maintaining a second, partial dependency list.
-      - name: Install Homebrew dependencies
-        run: brew bundle install
-
-      # After `brew bundle`, so the go.mod toolchain lands ahead of the
-      # Homebrew `go` the Brewfile pulls in — GITHUB_PATH prepends, and
-      # the Go gates must read the version the module declares.
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - name: Set up mise
+        uses: jdx/mise-action@7e36c90d9ab29c415a2384db3006f3ec8a8cc654 # v4.2.4
         with:
-          go-version-file: go.mod
-          check-latest: false
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.8.0
 
-      # Vale's style packages are downloaded, not vendored, so
-      # `lint-prose` fails on a bare checkout without this.
+      # mise installs the vale binary but does not fetch the style
+      # packages .vale.ini declares, and the Python linters run from the
+      # uv.lock closure.
       - name: Sync Vale styles and Python dependencies
-        run: just install-tools
+        run: mise run install-tools
 
       - name: Run lint gates
-        run: just lint
+        run: mise run lint
 
   # The Python suite covers the package under packages/, which is pure
   # standard library and carries no platform-specific behavior, so this runs
@@ -116,21 +94,21 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up just
-        uses: ./.github/actions/setup-just
-
-      # Installs the interpreter named in .python-version and restores the
-      # locked dependency closure from uv.lock.
-      - name: Set up uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+      # Installs the pinned uv, which then provisions the interpreter
+      # named in .python-version and restores the locked dependency
+      # closure from uv.lock.
+      - name: Set up mise
+        uses: jdx/mise-action@7e36c90d9ab29c415a2384db3006f3ec8a8cc654 # v4.2.4
         with:
-          enable-cache: true
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.8.0
+          install_args: uv
 
       - name: Check that uv.lock matches pyproject.toml
-        run: just lock-check
+        run: mise run lock-check
 
       - name: Run tests with branch coverage
-        run: just cover-py
+        run: mise run cover-py
 
   test:
     name: "test (${{ matrix.os }})"
@@ -164,14 +142,24 @@ jobs:
         with:
           persist-credentials: false
 
+      # setup-go stays on the matrix: it reads go.mod directly and its
+      # toolchain cache pays off on the slow test builds. mise supplies
+      # only `just` here — the Go test recipes are Justfile recipes, not
+      # mise tasks, because mise's handling of bash-shebang task bodies
+      # on the Windows runner is unverified while `just` under Git Bash
+      # is proven.
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
           check-latest: false
 
-      - name: Set up just
-        uses: ./.github/actions/setup-just
+      - name: Set up mise
+        uses: jdx/mise-action@7e36c90d9ab29c415a2384db3006f3ec8a8cc654 # v4.2.4
+        with:
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.8.0
+          install_args: just
 
       - name: Run tests with coverage
         run: just cover-go-binary
@@ -225,8 +213,12 @@ jobs:
           go-version-file: go.mod
           check-latest: false
 
-      - name: Set up just
-        uses: ./.github/actions/setup-just
+      - name: Set up mise
+        uses: jdx/mise-action@7e36c90d9ab29c415a2384db3006f3ec8a8cc654 # v4.2.4
+        with:
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.8.0
+          install_args: just
 
       - name: Download per-slot coverage data
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -259,17 +251,15 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - name: Set up mise
+        uses: jdx/mise-action@7e36c90d9ab29c415a2384db3006f3ec8a8cc654 # v4.2.4
         with:
-          go-version-file: go.mod
-          check-latest: false
-
-      - name: Set up just
-        uses: ./.github/actions/setup-just
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.8.0
+          install_args: go
 
       - name: Run govulncheck
-        run: just vuln
+        run: mise run vuln
 
   vendor-check:
     name: vendor-check
@@ -285,14 +275,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - name: Set up mise
+        uses: jdx/mise-action@7e36c90d9ab29c415a2384db3006f3ec8a8cc654 # v4.2.4
         with:
-          go-version-file: go.mod
-          check-latest: false
-
-      - name: Set up just
-        uses: ./.github/actions/setup-just
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.8.0
+          install_args: go
 
       - name: Check vendor drift
-        run: just vendor-check
+        run: mise run vendor-check

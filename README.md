@@ -29,7 +29,7 @@ A check is one rule enforced everywhere it matters. The same binary answers to a
 | --- | --- |
 | Claude `PreToolUse` | `guard-markdown --hook` reads the payload on stdin and denies the `Write` or `Edit` |
 | pre-commit | `guard-markdown FILES` reports the offending line ranges and exits nonzero |
-| verification stack | the same command from a `just` recipe, alongside the other linters |
+| verification stack | the same command from a mise task, alongside the other linters |
 
 [`.pre-commit-hooks.yaml`](.pre-commit-hooks.yaml) publishes the pre-commit leg:
 
@@ -63,12 +63,12 @@ go install github.com/tbhb/repotools/cmd/agenthooks@latest
 Or build everything from a checkout:
 
 ```bash
-just build
+mise run build
 ```
 
 ## Development
 
-`just` drives the workflow: `just lint` runs the full lint suite, `just test` runs the tests, and `just build` compiles the binaries into `bin/`. See the [Justfile](Justfile) for the complete recipe list, and [AGENTS.md](AGENTS.md) for the agent-facing contributor guide.
+[mise](https://mise.jdx.dev) pins the toolchain and drives the workflow: `mise run bootstrap` sets up a fresh clone, `mise run lint` runs the full lint suite, `mise run test` runs the tests, and `mise run build` compiles the binaries into `bin/`. On a machine with no mise, the committed shim at `tools/mise-bootstrap` stands in for `mise` and installs the pinned release on first use. The pins live in [mise.toml](mise.toml) and the drop-ins under `.config/mise/conf.d/`, locked by digest in the committed `mise.lock` files. The [Justfile](Justfile) remains for the container-pinned gates, the Go test recipes the CI matrix runs on Windows, and the recipe names the APM primitives invoke. See [AGENTS.md](AGENTS.md) for the agent-facing contributor guide.
 
 ## Releases
 
@@ -76,7 +76,7 @@ just build
 
 ## Python
 
-[`packages/repotools`](packages/repotools) holds the Python side, kept deliberately small for now. Its gates run through `just lint-py-all` and `just cover-py`, which enforce ruff at its full ruleset, pyrefly's strict preset, and 100% branch coverage. `uv sync` provisions everything from `uv.lock`.
+[`packages/repotools`](packages/repotools) holds the Python side, kept deliberately small for now. Its gates run through `mise run lint-py-all` and `mise run cover-py`, which enforce ruff at its full ruleset, pyrefly's strict preset, and 100% branch coverage. `uv sync` provisions everything from `uv.lock`.
 
 ## License
 

@@ -103,9 +103,13 @@ Copy this shape for the next rule.
 
 APM can deploy a hook's executable. A package-root `hooks/` directory lands under `.claude/hooks/<package>/hooks/`, which a declaration then references through `${CLAUDE_PLUGIN_ROOT}`. Nothing here takes that route now, so the directory is absent. `guard-markdown` takes the other one: `go install` puts it on PATH, so the declaration names a bare command and no file has to travel beside it.
 
-## Recipe naming
+## Tasks and recipes
 
-Recipes that operate on one source language carry a `-go` or `-py` suffix, and the bare name aggregates both: `just test` runs `test-go` and `test-py`, and so do `cover`, `mutate`, and `fuzz`. Reach for the suffixed form while iterating on one language, and the bare form before pushing. Lint gates follow the same shape through `lint-go-all` and `lint-py-all`, which `just lint` composes.
+mise pins the toolchain and holds most task definitions. `mise.toml` has the repo-specific pins and tasks. The drop-ins under `.config/mise/conf.d/` hold the pins and `repotools:`-namespaced tasks shared with the sibling repos, which this repository dogfoods the way it dogfoods its APM package. The tree commits both lockfiles, `mise.lock` and `.config/mise/mise.lock`, and `check-toolchain` gates the installed set against them.
+
+The Justfile survives for a few reasons. The container-pinned gates stay there because Renovate tracks their image digests through a manager keyed on that filename. The Go test and coverage recipes stay there because the CI matrix runs them on Windows, where `just` under Git Bash has a working record while mise's handling of bash-shebang task bodies remains untested. Thin delegation recipes cover every name an APM primitive invokes, and each forwards to the corresponding mise task through the committed `tools/mise-bootstrap` shim, so the pinned mise runs even where PATH has none.
+
+Tasks that operate on one source language carry a `-go` or `-py` suffix, and the bare name aggregates both: `mise run test` runs `test-go` and `test-py`, and so do `cover`, `mutate`, and `fuzz`. Reach for the suffixed form while iterating on one language, and the bare form before pushing. Lint gates follow the same shape through `lint-go-all` and `lint-py-all`, which `mise run lint` composes. A bare-name task lists its members in an ordered `run` array rather than in `depends`, because `depends` runs in parallel and interleaves the linters' findings, which defeats the one-line-per-finding output template.
 
 Python tooling covers `packages/`. It came from `proofhouse/proofhouse-python-tool`, dropping the gates that need an installable package. Because `pyproject.toml` declares a virtual project (`package = false`), `import-linter` contracts, a wheel build, and a generated build stamp have nothing to act on here. `lint-reuse` is absent for a different reason. REUSE compliance spans every file type in the tree. Adopting it needs a whole-tree sweep plus a `REUSE.toml` and `LICENSES/`, so that work belongs in its own change.
 

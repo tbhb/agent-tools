@@ -2,7 +2,7 @@
 # Coverage thresholds enforced by `just cover-go-check` via the
 # vladopajic/go-test-coverage tool. The three levels apply
 # independently. A profile that meets the total but fails on any one
-# package or file gets rejected. Mutation testing (`just mutate`)
+# package or file gets rejected. Mutation testing (`mise run mutate`)
 # remains the stronger gate for assertion quality; line coverage
 # here guards against new code shipping with no test reach at all.
 
