@@ -540,19 +540,22 @@ check-tombi-version:
     fi
 
 # Covers the standalone scripts the actionlint image never opens
-# (hooks/go-lint.sh, tools/fuzz.sh). The file list comes from git rather
-# than a glob so untracked scratch scripts stay out of the gate, and the
-# `:!:vendor/**` pathspec drops the vendored upstream scripts, which are
-# reviewed at vendor-tidy time rather than held to this project's style.
-# The emptiness guard matters because shellcheck with no path arguments
-# reads stdin and blocks. Runs from the SHA-pinned image above, so the
-# shellcheck version advances by Renovate rather than by whatever the
-# contributor happens to have on PATH.
+# (hooks/go-lint.sh, tools/fuzz.sh). `--others` puts a brand new script in
+# the gate before anyone stages it, which is when its first shellcheck
+# violation is cheapest to fix; without it a script escapes the gate for
+# exactly as long as it is newest. `--exclude-standard` is what keeps a
+# scratch script out, so a throwaway belongs in .gitignore rather than
+# outside git's view. The `:!:vendor/**` pathspec drops the vendored
+# upstream scripts, which are reviewed at vendor-tidy time rather than
+# held to this project's style. The emptiness guard matters because
+# shellcheck with no path arguments reads stdin and blocks. Runs from the
+# SHA-pinned image above, so the shellcheck version advances by Renovate
+# rather than by whatever the contributor happens to have on PATH.
 
-# Lint every tracked non-vendored *.sh via the pinned shellcheck image.
+# Lint every non-vendored *.sh git can see via the pinned shellcheck image.
 [script]
 lint-shell:
-    files=$(git ls-files '*.sh' ':!:vendor/**' ':!:.claude/**')
+    files=$(git ls-files --cached --others --exclude-standard '*.sh' ':!:vendor/**' ':!:.claude/**')
     if [ -n "$files" ]; then {{ shellcheck }} $files; fi
 
 # The check-only mirror of `format-shell`: -d prints a unified diff and
