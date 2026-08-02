@@ -668,6 +668,17 @@ lint-commit-msg:
 lint-draft file:
     bash tools/lint-draft.sh {{ file }}
 
+# About a third of a typical vale run needs no judgment: the rule's own
+# action carries the correction, and the output template already prints
+# it as replace_with= on the finding line. Reading those into a model so
+# it can retype the answer spends tokens on a lookup. This applies them
+# and leaves the rest, refusing any finding whose span no longer holds
+# the text the report quoted.
+
+# Apply every vale finding that carries its own replacement.
+fix-prose-replacements file:
+    bash tools/fix-prose-replacements.sh {{ file }}
+
 # The pull request counterpart. The validator is mechanical and offline:
 # it settles the frontmatter shape, the Conventional Commits form of the
 # title, the template's sections and their order, empty sections,
