@@ -79,7 +79,7 @@ apm.lock.yaml rebase-resolve=regenerate
 **/skills/*/tokens.json rebase-resolve=regenerate
 ```
 
-A path marked that way resolves by taking one side whole, because the generator overwrites it afterwards. Run `apm install` and `just skill-tokens` once the rebase finishes, then commit what they change.
+A path marked that way resolves by taking one side whole, because the generator overwrites it afterwards. Once the rebase finishes, run `just skill-tokens` and then `apm install`, in that order. Measuring writes the token counts under `.apm/`, and installing deploys them and records their hashes, so the reverse order leaves the lockfile describing files that changed after it read them. Commit what the two of them rewrite.
 
 `conflict-markers=documented` is the companion attribute, for a file carrying marker-shaped lines as its subject rather than its damage. The resolve skill's own `SKILL.md` carries a built-in exemption, so no consumer meets that false alarm.
 
