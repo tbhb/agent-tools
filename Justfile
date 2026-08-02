@@ -178,9 +178,9 @@ setup: install-brew install-tools prek-install
 install-brew:
     brew bundle check || brew bundle install
 
-# Vale's synced style packages, plus the Python toolchain the hook
-# scripts under hooks/ are linted and tested with. `uv sync` reads
-# uv.lock, so every contributor and CI runner gets the same versions.
+# Vale's synced style packages, plus the Python toolchain the code under
+# packages/ is linted and tested with. `uv sync` reads uv.lock, so every
+# contributor and CI runner gets the same versions.
 
 # Refresh non-brew tooling.
 install-tools:
@@ -310,8 +310,8 @@ fix-markdown *args:
 # Aggregate every Go-flavored lint gate.
 lint-go-all: lint-go lint-go-modernize lint-go-deadcode lint-go-arch lint-workflows
 
-# The Python counterpart to `lint-go-all`, covering the hook scripts under
-# hooks/ and their tests. Same shape: a pure dependency list a contributor
+# The Python counterpart to `lint-go-all`, covering the source under
+# packages/ and its tests. Same shape: a pure dependency list a contributor
 # iterating on Python can rerun without paying for the tree-wide text
 # checks, and each new Python gate appends itself here. lint-bandit rides
 # along because the Go side runs gosec inside golangci-lint, so the SAST
@@ -357,11 +357,12 @@ lint-deadcode:
 lint-dup-code:
     uv run pylint packages
 
-# Scan the hook scripts for insecure code patterns with bandit. This is
+# Scan the Python source for insecure code patterns with bandit. This is
 # the static second pass behind ruff's `S` rules -- ruff ports only part
-# of bandit's checks and trails its releases. tests/ stays out: a suite
-# leans on assert (B101) and other shapes that read as findings there,
-# while ruff's `S` set still covers test code through per-file-ignores.
+# of bandit's checks and trails its releases. Pointing the scan at the
+# package's src/ keeps the tests out: a suite leans on assert (B101) and
+# other shapes that read as findings there, while ruff's `S` set still
+# covers test code through per-file-ignores.
 lint-bandit:
     uv run bandit -r packages/agent-tools-py/src -q
 
@@ -736,9 +737,9 @@ cover: cover-go cover-py
 # pyproject.toml sets fail_under = 100 with branch coverage on, so
 # anything unreachable belongs in exclude_also with a reason rather than
 # behind a lowered threshold. `--cov` with no value reads the configured
-# source, so the hook scripts get measured and the tests do not. This is
-# the inner-loop recipe: run it, read the Missing column, write the test
-# that reaches the gap.
+# source, so the agent_tools_py package gets measured and the tests do
+# not. This is the inner-loop recipe: run it, read the Missing column,
+# write the test that reaches the gap.
 
 # Run the Python tests with branch coverage and enforce the 100% floor.
 cover-py:

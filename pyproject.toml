@@ -32,7 +32,7 @@ dev = [
   "diff-cover>=10.3.0",
   # hypofuzz is AGPL-3.0. It drives the hypothesis property tests under
   # coverage-guided search in the nightly fuzz sweep; it is never
-  # imported by the hook scripts and never ships anywhere, so the
+  # imported by agent_tools_py and never ships anywhere, so the
   # Apache-2.0 distribution stays clear of the copyleft terms.
   "hypofuzz>=25.11.1",
   "pip-audit>=2.10.1",
