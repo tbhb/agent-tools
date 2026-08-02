@@ -695,7 +695,7 @@ mutate: mutate-go-all mutate-py
 # timeout, and the test command live in cosmic-ray.toml. The session
 # database lands under .cosmic-ray/ and is regenerated each run.
 
-# Run mutation testing over the hook scripts.
+# Run mutation testing over the Python packages.
 mutate-py:
     mkdir -p .cosmic-ray
     uv run cosmic-ray init cosmic-ray.toml .cosmic-ray/session.sqlite

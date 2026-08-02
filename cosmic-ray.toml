@@ -1,9 +1,16 @@
 [cosmic-ray]
-# The hook scripts are the mutation target. cosmic-ray walks the
-# directory and mutates every module under it, so naming the directory
-# root here keeps `mutate-py-all` honest as new hooks land — a new
-# script joins the sweep without a config edit.
-module-path = "hooks"
+# The workspace packages are the mutation target. cosmic-ray walks the
+# directory and mutates every module under it, so naming the workspace
+# root here keeps `mutate-py` honest as new members land — a new package
+# joins the sweep without a config edit.
+module-path = "packages"
+
+# Mutating a test asserts nothing about the source: a surviving mutant in
+# an assertion only proves no other test covers that test. Excluding the
+# suites leaves the sweep pointed at source alone, the same split
+# `lint-bandit` draws by scanning src/. The glob stays member-agnostic so
+# a new package's tests drop out without a config edit.
+excluded-modules = ["packages/*/tests/**/*.py"]
 
 # Absolute per-mutant test budget in seconds, not a multiplier:
 # cosmic-ray kills a mutant's run at this wall-clock ceiling and records
