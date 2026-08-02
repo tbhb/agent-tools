@@ -697,6 +697,7 @@ mutate: mutate-go-all mutate-py
 
 # Run mutation testing over the hook scripts.
 mutate-py:
+    mkdir -p .cosmic-ray
     uv run cosmic-ray init cosmic-ray.toml .cosmic-ray/session.sqlite
     uv run cosmic-ray exec cosmic-ray.toml .cosmic-ray/session.sqlite
     uv run cr-report .cosmic-ray/session.sqlite --show-pending
