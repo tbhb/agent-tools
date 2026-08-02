@@ -51,9 +51,12 @@ review-commit-message | */review-commit-message | *:review-commit-message) ;;
 *) exit 0 ;;
 esac
 
-# The skill takes the repository root as its argument. Without one it
-# reviewed the directory this hook runs in.
+# The skill takes the repository root as its argument, and an amend adds
+# a second word after it. Reading the whole string as a path sends git -C
+# at "<root> --amend", which resolves nothing, and the hook then exits
+# without stamping a review that passed. Take the first word only.
 repo=$(jq -r '.tool_input.args // ""' <<<"$payload")
+repo=${repo%% *}
 [ -n "$repo" ] || repo=$(pwd)
 
 git_dir=$(git -C "$repo" rev-parse --absolute-git-dir 2>/dev/null) || exit 0

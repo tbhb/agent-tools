@@ -172,7 +172,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:c670377ae5dec34b564a99e0845e35bd0d228812f3df4e3c797444a411fbeff3
+  content_hash: sha256:60ef7d05931d2773764a4be8aedfa44bb6de3bb364da503f7d52e0f3b5e45f1e
 - kind: project-relative
   target: claude
   value: .claude/skills/commit/tokens.json
@@ -830,7 +830,7 @@ local_deployed_file_hashes:
   .claude/skills/commit/scripts/commit.sh: sha256:5d60d85e655062fd7c63dfac3d4b0615c2aac8f166a41833bc248db1e3ddeb36
   .claude/skills/commit/scripts/guard-git.sh: sha256:ac7965a1f42ac73e6e2e43210db708157d5e0080a7ba67dba88d89ca20f06924
   .claude/skills/commit/scripts/preflight.sh: sha256:aa86398adae53090838087b2556d7514cd27b11ec0a6faaa118d3fac2318e1e3
-  .claude/skills/commit/scripts/stamp-review.sh: sha256:c670377ae5dec34b564a99e0845e35bd0d228812f3df4e3c797444a411fbeff3
+  .claude/skills/commit/scripts/stamp-review.sh: sha256:60ef7d05931d2773764a4be8aedfa44bb6de3bb364da503f7d52e0f3b5e45f1e
   .claude/skills/commit/tokens.json: sha256:8cda3b7bac131944a065235198b7f8720a942da773fbb73746edeb10d4b33890
   .claude/skills/fix-pr/SKILL.md: sha256:8a56c7e8c8c49baa525099d6d8baec28ed71b94366fc2f5bbcaf33f55cb3ed2f
   .claude/skills/fix-pr/scripts/diagnose.sh: sha256:767cb1d690577d182be7c2f80b62ba4259c08cc8d5125838c2ed0926cadcd60a
