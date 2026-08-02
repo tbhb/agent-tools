@@ -25,6 +25,8 @@ hooks:
 
 Work the steps in order. A pair of hooks runs alongside them and refuses the shortcuts: whole-tree staging, an inline `-m` message, `--no-verify`, and any commit whose draft the reviewer hasn't seen in its current form.
 
+Those hooks stay registered for the rest of the session so they carry a scope. Preflight arms the guard at the commit `HEAD` sits on now. Step 8 moves `HEAD` past that mark and stands the guard down. Work later in the session is none of the guard's business. A second commit means invoking this skill again rather than carrying on from here.
+
 ## Preflight
 
 !`bash ${CLAUDE_SKILL_DIR}/scripts/preflight.sh`

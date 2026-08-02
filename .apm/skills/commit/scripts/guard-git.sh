@@ -3,8 +3,10 @@
 #
 # The skill body already states these rules. This hook is what makes them
 # hold: instructions degrade under a long context, an exit-2 deny does
-# not. It stays scoped to the skill's frontmatter rather than to
-# settings.json so it governs a commit workflow and nothing else.
+# not. Declaring it in the skill's frontmatter rather than in
+# settings.json keeps it out of a session that never asked for it, and
+# the workflow scope below keeps it out of the rest of a session that
+# did.
 #
 # Three rules, in order of how they fire:
 #
@@ -47,6 +49,30 @@ deny() {
   printf 'Blocked by the commit skill guard.\n\n%s\n' "$1" >&2
   exit 2
 }
+
+# --- workflow scope ---------------------------------------------------
+# A skill's frontmatter hooks outlive the turn that invoked the skill.
+# Without a scope of its own this guard would go on policing every later
+# `git add` and `git commit` in the session, and it did: a legitimate
+# `git commit --amend` during unrelated release work was refused long
+# after the commit workflow it belonged to had ended.
+#
+# preflight.sh arms the guard by recording the commit HEAD sat at when
+# the workflow opened. A commit workflow leaves HEAD alone until it
+# commits, so the mark matches for as long as the workflow is open, and
+# the commit that ends the workflow moves HEAD past the mark and stands
+# the guard down. Nothing has to remember to clear anything, which is
+# the point: an end-of-workflow cleanup step is exactly the kind of
+# thing an abandoned run skips.
+#
+# The mark is read from the repository holding the session rather than
+# from wherever the command retargets, because the workflow is anchored
+# where the skill ran. Outside a repository there is no workflow to
+# scope, so the guard stands aside.
+session_git_dir=$(git rev-parse --absolute-git-dir 2>/dev/null) || exit 0
+armed_at=$(cat "$session_git_dir/commit-workflow.head" 2>/dev/null) || exit 0
+head_now=$(git rev-parse HEAD 2>/dev/null) || head_now=unborn
+[ "$armed_at" = "$head_now" ] || exit 0
 
 # Heredoc bodies are data, not commands. A script written through a
 # heredoc can discuss git in its comments or its prose, and matching
