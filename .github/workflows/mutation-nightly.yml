@@ -3,7 +3,7 @@
 # reports which mutants the test suite kills versus which survive, so
 # mutation analysis happens off the critical path rather than on every
 # PR. Gremlins reruns the entire suite per mutant, far too slow to gate
-# a pull request. The workflow invokes the same `just mutate-all` recipe
+# a pull request. The workflow invokes the same `just mutate-go-all` recipe
 # contributors run locally, overriding only the timeout coefficient, so
 # the recipe stays the single source of truth for what gets mutated.
 # Mirrors the fuzz / fuzz-nightly split where one recipe powers both the
@@ -72,4 +72,4 @@ jobs:
         env:
           # Scheduled runs carry no inputs, so fall back to the dispatch default.
           GREMLINS_TIMEOUT_COEFFICIENT: ${{ github.event.inputs.timeout_coefficient || '100' }}
-        run: just mutate-all
+        run: just mutate-go-all

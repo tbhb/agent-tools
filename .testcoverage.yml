@@ -1,5 +1,5 @@
 ---
-# Coverage thresholds enforced by `just cover-check` via the
+# Coverage thresholds enforced by `just cover-go-check` via the
 # vladopajic/go-test-coverage tool. The three levels apply
 # independently. A profile that meets the total but fails on any one
 # package or file gets rejected. Mutation testing (`just mutate`)

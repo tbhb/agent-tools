@@ -8,7 +8,7 @@
 #
 # The `just fuzz` recipe and the fuzz-nightly workflow both call this
 # script; the workflow raises FUZZ_TIME for a longer scheduled sweep,
-# mirroring the gremlins / mutate-all shape where one entry point powers
+# mirroring the gremlins / mutate-go-all shape where one entry point powers
 # both the inner loop and the scheduled run.
 set -euo pipefail
 

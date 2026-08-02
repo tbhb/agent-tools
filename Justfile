@@ -521,17 +521,20 @@ lint-commit-msg:
 
 # --- Test ---
 
-# Run tests
-test *args:
+# Run every test suite.
+test: test-go
+
+# Run the Go tests.
+test-go *args:
     go test ./... "$@"
 
-# Slower than plain `just test`; pairs with goroutine-bearing code as it
+# Slower than plain `just test-go`; pairs with goroutine-bearing code as it
 # lands. Native fuzz targets discovered by the nightly workflow rerun
 # under `-race` automatically when their function-under-test is reached
 # from `-race` builds; for ad-hoc local runs use this recipe.
 
-# Run tests with the race detector.
-test-race:
+# Run the Go tests with the race detector.
+test-go-race:
     go test -race ./...
 
 # Mutation-testing timeout coefficient. Gremlins gates each mutant's
@@ -562,7 +565,7 @@ gremlins_timeout_coefficient := env("GREMLINS_TIMEOUT_COEFFICIENT", "100")
 # land as reviewable diffs.
 
 # Run mutation testing via gremlins.
-mutate *args:
+mutate-go *args:
     go tool gremlins unleash --timeout-coefficient {{ gremlins_timeout_coefficient }} {{ if args == "" { "." } else { args } }}
 
 # The nightly form, factored out so the future `mutation-nightly.yml`
@@ -570,28 +573,37 @@ mutate *args:
 # same scan locally before opening a release-bound PR.
 
 # Mutate the whole module from the repository root.
-mutate-all:
+mutate-go-all:
     go tool gremlins unleash --timeout-coefficient {{ gremlins_timeout_coefficient }} .
+
+# Run every mutation sweep.
+mutate: mutate-go-all
 
 # Runs via tools/fuzz.sh, which lists every Fuzz* function under each
 # package and runs it for the FUZZ_TIME budget (default 30s); set
-# FUZZ_TIME to widen the sweep, e.g. `FUZZ_TIME=5m just fuzz`. The nightly
+# FUZZ_TIME to widen the sweep, e.g. `FUZZ_TIME=5m just fuzz-go`. The nightly
 # workflow under `.github/workflows/` calls the same script with a longer
-# FUZZ_TIME, mirroring the gremlins / mutate-all shape where one entry
+# FUZZ_TIME, mirroring the gremlins / mutate-go-all shape where one entry
 # point powers both the inner loop and the scheduled sweep.
 
+# Run every fuzzing sweep.
+fuzz: fuzz-go
+
 # Run native Go fuzz targets under [path] (default the entire module).
-fuzz path="./...":
+fuzz-go path="./...":
     tools/fuzz.sh {{ path }}
 
-# The inner-loop coverage gate. Pair with `just mutate <path>` when
+# The inner-loop coverage gate. Pair with `just mutate-go <path>` when
 # adding tests against survivor mutants. The total threshold remains
 # intentionally lower than today's measured coverage so a contributor can
 # land a feature with a few new uncovered lines and tighten coverage in a
 # follow-up.
 
-# Run tests with coverage, print the per-function breakdown, and enforce the `.testcoverage.yml` thresholds.
-cover:
+# Run every coverage gate.
+cover: cover-go
+
+# Run the Go tests with coverage, print the per-function breakdown, and enforce the `.testcoverage.yml` thresholds.
+cover-go:
     go test -coverprofile=coverage.out ./...
     @echo
     go tool cover -func=coverage.out | tail -n 30
@@ -603,28 +615,28 @@ cover:
 # `go tool cover -html`.
 
 # Open the HTML coverage report.
-cover-html:
+cover-go-html:
     go test -coverprofile=coverage.out ./...
     go tool cover -html=coverage.out
 
 # Cobertura is the lingua franca format coverage dashboards accept. This
 # is the quick local form; CI's per-slot and combined uploads flow
-# through `cover-binary` and `cover-merge` below.
+# through `cover-go-binary` and `cover-go-merge` below.
 
 # Emit a Cobertura XML report from one local text profile.
-cover-cobertura:
+cover-go-cobertura:
     go test -coverprofile=coverage.out ./...
     go tool gocover-cobertura < coverage.out > coverage.xml
 
 # CI uploads the binary covdir per matrix slot so the downstream coverage
-# job can merge the slots with `go tool covdata merge` (see `cover-merge`)
+# job can merge the slots with `go tool covdata merge` (see `cover-go-merge`)
 # into one combined report — a merge only the binary format supports
 # losslessly. The covdir is absolute because `go test` runs each
 # package's binary from that package's directory, which would scatter a
 # relative path.
 
-# Run tests into [covdir] as binary coverage, then render Cobertura XML.
-cover-binary covdir="coverage.covdata":
+# Run the Go tests into [covdir] as binary coverage, then render Cobertura XML.
+cover-go-binary covdir="coverage.covdata":
     rm -rf "{{ justfile_directory() }}/{{ covdir }}"
     mkdir -p "{{ justfile_directory() }}/{{ covdir }}"
     go test ./... -cover -args -test.gocoverdir="{{ justfile_directory() }}/{{ covdir }}"
@@ -637,7 +649,7 @@ cover-binary covdir="coverage.covdata":
 # slot's uploaded covdata.
 
 # Merge the per-slot binary coverage dirs into one report.
-cover-merge slotsdir="coverage.covdata.slots":
+cover-go-merge slotsdir="coverage.covdata.slots":
     rm -rf coverage.covdata.merged
     mkdir -p coverage.covdata.merged
     go tool covdata merge -i="$(ls -d {{ slotsdir }}/*/ | paste -sd, -)" -o=coverage.covdata.merged
@@ -649,7 +661,7 @@ cover-merge slotsdir="coverage.covdata.slots":
 # editing `.testcoverage.yml` without rerunning the suite.
 
 # Run only the threshold gate against an existing coverage.out.
-cover-check:
+cover-go-check:
     go tool go-test-coverage --config .testcoverage.yml
 
 # --- Security ---
@@ -760,7 +772,7 @@ check: tidy verify lint test vuln vendor-check
 # than seconds, so kept off the inner-loop path.
 
 # Comprehensive quality bar for release-prep sweeps.
-check-all: check test-race fuzz gitleaks
+check-all: check test-go-race fuzz gitleaks
 
 # Pairs govulncheck with the gomodscan and gitleaks scanners so a future
 # `security.yml` workflow under `.github/workflows/` invokes one recipe

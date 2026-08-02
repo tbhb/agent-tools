@@ -138,10 +138,10 @@ jobs:
         uses: tbhb/github-actions/.github/actions/setup-just@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
 
       - name: Run tests with coverage
-        run: just cover-binary
+        run: just cover-go-binary
 
       - name: Run tests with race detector
-        run: just test-race
+        run: just test-go-race
 
       # Publish this slot's report under a per-OS label so each platform
       # shows on its own, and stash the binary coverage data for the
@@ -199,7 +199,7 @@ jobs:
           pattern: covdata-*
 
       - name: Merge coverage and render the combined report
-        run: just cover-merge
+        run: just cover-go-merge
 
       - name: Upload combined coverage report
         uses: actions/upload-code-coverage@1c15be36fc3733ba839b1dd643bd9556e4426dc1 # v1.4.1
