@@ -650,6 +650,24 @@ skill-tokens *args:
 lint-commit-msg:
     prek run --stage commit-msg --commit-msg-filename COMMIT_AGENTMSG
 
+# Every other prose recipe runs one checker over many files. This runs
+# every checker over one drafted document, and reports all of them in a
+# single call. Answering vale, then cspell, then rumdl in sequence is
+# how a short draft becomes four rounds: the session that motivated this
+# ran a linter on half its Bash calls, and most failing runs surfaced
+# one or two findings apiece.
+#
+# It also probes the path before trusting a clean run. Vale matches a
+# path against the sections in .vale.ini exactly, and a path no section
+# names loads no styles, reads the file, prints nothing, and exits 0 —
+# byte for byte what a clean document produces. The recipe sends
+# known-bad text through vale under the target's own path and reports an
+# unscoped path rather than a pass.
+
+# Lint one drafted document through every prose gate at once.
+lint-draft file:
+    bash tools/lint-draft.sh {{ file }}
+
 # The pull request counterpart. The validator is mechanical and offline:
 # it settles the frontmatter shape, the Conventional Commits form of the
 # title, the template's sections and their order, empty sections,
