@@ -169,10 +169,14 @@ Follow the answer. Revising or restaging sends you back through the review, beca
 ## Step 8: commit and rebase
 
 ```text
-git -c commit.cleanup=whitespace commit -F COMMIT_AGENTMSG
+bash .claude/skills/commit/scripts/commit.sh
 ```
 
-Without that flag, `commit.cleanup=strip` drops every body line opening with a number sign, and it does so after `review-commit-message` has hashed the file, so the bytes the reviewer cleared stop matching the bytes git records. Pinning the mode closes exactly the gap the signature exists to catch.
+That script records what the index holds, commits the drafted message, then reads the commit back and compares. prek stashes and restores the worktree around the pre-commit hooks, so a failed run can hand back an index short of what it took, and the retry then commits part of the group without saying so. Here the script says so: it names the missing paths and fails. Its output is the check, so nothing needs a `git show --stat` after it.
+
+The script pins `commit.cleanup=whitespace` for you. At the default of `strip`, git drops every body line opening with a number sign, and it does so after `review-commit-message` has hashed the file, so the bytes the reviewer cleared stop matching the bytes git records.
+
+Only `--amend` passes through, which is the form `fix-pr` routes here for. The script refuses every other flag, because the guard hook reads the tool call rather than the flags underneath it.
 
 Then rebase onto the base from step 1, without asking:
 

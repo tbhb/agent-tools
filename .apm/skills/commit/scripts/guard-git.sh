@@ -143,7 +143,7 @@ if [[ $invocation =~ (--no-verify|[[:space:]]-[a-zA-Z]*n([[:space:]]|$)) ]]; the
   deny "--no-verify skips the commit-msg gates this workflow exists to satisfy.
 Commit the drafted message instead:
 
-  git commit -F COMMIT_AGENTMSG
+  bash .claude/skills/commit/scripts/commit.sh
 
 The one sanctioned --no-verify is the throwaway work-in-progress commit
 in the worktree rules, which is not part of a commit workflow."
@@ -153,13 +153,16 @@ if [[ $invocation =~ (--message|[[:space:]]-[a-zA-Z]*m([[:space:]]|=|$)) ]]; the
   deny "An inline -m message skips COMMIT_AGENTMSG, so nothing lints it and
 nothing reviews it. Write the message to COMMIT_AGENTMSG, then:
 
-  git commit -F COMMIT_AGENTMSG"
+  bash .claude/skills/commit/scripts/commit.sh"
 fi
 
 if [[ ! $invocation =~ (--file|[[:space:]]-F)([[:space:]]|=) ]]; then
   deny "This workflow commits the drafted file, so the editor never opens:
 
-  git commit -F COMMIT_AGENTMSG"
+  bash .claude/skills/commit/scripts/commit.sh
+
+That script also reads the commit back and says so when it landed short
+of what was staged, which a bare git commit cannot."
 fi
 
 # Rule 3: the reviewed bytes and the committed bytes must match.
