@@ -2,12 +2,7 @@
 name: commit
 license: Apache-2.0
 description: >-
-  Group changes into one atomic commit, draft a Conventional Commit
-  message in COMMIT_AGENTMSG, put it through an independent review and
-  the commit-msg gates, confirm it with the operator, then commit and
-  rebase. Use this skill whenever the user asks to commit work in a tbhb
-  repo ("commit this", "commit the staged changes", "write a commit
-  message") or whenever a task ends in creating a commit.
+  Group changes into one atomic commit, draft a Conventional Commit message in COMMIT_AGENTMSG, put it through an independent review and the commit-msg gates, confirm it with the operator, then commit and rebase. Use this skill whenever the user asks to commit work in a tbhb repo ("commit this," "commit the staged changes," "write a commit message") or whenever a task ends in creating a commit.
 hooks:
   PreToolUse:
     - matcher: Bash

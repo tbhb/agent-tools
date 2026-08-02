@@ -37,7 +37,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:6031201142d6be6f175dfc45d62fffdd41b37e01dacfd33b7721077ba144d6e8
+  content_hash: sha256:78bda86b9e1635829153bf364fd34bf537b98704e0d73a173f01e85d2717a4bd
 - kind: project-relative
   target: claude
   value: .claude/skills/commit/scripts/commit.sh
@@ -316,7 +316,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:f8bbbbcd9a069f85f1d5ef9c3eea70973e31d597b2a336f9337a26318686a7c2
+  content_hash: sha256:5a02ff2ee3419a12dc71b2e298ee97f9d02928e51f92eb769a75762a5866414c
 - kind: project-relative
   target: claude
   value: .claude/skills/review-commit-message/tokens.json
@@ -526,7 +526,7 @@ local_deployed_files:
 local_deployed_file_hashes:
   .claude/hooks/agent-tools/hooks/go-lint.sh: sha256:43246da28ccda66e17acafae220197c6c95403292b342b44d7fc437453438f6c
   .claude/rules/worktree-wip.md: sha256:0204082643d1ea505ae20eaf93e7d94dd52b65046f3e4f290ec7bbc5c6093634
-  .claude/skills/commit/SKILL.md: sha256:6031201142d6be6f175dfc45d62fffdd41b37e01dacfd33b7721077ba144d6e8
+  .claude/skills/commit/SKILL.md: sha256:78bda86b9e1635829153bf364fd34bf537b98704e0d73a173f01e85d2717a4bd
   .claude/skills/commit/scripts/commit.sh: sha256:5d60d85e655062fd7c63dfac3d4b0615c2aac8f166a41833bc248db1e3ddeb36
   .claude/skills/commit/scripts/guard-git.sh: sha256:4b0d6c9b94229ebe174c21751e030e7ece662142d616b51b3542b97d7548ea15
   .claude/skills/commit/scripts/preflight.sh: sha256:aa86398adae53090838087b2556d7514cd27b11ec0a6faaa118d3fac2318e1e3
@@ -553,7 +553,7 @@ local_deployed_file_hashes:
   .claude/skills/pr/scripts/stamp-review.sh: sha256:198b887cf78c83c596e39ee9703bc8948030340827c65fb6439d6736ff3fd260
   .claude/skills/pr/scripts/validate-description.sh: sha256:024882b913c0e42ea39a667b99d7e3932f1e575e4ac3b002ebd64d3306d63861
   .claude/skills/pr/tokens.json: sha256:147ae919f75cb1d1b3e7cb4ffa1c4a016671cb33c1690634d8ccda9d8f368d60
-  .claude/skills/review-commit-message/SKILL.md: sha256:f8bbbbcd9a069f85f1d5ef9c3eea70973e31d597b2a336f9337a26318686a7c2
+  .claude/skills/review-commit-message/SKILL.md: sha256:5a02ff2ee3419a12dc71b2e298ee97f9d02928e51f92eb769a75762a5866414c
   .claude/skills/review-commit-message/tokens.json: sha256:b1ab897377d46f77b4d654c9cc75c8939d0cbdded3303b58cb5f313788e9ce33
   .claude/skills/review-pr-description/SKILL.md: sha256:b73e53c7011fbd9f16d922b2fe7482bbc2ba13628c8d53d9f897625a202aaeb7
   .claude/skills/review-pr-description/tokens.json: sha256:44eb0e93c0e155142f79b8101fab86ac6cba62c6d451fc9ac68006d8f955f9c2
