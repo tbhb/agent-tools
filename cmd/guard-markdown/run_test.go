@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -110,6 +111,14 @@ func TestFixMode(t *testing.T) {
 }
 
 func TestFixPreservesMode(t *testing.T) {
+	// Windows has no permission triplet for a rewrite to preserve. os.Stat
+	// synthesizes 0o666 for every writable file, whatever mode created it, so
+	// the fixture below reads 0o666 both before the fix and after, and the
+	// assertion compares Go's stand-in against itself.
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows synthesizes the permission bits os.Stat reports")
+	}
+
 	t.Parallel()
 
 	// write() creates at 0o600. A rewrite that imposed its own mode would
