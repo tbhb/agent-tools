@@ -158,6 +158,7 @@ XDG
 [Vv]ulns?
 [Ww]orktrees?
 [Yy]amllint('s)?
+_apm_source
 agent-tools
 agent_id
 agent_tools_py
