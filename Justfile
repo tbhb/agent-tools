@@ -246,12 +246,15 @@ format-toml:
 # hooks/, so formatting them here would put a second writer in a tree
 # the installer owns, and the sources are already covered. The
 # emptiness guard keeps shfmt from falling back to reading stdin (and
-# hanging) if the tree ever carries no matching script.
+# hanging) if the tree ever carries no matching script. `--others` is
+# there for the same reason `lint-shell` carries it: the gate reaches a
+# new script before staging does, and a formatter that reached a
+# narrower set than its gate would leave findings it could have fixed.
 
 # Format shell scripts in place via shfmt.
 [script]
 format-shell:
-    files=$(git ls-files '*.sh' ':!:vendor/**' ':!:.claude/**')
+    files=$(git ls-files --cached --others --exclude-standard '*.sh' ':!:vendor/**' ':!:.claude/**')
     if [ -n "$files" ]; then shfmt -w $files; fi
 
 # Rewrites in place; `lint-ruff-format` is the --check counterpart CI
@@ -565,10 +568,10 @@ lint-shell:
 # backs the local pre-commit hook where a per-file docker run would dominate
 # the hook's runtime.
 
-# Fail if shfmt would reformat any tracked non-vendored *.sh.
+# Fail if shfmt would reformat any non-vendored *.sh git can see.
 [script]
 lint-shell-fmt:
-    files=$(git ls-files '*.sh' ':!:vendor/**' ':!:.claude/**')
+    files=$(git ls-files --cached --others --exclude-standard '*.sh' ':!:vendor/**' ':!:.claude/**')
     if [ -n "$files" ]; then shfmt -d $files; fi
 
 # --check makes the formatter a gate: it exits non-zero and prints the
