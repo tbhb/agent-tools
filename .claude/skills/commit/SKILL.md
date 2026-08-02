@@ -167,14 +167,18 @@ Follow the answer. Revising or restaging sends you back through the review, beca
 ## Step 8: commit and rebase
 
 ```text
-git commit -F COMMIT_AGENTMSG
+git -c commit.cleanup=whitespace commit -F COMMIT_AGENTMSG
 ```
+
+Without that flag, `commit.cleanup=strip` drops every body line opening with a number sign, and it does so after `review-commit-message` has hashed the file, so the bytes the reviewer cleared stop matching the bytes git records. Pinning the mode closes exactly the gap the signature exists to catch.
 
 Then rebase onto the base from step 1, without asking:
 
 ```text
-git rebase --autostash <base>
+git -c rebase.updateRefs=false -c rebase.autoSquash=false rebase --autostash <base>
 ```
+
+Same reasoning, two more knobs. `rebase.updateRefs` quietly moves other local branches that point into the replayed range. `rebase.autoSquash` collapses any `fixup!` commit, each of which earned its own review.
 
 `--autostash` scopes the save to the rebase itself. Never a bare `git stash pop`: worktrees share one stash stack, so a bare pop can take another session's entry.
 

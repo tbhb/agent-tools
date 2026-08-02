@@ -17,6 +17,19 @@
 # Written to bash 3.2.
 set -uo pipefail
 
+# --- environment hardening -------------------------------------------
+# The agent reads this output, so the operator's preferences must not
+# change its shape. LC_ALL pins collation, because sort and the [a-z]
+# ranges below mean different things under a UTF-8 locale. The unsets
+# cover variables that silently retarget a command: GH_REPO sends gh at
+# another repository, CDPATH makes a relative cd print somewhere else.
+export LC_ALL=C
+export GH_PAGER=cat
+export GH_PROMPT_DISABLED=1
+export PYTHONUTF8=1
+unset CDPATH GH_REPO GH_HOST GREP_OPTIONS
+IFS=$(printf ' \t\n')
+
 readonly LOG_LINES=${FIX_PR_LOG_LINES:-80}
 
 root=$(git rev-parse --show-toplevel)

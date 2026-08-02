@@ -22,6 +22,22 @@
 # decision/reason only (it rejects hookSpecificOutput). Toolchain failures never
 # block. Registered locally via .claude/settings.local.json (not committed).
 set -euo pipefail
+# --- environment hardening -------------------------------------------
+# core.quotePath defaults to true, so a path with a non-ASCII character
+# arrives as "caf\303\251.go" and every linter downstream is handed a
+# filename that does not exist. The locale pin keeps sort -u from
+# collapsing two paths that merely collate alike.
+#
+# ls-files keeps --exclude-standard on purpose: the operator's global
+# gitignore legitimately decides what counts as untracked.
+export LC_ALL=C
+unset CDPATH GREP_OPTIONS
+IFS=$(printf ' \t\n')
+
+gitr() {
+  command git --no-pager -c core.quotePath=false -c color.ui=false \
+    -c log.showSignature=false "$@"
+}
 
 # Feed the agent context for its next step (non-blocking), then exit.
 emit_context() {
@@ -113,8 +129,8 @@ $(findings_text "$RUN_STDOUT" "$RUN_STDERR")
 # All non-vendor files that differ from HEAD: tracked edits + brand-new files.
 compute_changed() {
   {
-    git diff --name-only HEAD -- . ':(exclude)vendor'
-    git ls-files --others --exclude-standard -- . ':(exclude)vendor'
+    gitr diff --no-ext-diff --name-only HEAD -- . ':(exclude)vendor'
+    gitr ls-files --others --exclude-standard -- . ':(exclude)vendor'
   } | sort -u
 }
 

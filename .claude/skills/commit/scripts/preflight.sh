@@ -14,6 +14,40 @@
 # COMMIT_PREFLIGHT_FETCH=0 skips it.
 set -euo pipefail
 
+# --- environment hardening -------------------------------------------
+# The agent reads this output, so the operator's preferences must not
+# change its shape. LC_ALL pins collation, because sort and the [a-z]
+# ranges below mean different things under a UTF-8 locale. The unsets
+# cover variables that silently retarget a command: GH_REPO sends gh at
+# another repository, CDPATH makes a relative cd print somewhere else.
+export LC_ALL=C
+export GH_PAGER=cat
+export GH_PROMPT_DISABLED=1
+export PYTHONUTF8=1
+unset CDPATH GH_REPO GH_HOST GREP_OPTIONS
+IFS=$(printf ' \t\n')
+
+# gitr runs git for output this script parses, with every formatting
+# knob pinned. log.showSignature is the one that matters most: it
+# prepends a verification line per commit to stdout, ahead of the
+# format string, so a --oneline listing silently becomes two lines per
+# commit and any head -n cap shows half a branch as though it were all
+# of it.
+#
+# Plain `git` stays available on purpose. Config reads, fetch, and push
+# need the operator's real configuration: the sign-off identity may come
+# from an includeIf work profile, and the network calls need credential
+# helpers and any url.insteadOf rewriting.
+gitr() {
+  command git --no-pager \
+    -c log.showSignature=false \
+    -c color.ui=false -c color.diff=false -c color.status=false \
+    -c core.quotePath=false \
+    -c diff.noprefix=false -c diff.mnemonicPrefix=false \
+    -c diff.renames=true -c diff.context=3 \
+    "$@"
+}
+
 # Diff budget. The full patch is worth inlining when it is small enough
 # to read, and actively harmful when it is not: an oversized paste
 # crowds out the rest of the skill. Past the cap the report prints the
@@ -176,11 +210,11 @@ else
 fi
 
 section "staged changes"
-staged=$(git diff --cached --name-status)
+staged=$(gitr diff --no-ext-diff --cached --name-status)
 if [ -n "$staged" ]; then printf '%s\n' "$staged"; else none; fi
 
 section "unstaged changes"
-unstaged=$(git diff --name-status)
+unstaged=$(gitr diff --no-ext-diff --name-status)
 if [ -n "$unstaged" ]; then printf '%s\n' "$unstaged"; else none; fi
 
 section "untracked files"
@@ -189,31 +223,31 @@ if [ -n "$untracked" ]; then printf '%s\n' "$untracked"; else none; fi
 
 section "diffstat"
 printf 'staged:\n'
-git diff --cached --stat || true
+gitr diff --no-ext-diff --cached --stat || true
 printf '\nunstaged:\n'
-git diff --stat || true
+gitr diff --no-ext-diff --stat || true
 
 # The patch itself, tracked changes only. Untracked file bodies stay out:
 # they are listed above, and a new vendored file would swamp the report.
 section "diff"
 patch=$(
-  git diff --cached
-  git diff
+  gitr diff --no-ext-diff --cached
+  gitr diff --no-ext-diff
 )
 if [ -z "$patch" ]; then
   printf '(no tracked changes)\n'
 elif [ "$(printf '%s\n' "$patch" | wc -l)" -le "$DIFF_LINE_CAP" ]; then
   printf '%s\n' "$patch"
 else
-  printf '(diff exceeds %s lines. Read it one path at a time with git diff\n' "$DIFF_LINE_CAP"
-  printf 'and git diff --cached before grouping the commits.)\n'
+  printf '(diff exceeds %s lines. Read it one path at a time with gitr diff --no-ext-diff\n' "$DIFF_LINE_CAP"
+  printf 'and gitr diff --no-ext-diff --cached before grouping the commits.)\n'
 fi
 
 section "recent commits"
 printf 'subjects:\n'
-git log --oneline -10 2>/dev/null || printf '(no history)\n'
+gitr log --oneline -10 2>/dev/null || printf '(no history)\n'
 printf '\nlast two messages in full, for house style:\n'
-git log -2 --pretty=format:'--- %h%n%B' 2>/dev/null || true
+gitr log -2 --pretty=format:'--- %h%n%B' 2>/dev/null || true
 
 section "message rules"
 printf 'types:   %s\n' "$TYPES"

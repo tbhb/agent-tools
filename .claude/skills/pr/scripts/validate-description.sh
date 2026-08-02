@@ -23,6 +23,40 @@
 # associative arrays, no process substitution, no GNU-only sed.
 set -euo pipefail
 
+# --- environment hardening -------------------------------------------
+# The agent reads this output, so the operator's preferences must not
+# change its shape. LC_ALL pins collation, because sort and the [a-z]
+# ranges below mean different things under a UTF-8 locale. The unsets
+# cover variables that silently retarget a command: GH_REPO sends gh at
+# another repository, CDPATH makes a relative cd print somewhere else.
+export LC_ALL=C
+export GH_PAGER=cat
+export GH_PROMPT_DISABLED=1
+export PYTHONUTF8=1
+unset CDPATH GH_REPO GH_HOST GREP_OPTIONS
+IFS=$(printf ' \t\n')
+
+# gitr runs git for output this script parses, with every formatting
+# knob pinned. log.showSignature is the one that matters most: it
+# prepends a verification line per commit to stdout, ahead of the
+# format string, so a --oneline listing silently becomes two lines per
+# commit and any head -n cap shows half a branch as though it were all
+# of it.
+#
+# Plain `git` stays available on purpose. Config reads, fetch, and push
+# need the operator's real configuration: the sign-off identity may come
+# from an includeIf work profile, and the network calls need credential
+# helpers and any url.insteadOf rewriting.
+gitr() {
+  command git --no-pager \
+    -c log.showSignature=false \
+    -c color.ui=false -c color.diff=false -c color.status=false \
+    -c core.quotePath=false \
+    -c diff.noprefix=false -c diff.mnemonicPrefix=false \
+    -c diff.renames=true -c diff.context=3 \
+    "$@"
+}
+
 DRAFT=${1:-PR_AGENTDESC.md}
 TEMPLATE=${PR_TEMPLATE:-.github/pull_request_template.md}
 
@@ -302,7 +336,7 @@ else
     title_type=${title_type%%\(*}
     title_type=${title_type%!}
     if [ -n "$fm_base" ] && git rev-parse --verify --quiet "$fm_base" >/dev/null; then
-      landing_types=$(git log --format='%s' "$fm_base..HEAD" |
+      landing_types=$(gitr log --format='%s' "$fm_base..HEAD" |
         sed -n 's/^\([a-z][a-z]*\)[(!:].*/\1/p' | sort -u | tr '\n' ' ')
       if [ -n "$landing_types" ] && ! contains "$landing_types" "$title_type"; then
         report "$title_line" title-type-unused \
@@ -432,7 +466,7 @@ fi
 # the diff. This is the one truthfulness rule a machine can settle: an
 # invented path is invented whatever the surrounding prose claims.
 if [ -n "$fm_base" ] && git rev-parse --verify --quiet "$fm_base" >/dev/null; then
-  changed=$(git diff --name-only "$fm_base...HEAD" 2>/dev/null || true)
+  changed=$(gitr diff --no-ext-diff --name-only "$fm_base...HEAD" 2>/dev/null || true)
 else
   changed=""
 fi

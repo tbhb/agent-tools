@@ -22,6 +22,19 @@
 # Written to bash 3.2.
 set -uo pipefail
 
+# --- environment hardening -------------------------------------------
+# The agent reads this output, so the operator's preferences must not
+# change its shape. LC_ALL pins collation, because sort and the [a-z]
+# ranges below mean different things under a UTF-8 locale. The unsets
+# cover variables that silently retarget a command: GH_REPO sends gh at
+# another repository, CDPATH makes a relative cd print somewhere else.
+export LC_ALL=C
+export GH_PAGER=cat
+export GH_PROMPT_DISABLED=1
+export PYTHONUTF8=1
+unset CDPATH GH_REPO GH_HOST GREP_OPTIONS
+IFS=$(printf ' \t\n')
+
 readonly INTERVAL=${PR_CHECKS_INTERVAL:-30}
 readonly TIMEOUT=${PR_CHECKS_TIMEOUT:-1800}
 readonly APPEAR_TIMEOUT=${PR_CHECKS_APPEAR_TIMEOUT:-120}
@@ -76,6 +89,7 @@ if [ "$(total_count)" = "0" ]; then
 fi
 
 prev=""
+seen=""
 elapsed=0
 failures=0
 
@@ -83,9 +97,18 @@ while :; do
   current=$(settled)
 
   # Emit only what has settled since the previous look.
-  fresh=$(comm -13 <(printf '%s\n' "$prev") <(printf '%s\n' "$current") 2>/dev/null || printf '%s\n' "$current")
+  #
+  # A seen-set rather than comm. comm compares under the collation its
+  # locale defines, so a name carrying spaces or punctuation could sort
+  # one way and compare another, and the mismatch drops a FAIL line
+  # instead of reporting it. Silence and success would then look alike,
+  # which is the one thing this script exists to prevent.
   while IFS="$(printf '\t')" read -r bucket name link; do
     [ -n "$name" ] || continue
+    case "$seen" in
+    *"|${name}|"*) continue ;;
+    esac
+    seen="${seen}|${name}|"
     case $bucket in
     pass) printf 'PASS  %s\n' "$name" ;;
     skipping) printf 'SKIP  %s\n' "$name" ;;
@@ -96,7 +119,7 @@ while :; do
     *) printf '%s  %s\n' "$bucket" "$name" ;;
     esac
   done <<EOF
-$fresh
+$current
 EOF
 
   prev=$current

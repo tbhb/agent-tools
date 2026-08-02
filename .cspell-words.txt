@@ -9,6 +9,7 @@ ENV
 Equalf
 Errorf
 Honnef
+PYTHONUTF
 RLENGTH
 RSTART
 Sprintf
@@ -77,6 +78,7 @@ dedupe
 depguard
 depscan
 diffstat
+difftool
 distroless
 docstrings
 dogfooding
@@ -114,6 +116,7 @@ ghmilestones
 ghprojects
 ghsa
 gitpython
+gitr
 gitsign
 goarch
 gocheckcompilerdirectives
@@ -212,6 +215,7 @@ nolintlint
 nolints
 nonamedreturns
 nonbreaking
+noprefix
 nosprintfhostport
 openssf
 openvex
@@ -257,12 +261,14 @@ relpath
 renovatebot
 repofile
 retarget
+retargets
 retunes
 reviewdog
 rhysd
 rollup
 rowserrcheck
 rpop
+rstrip
 ruleid
 rumdl
 runuser
@@ -330,6 +336,7 @@ unconvert
 underef
 unparam
 unreviewed
+unsets
 usestdlibvars
 usetesting
 vendormod

@@ -25,6 +25,19 @@
 # Written to bash 3.2 so it runs on a stock macOS shell.
 set -euo pipefail
 
+# --- environment hardening -------------------------------------------
+# The agent reads this output, so the operator's preferences must not
+# change its shape. LC_ALL pins collation, because sort and the [a-z]
+# ranges below mean different things under a UTF-8 locale. The unsets
+# cover variables that silently retarget a command: GH_REPO sends gh at
+# another repository, CDPATH makes a relative cd print somewhere else.
+export LC_ALL=C
+export GH_PAGER=cat
+export GH_PROMPT_DISABLED=1
+export PYTHONUTF8=1
+unset CDPATH GH_REPO GH_HOST GREP_OPTIONS
+IFS=$(printf ' \t\n')
+
 readonly DRAFT=PR_AGENTDESC.md
 
 root=$(git rev-parse --show-toplevel)
@@ -32,7 +45,7 @@ cd "$root"
 git_dir=$(git rev-parse --absolute-git-dir)
 readonly STAMP="$git_dir/pr-agentdesc.reviewed"
 
-here=$(cd "$(dirname "$0")" && pwd)
+here=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 
 die() {
   printf 'create-pr: %s\n' "$1" >&2

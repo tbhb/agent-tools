@@ -373,7 +373,7 @@ lint-bandit:
 # the .editorconfig whitespace contract (editorconfig-checker).
 
 # Run every linter that operates on the source tree.
-lint: lint-go-all lint-py-all lint-prose lint-spelling lint-markdown lint-markdown-wrap lint-config lint-yaml lint-toml lint-shell lint-shell-fmt lint-just lint-editorconfig lint-skills
+lint: lint-go-all lint-py-all lint-prose lint-spelling lint-markdown lint-markdown-wrap lint-config lint-yaml lint-toml lint-shell lint-shell-fmt lint-just lint-editorconfig lint-skills lint-script-hygiene
 
 # --modules-download-mode=vendor matches `just build`, so the linter
 # sees exactly the dependency set the compiler does and never falls back
@@ -610,6 +610,15 @@ lint-editorconfig:
 # Check every skill against the platform's name and description limits.
 lint-skills *args:
     bash tools/skill-limits.sh {{ args }}
+
+# An operator's git, gh, and locale settings can reshape the output
+# these scripts print, and the agent reads that output. The scripts
+# carry a hardening block for it; this recipe is what keeps the block
+# from quietly going missing on the next script somebody adds.
+
+# Refuse a script whose output user configuration could reshape.
+lint-script-hygiene *args:
+    bash tools/check-script-hygiene.sh {{ args }}
 
 # Count what each skill costs in context and write tokens.json beside
 # it. Needs the `ant` CLI authenticated; kept out of `just lint` because

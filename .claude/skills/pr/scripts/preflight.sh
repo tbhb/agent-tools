@@ -25,6 +25,40 @@
 # survive either.
 set -euo pipefail
 
+# --- environment hardening -------------------------------------------
+# The agent reads this output, so the operator's preferences must not
+# change its shape. LC_ALL pins collation, because sort and the [a-z]
+# ranges below mean different things under a UTF-8 locale. The unsets
+# cover variables that silently retarget a command: GH_REPO sends gh at
+# another repository, CDPATH makes a relative cd print somewhere else.
+export LC_ALL=C
+export GH_PAGER=cat
+export GH_PROMPT_DISABLED=1
+export PYTHONUTF8=1
+unset CDPATH GH_REPO GH_HOST GREP_OPTIONS
+IFS=$(printf ' \t\n')
+
+# gitr runs git for output this script parses, with every formatting
+# knob pinned. log.showSignature is the one that matters most: it
+# prepends a verification line per commit to stdout, ahead of the
+# format string, so a --oneline listing silently becomes two lines per
+# commit and any head -n cap shows half a branch as though it were all
+# of it.
+#
+# Plain `git` stays available on purpose. Config reads, fetch, and push
+# need the operator's real configuration: the sign-off identity may come
+# from an includeIf work profile, and the network calls need credential
+# helpers and any url.insteadOf rewriting.
+gitr() {
+  command git --no-pager \
+    -c log.showSignature=false \
+    -c color.ui=false -c color.diff=false -c color.status=false \
+    -c core.quotePath=false \
+    -c diff.noprefix=false -c diff.mnemonicPrefix=false \
+    -c diff.renames=true -c diff.context=3 \
+    "$@"
+}
+
 # Budgets. A branch carrying a hundred commits is worth summarizing
 # rather than transcribing, and an oversized paste crowds out the rest
 # of the skill.
@@ -128,14 +162,14 @@ printf 'count: %s\n\n' "$landing"
 if [ "$landing" = "0" ]; then
   printf 'Nothing to open a pull request for. Commit the work first.\n'
 else
-  git log --oneline "$base_ref..HEAD" | head -n "$LOG_CAP"
+  gitr log --oneline "$base_ref..HEAD" | head -n "$LOG_CAP"
   printf '\nmessages in full:\n'
-  git log --reverse --pretty=format:'--- %h%n%B' "$base_ref..HEAD" | head -n 200
+  gitr log --reverse --pretty=format:'--- %h%n%B' "$base_ref..HEAD" | head -n 200
 fi
 
 section "commit types on the branch"
 if [ "$landing" != "0" ]; then
-  git log --format='%s' "$base_ref..HEAD" |
+  gitr log --format='%s' "$base_ref..HEAD" |
     sed -n 's/^\([a-z][a-z]*\)[(!:].*/\1/p' | sort | uniq -c | sort -rn
   printf '\nThe pull request title takes one of these types. A squash merge\n'
   printf 'turns that title into the commit subject on the default branch.\n'
@@ -145,21 +179,21 @@ fi
 
 section "changed files"
 if [ "$landing" != "0" ]; then
-  git diff --name-status "$base_ref...HEAD"
+  gitr diff --no-ext-diff --name-status "$base_ref...HEAD"
   printf '\n'
-  git diff --stat "$base_ref...HEAD"
+  gitr diff --no-ext-diff --stat "$base_ref...HEAD"
 else
   none
 fi
 
 section "diff"
 if [ "$landing" != "0" ]; then
-  patch=$(git diff "$base_ref...HEAD")
+  patch=$(gitr diff --no-ext-diff "$base_ref...HEAD")
   if [ "$(printf '%s\n' "$patch" | wc -l)" -le "$DIFF_LINE_CAP" ]; then
     printf '%s\n' "$patch"
   else
     printf '(diff exceeds %s lines. Read it one path at a time with\n' "$DIFF_LINE_CAP"
-    printf 'git diff %s...HEAD -- <path> before drafting.)\n' "$base_ref"
+    printf 'gitr diff --no-ext-diff %s...HEAD -- <path> before drafting.)\n' "$base_ref"
   fi
 else
   none
@@ -238,21 +272,6 @@ else
   printf 'NO TEMPLATE at %s — stop and tell the operator\n' "$template"
 fi
 
-section "draft skeleton"
-printf 'Write %s at the repository root, in exactly this shape:\n\n' "$DRAFT"
-printf -- '---\n'
-printf 'base: %s\n' "$default_branch"
-printf 'draft: false\n'
-printf 'labels: [pick, from, the, list, above]\n'
-printf 'reviewers: []\n'
-printf 'assignees: []\n'
-printf 'milestone:\n'
-printf -- '---\n\n'
-printf '# <type>(<scope>)?: <description>\n\n'
-if [ -f "$template" ]; then
-  grep '^## ' "$template" | awk '{ print $0 "\n\n<prose>\n" }'
-fi
-
 section "preconditions"
 if git check-ignore --quiet "$DRAFT" 2>/dev/null; then
   printf '%s gitignored: yes\n' "$DRAFT"
@@ -281,7 +300,7 @@ elif [ "$gh_state" != ok ]; then
 elif [ -z "$open_number" ]; then
   rm -f "$DRAFT" "$stamp"
   printf '%s: REMOVED. It carried no open pull request, so it was a leftover\n' "$DRAFT"
-  printf 'from a run that stopped early. Draft fresh.\n'
+  printf 'from a run that stopped early.\n'
 else
   printf '%s: present, the working copy for #%s\n' "$DRAFT" "$open_number"
   # Whether the draft still matches what is published decides the next
@@ -298,4 +317,19 @@ else
       printf 'once the review clears it again.\n'
     fi
   fi
+fi
+
+section "draft skeleton"
+printf 'Write %s at the repository root, in exactly this shape:\n\n' "$DRAFT"
+printf -- '---\n'
+printf 'base: %s\n' "$default_branch"
+printf 'draft: false\n'
+printf 'labels: [pick, from, the, list, above]\n'
+printf 'reviewers: []\n'
+printf 'assignees: []\n'
+printf 'milestone:\n'
+printf -- '---\n\n'
+printf '# <type>(<scope>)?: <description>\n\n'
+if [ -f "$template" ]; then
+  grep '^## ' "$template" | awk '{ print $0 "\n\n<prose>\n" }'
 fi

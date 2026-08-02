@@ -25,6 +25,40 @@
 # Written to bash 3.2.
 set -euo pipefail
 
+# --- environment hardening -------------------------------------------
+# The agent reads this output, so the operator's preferences must not
+# change its shape. LC_ALL pins collation, because sort and the [a-z]
+# ranges below mean different things under a UTF-8 locale. The unsets
+# cover variables that silently retarget a command: GH_REPO sends gh at
+# another repository, CDPATH makes a relative cd print somewhere else.
+export LC_ALL=C
+export GH_PAGER=cat
+export GH_PROMPT_DISABLED=1
+export PYTHONUTF8=1
+unset CDPATH GH_REPO GH_HOST GREP_OPTIONS
+IFS=$(printf ' \t\n')
+
+# gitr runs git for output this script parses, with every formatting
+# knob pinned. log.showSignature is the one that matters most: it
+# prepends a verification line per commit to stdout, ahead of the
+# format string, so a --oneline listing silently becomes two lines per
+# commit and any head -n cap shows half a branch as though it were all
+# of it.
+#
+# Plain `git` stays available on purpose. Config reads, fetch, and push
+# need the operator's real configuration: the sign-off identity may come
+# from an includeIf work profile, and the network calls need credential
+# helpers and any url.insteadOf rewriting.
+gitr() {
+  command git --no-pager \
+    -c log.showSignature=false \
+    -c color.ui=false -c color.diff=false -c color.status=false \
+    -c core.quotePath=false \
+    -c diff.noprefix=false -c diff.mnemonicPrefix=false \
+    -c diff.renames=true -c diff.context=3 \
+    "$@"
+}
+
 readonly DRAFT=SQUASH_AGENTMSG
 readonly WRAP=${COMMITLINT_BODY_MAX_LINE_LENGTH:-72}
 
@@ -134,7 +168,7 @@ fi
 # Trailers come from the commits themselves rather than the description,
 # because that is where the sign-off actually happened. Order follows
 # the shared trailer rule: attribution first, sign-off last.
-trailers=$(git log --pretty=format:'%(trailers:only,unfold)' "origin/${base}..HEAD" 2>/dev/null || true)
+trailers=$(gitr log --pretty=format:'%(trailers:only,unfold)' "origin/${base}..HEAD" 2>/dev/null || true)
 for key in Assisted-by Signed-off-by; do
   printf '%s\n' "$trailers" | grep "^${key}:" | sort -u | while IFS= read -r line; do
     [ -n "$line" ] || continue

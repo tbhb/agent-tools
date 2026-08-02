@@ -20,6 +20,16 @@
 # Silence means a clean run.
 set -euo pipefail
 
+# --- environment hardening -------------------------------------------
+# Output here feeds an agent and a committed artifact, so the operator's
+# locale must not reorder it. PYTHONUTF8 is the companion: under LC_ALL=C
+# python would otherwise read these files as ASCII and raise on the first
+# non-ASCII character.
+export LC_ALL=C
+export PYTHONUTF8=1
+unset CDPATH GREP_OPTIONS
+IFS=$(printf ' \t\n')
+
 readonly NAME_MAX=64
 readonly DESC_MAX=1024
 
