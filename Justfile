@@ -367,7 +367,7 @@ lint-dup-code:
 # other shapes that read as findings there, while ruff's `S` set still
 # covers test code through per-file-ignores.
 lint-bandit:
-    uv run bandit -r packages/agent-tools-py/src -q
+    uv run bandit -r packages/repotools/src -q
 
 # Aggregates the Go gates (via `lint-go-all`), the Python gates (via
 # `lint-py-all`), prose (vale), spelling (cspell), Markdown (rumdl),
@@ -840,7 +840,7 @@ cover: cover-go cover-py
 # pyproject.toml sets fail_under = 100 with branch coverage on, so
 # anything unreachable belongs in exclude_also with a reason rather than
 # behind a lowered threshold. `--cov` with no value reads the configured
-# source, so the agent_tools_py package gets measured and the tests do
+# source, so the repotools package gets measured and the tests do
 # not. This is the inner-loop recipe: run it, read the Missing column,
 # write the test that reaches the gap.
 

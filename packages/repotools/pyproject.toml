@@ -1,11 +1,11 @@
-# The Python side of agent-tools. Today it carries one module, kept
+# The Python side of repotools. Today it carries one module, kept
 # deliberately small: the toolchain at the repository root needs a real
 # subject to verify against, and a package that lints, type checks, and
 # reaches full branch coverage proves the gates work before any weight
 # rests on them. The agent eval work this repository is headed toward
 # lands here.
 [project]
-name = "agent-tools-py"
+name = "repotools"
 version = "0.1.1"
 description = "Python support library for tbhb agent tooling"
 authors = [{ name = "Tony Burns" }]

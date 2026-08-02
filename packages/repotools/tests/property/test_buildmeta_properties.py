@@ -5,9 +5,9 @@
 
 from __future__ import annotations
 
-from agent_tools_py import buildmeta
 from hypothesis import given
 from hypothesis import strategies as st
+from repotools import buildmeta
 
 
 @given(fallback=st.text())

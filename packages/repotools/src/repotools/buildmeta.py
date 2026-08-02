@@ -17,7 +17,7 @@ from importlib import metadata
 # straight from a source checkout looks like.
 DEVELOPMENT: str = "dev"
 
-DISTRIBUTION: str = "agent-tools-py"
+DISTRIBUTION: str = "repotools"
 
 
 def resolve_version(distribution: str, fallback: str = DEVELOPMENT) -> str:

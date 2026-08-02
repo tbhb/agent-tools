@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from agent_tools_py import buildmeta
+from repotools import buildmeta
 
 
 def test_installed_distribution_reports_its_version() -> None:

@@ -160,6 +160,7 @@ XDG
 [Yy]amllint('s)?
 agent-tools
 agent_id
+agent_tools_py
 agent_type
 agentcontext
 agenthooks
