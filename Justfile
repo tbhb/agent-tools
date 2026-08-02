@@ -372,7 +372,7 @@ lint-bandit:
 # the .editorconfig whitespace contract (editorconfig-checker).
 
 # Run every linter that operates on the source tree.
-lint: lint-go-all lint-py-all lint-prose lint-spelling lint-markdown lint-config lint-yaml lint-toml lint-shell lint-shell-fmt lint-just lint-editorconfig
+lint: lint-go-all lint-py-all lint-prose lint-spelling lint-markdown lint-markdown-wrap lint-config lint-yaml lint-toml lint-shell lint-shell-fmt lint-just lint-editorconfig
 
 # --modules-download-mode=vendor matches `just build`, so the linter
 # sees exactly the dependency set the compiler does and never falls back
@@ -458,6 +458,27 @@ lint-spelling *args:
 # Lint Markdown files against the project's .rumdl.toml ruleset.
 lint-markdown *args:
     rumdl check {{ if args == "" { "." } else { args } }}
+
+# This repository's own check, applied to itself. `go run` rather than an
+# installed binary so the gate reflects the working tree: a change to the
+# detector is judged by the detector as changed, not by the last release.
+# The build cache makes every run after the first cheap. Consumers get the
+# same check through .pre-commit-hooks.yaml, where prek builds it once, or
+# by running `check-markdown` from `go install`.
+#
+# Scope comes from git rather than a shell glob so the file list matches
+# what the other tree-wide gates see, minus the vendored Markdown that
+# upstream hard-wrapped and this repository does not own.
+
+# Fail if any Markdown paragraph spans more than one line.
+[script]
+lint-markdown-wrap *args:
+    files=$(git ls-files '*.md' ':!:vendor/**')
+    if [ -n "$files" ]; then go run ./cmd/check-markdown {{ args }} $files; fi
+
+# Join every hard-wrapped Markdown paragraph back into one line.
+fix-markdown-wrap:
+    just lint-markdown-wrap --fix
 
 # Recommended ruleset, biome's own formatter; covers config files
 # (biome.json, package.json, tsconfig) and any future scripts under

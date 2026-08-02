@@ -1,0 +1,31 @@
+---
+# Hook manifest consumed by other tbhb repositories. Reference it from a
+# .pre-commit-config.yaml with:
+#
+#   repos:
+#     - repo: https://github.com/tbhb/agent-tools
+#       rev: v0.1.1
+#       hooks:
+#         - id: check-markdown
+#
+# language: golang, so prek builds the binary once into an isolated GOPATH
+# and reuses it; nothing compiles per commit and the consumer needs no Go
+# toolchain beyond what prek provisions.
+#
+# The same binary backs the Claude PreToolUse hook this package declares
+# (see hooks/check-markdown.json). One implementation serves both, plus a
+# repo's own verification stack via `check-markdown <paths>`. Note that the
+# two paths install separately: prek builds its own copy, while the Claude
+# hook resolves `check-markdown` on PATH from
+# `go install github.com/tbhb/agent-tools/cmd/check-markdown@vX.Y.Z`.
+
+- id: check-markdown
+  name: check-markdown
+  description: >-
+    Refuse Markdown whose paragraphs span more than one line. Prose in
+    tbhb repositories is never hard-wrapped: each paragraph is a single
+    line and the renderer decides where it breaks. Reports the offending
+    line ranges, and rewrites them in place when passed --fix.
+  entry: check-markdown
+  language: golang
+  types: [markdown]

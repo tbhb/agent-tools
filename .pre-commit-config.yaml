@@ -206,3 +206,15 @@ repos:
         language: system
         files: ^(pyproject\.toml|uv\.lock)$
         pass_filenames: false
+
+      # This repository publishes the check (see .pre-commit-hooks.yaml)
+      # and applies it to itself. It runs the recipe, which builds from the
+      # working tree, rather than the published manifest: a change to the
+      # detector then gates the very commit that makes it, instead of being
+      # checked against the last released binary.
+      - id: check-markdown
+        name: check-markdown
+        entry: just lint-markdown-wrap
+        language: system
+        types: [markdown]
+        pass_filenames: false
