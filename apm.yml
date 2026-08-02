@@ -8,7 +8,7 @@
 # harness layout. The cog pre-bump hook keeps `version` in lockstep
 # with the vX.Y.Z git tags (see cog.toml).
 name: agent-tools
-version: 0.1.1
+version: 0.2.0
 description: Shared agent package for tbhb repositories
 author: tbhb
 license: Apache-2.0
