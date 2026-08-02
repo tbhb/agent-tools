@@ -95,6 +95,8 @@ Every Markdown paragraph in this repository occupies one line, leaving the rende
 
 `cmd/guard-markdown` enforces it. A prek hook runs it over `*.md`. A Claude `PreToolUse` hook runs it against a `Write` or `Edit` and denies the call before wrapped prose reaches disk. `just lint-markdown-wrap` runs it in the verification stack, and `just fix-markdown-wrap` collapses paragraphs someone already wrapped.
 
+A `CHANGELOG.md` is exempt in every one of those modes. The match is exact, on the base name alone, so a changelog under any directory qualifies and nothing else does. A generator writes it from commit messages, which are hard-wrapped under their own gate, so the wrapping arrives with the content and unwrapping it by hand holds only until the next release. `internal/markdown` carries the exemption as a constant, so it reaches every consumer repo and no repo can decline it. A second exception is the point at which that becomes declarative configuration instead. The vale gate already skips the same file through a glob in `just lint-prose`.
+
 Copy this shape for the next rule.
 
 `internal/markdown` holds the rule itself, `internal/hookio` the payload decoding and deny envelope every check shares, and `cmd/guard-markdown` a thin layer of glue over the two. Keep the glue thin for a concrete reason. `.testcoverage.yml` excludes `main.go` and nothing else, so logic placed there goes unmeasured. Shared plumbing living in its own package also means a second check writes only its own rule. Give each check a standalone binary, and `agenthooks` stays a dispatcher instead of accumulating one subcommand per rule.

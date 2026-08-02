@@ -71,7 +71,10 @@ func newRootCmd(s streams) *cobra.Command {
 			"PreToolUse payload on stdin and denies a Write or Edit before wrapped\n" +
 			"prose reaches disk. With paths it reports violations and exits nonzero,\n" +
 			"which is what pre-commit and the just recipes consume. With --fix it\n" +
-			"joins the offending paragraphs in place.",
+			"joins the offending paragraphs in place.\n\n" +
+			"A CHANGELOG.md is exempt in every mode. A generator builds it from\n" +
+			"commit messages, which are hard-wrapped under their own gate, so the\n" +
+			"wrapping arrives with the content and the next release restores it.",
 		Version:       buildmeta.Version,
 		SilenceUsage:  true,
 		SilenceErrors: true,
@@ -107,7 +110,7 @@ func runHook(s streams) error {
 		return nil //nolint:nilerr // fail open, as the comment explains
 	}
 	path, content, ok := payload.Resolve(nil)
-	if !ok || !markdown.IsMarkdown(path) {
+	if !ok || !markdown.Checked(path) {
 		return nil
 	}
 	report := markdown.Analyze(content)
@@ -124,7 +127,7 @@ func runHook(s streams) error {
 func runCheck(paths []string, fix bool, s streams) error {
 	found := false
 	for _, path := range paths {
-		if !markdown.IsMarkdown(path) {
+		if !markdown.Checked(path) {
 			continue
 		}
 		data, err := os.ReadFile(path)

@@ -82,6 +82,20 @@ func TestCheckMode(t *testing.T) {
 		assert.Equal(t, exitOK, got.code)
 	})
 
+	// A generator owns this file, so neither mode touches it.
+	t.Run("generated changelog is skipped", func(t *testing.T) {
+		t.Parallel()
+		path := write(t, "CHANGELOG.md", wrapped)
+		got := exec(t, "", path)
+		assert.Equal(t, exitOK, got.code)
+		assert.Empty(t, got.stdout)
+
+		require.Equal(t, exitOK, exec(t, "", "--fix", path).code)
+		body, err := os.ReadFile(path)
+		require.NoError(t, err)
+		assert.Equal(t, wrapped, string(body), "--fix leaves it as the generator wrote it")
+	})
+
 	t.Run("no paths is a pass", func(t *testing.T) {
 		t.Parallel()
 		assert.Equal(t, exitOK, exec(t, "").code)
@@ -164,6 +178,13 @@ func TestHookMode(t *testing.T) {
 	t.Run("non-markdown path is silent", func(t *testing.T) {
 		t.Parallel()
 		got := exec(t, payload("Write", "a.go", "alpha\nbeta\n"), "--hook")
+		assert.Equal(t, exitOK, got.code)
+		assert.Empty(t, got.stdout)
+	})
+
+	t.Run("wrapped changelog write is allowed", func(t *testing.T) {
+		t.Parallel()
+		got := exec(t, payload("Write", "CHANGELOG.md", wrapped), "--hook")
 		assert.Equal(t, exitOK, got.code)
 		assert.Empty(t, got.stdout)
 	})

@@ -25,6 +25,7 @@ package markdown
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -443,4 +444,20 @@ func DenyReason(path string, report Report) string {
 func IsMarkdown(path string) bool {
 	lower := strings.ToLower(path)
 	return strings.HasSuffix(lower, ".md") || strings.HasSuffix(lower, ".markdown")
+}
+
+// generatedChangelog is the one document this check never judges. A
+// changelog generator writes it from commit messages, which are hard-wrapped
+// under their own gate, so the wrapping arrives with the content and no
+// author is in a position to unwrap it. Unwrapping it by hand only holds
+// until the next release regenerates the file.
+//
+// The match is exact, on the base name alone.
+const generatedChangelog = "CHANGELOG.md"
+
+// Checked reports whether this check judges the document at path. Every
+// caller asks this one question, so the hook, the file check, and the fixer
+// can't come to different answers about the same path.
+func Checked(path string) bool {
+	return IsMarkdown(path) && filepath.Base(path) != generatedChangelog
 }

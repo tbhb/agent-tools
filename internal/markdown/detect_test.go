@@ -275,6 +275,32 @@ func TestIsMarkdown(t *testing.T) {
 	}
 }
 
+func TestChecked(t *testing.T) {
+	t.Parallel()
+
+	// The generated changelog is the one Markdown document this check skips,
+	// matched on its exact base name. Everything a near miss would catch
+	// stays in scope.
+	cases := map[string]bool{
+		"a.md":               true,
+		"docs/a.markdown":    true,
+		"changelog.md":       true,
+		"Changelog.md":       true,
+		"CHANGELOG.markdown": true,
+		"CHANGELOG-old.md":   true,
+		"CHANGELOG.md":       false,
+		"docs/CHANGELOG.md":  false,
+		"CHANGELOG":          false,
+		"a.go":               false,
+	}
+	for name, want := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, want, markdown.Checked(name))
+		})
+	}
+}
+
 // fill wraps words at the given column, the way a hard-wrapping editor would.
 func fill(words []string, width int) string {
 	var b strings.Builder
