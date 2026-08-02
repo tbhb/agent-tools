@@ -240,6 +240,7 @@ protogetter
 pycache
 pydocstyle
 pylint
+pylock
 pyproject
 pyrefly
 pytest

@@ -178,12 +178,14 @@ setup: install-brew install-tools prek-install
 install-brew:
     brew bundle check || brew bundle install
 
-# Today that means Vale's synced style packages; grows as new
-# sync-style tools land.
+# Vale's synced style packages, plus the Python toolchain the hook
+# scripts under hooks/ are linted and tested with. `uv sync` reads
+# uv.lock, so every contributor and CI runner gets the same versions.
 
 # Refresh non-brew tooling.
 install-tools:
     vale sync
+    uv sync
 
 # --- Build ---
 # CGO_ENABLED=0 removes the host C toolchain as a build input.
@@ -252,6 +254,14 @@ format-shell:
     files=$(git ls-files '*.sh' ':!:vendor/**' ':!:.claude/**')
     if [ -n "$files" ]; then shfmt -w $files; fi
 
+# Rewrites in place; `lint-ruff-format` is the --check counterpart CI
+# runs. Scope comes from [tool.ruff] in pyproject.toml, so the path-less
+# invocation walks the whole tree, tests included.
+
+# Format Python code in place via ruff's formatter.
+format-py *args:
+    uv run ruff format {{ args }}
+
 # just's formatter is still an unstable subcommand upstream. The `set
 # unstable` at the top of this file already unlocks it, but both this recipe
 # and `lint-just` pass --unstable explicitly so neither breaks if that
@@ -275,6 +285,13 @@ fix-go *args:
     {{ golangci_lint }} fmt {{ args }}
     {{ golangci_lint }} run --fix --modules-download-mode=vendor {{ args }}
 
+# Applies only ruff's safe autofixes; anything it leaves behind needs a
+# human. Pair with `format-py`, which handles layout rather than lint.
+
+# Fix Python linting issues.
+fix-py *args:
+    uv run ruff check --fix {{ args }}
+
 # Complement to `format-markdown` (which only rewrites whitespace and
 # ordering, not semantic lints).
 
@@ -293,14 +310,69 @@ fix-markdown *args:
 # Aggregate every Go-flavored lint gate.
 lint-go-all: lint-go lint-go-modernize lint-go-deadcode lint-go-arch lint-workflows
 
-# Aggregates the Go gates (via `lint-go-all`), prose (vale), spelling
-# (cspell), Markdown (rumdl), config / JS / TS (biome), YAML (yamllint),
-# TOML (tombi), shell (shellcheck + shfmt), this Justfile's own formatting
-# (just --fmt), and the .editorconfig whitespace contract
-# (editorconfig-checker).
+# The Python counterpart to `lint-go-all`, covering the hook scripts under
+# hooks/ and their tests. Same shape: a pure dependency list a contributor
+# iterating on Python can rerun without paying for the tree-wide text
+# checks, and each new Python gate appends itself here. lint-bandit rides
+# along because the Go side runs gosec inside golangci-lint, so the SAST
+# pass travels with the source linters rather than standing up its own CI
+# job for one fast check.
+
+# Aggregate every Python-flavored lint gate.
+lint-py-all: lint-ruff-format lint-ruff lint-types lint-complexity lint-deadcode lint-dup-code lint-bandit
+
+# Check Python formatting via ruff's formatter in --check mode: report
+# drift and fail without rewriting. Drift must fail a gate, never rewrite
+# the tree behind the contributor's back; `format-py` is the in-place
+# counterpart.
+lint-ruff-format:
+    uv run ruff format --check
+
+# Lint Python against the full ruff ruleset. Rule selection and the
+# justified ignore list live in pyproject.toml under [tool.ruff].
+lint-ruff *args:
+    uv run ruff check {{ args }}
+
+# Type check with pyrefly. The [tool.pyrefly] tables in pyproject.toml
+# pin every error kind and name the project scope, so a bare project-mode
+# check is the whole gate.
+lint-types:
+    uv run pyrefly check
+
+# Measure per-function cognitive complexity and fail on anything over the
+# ceiling. Scope and threshold live in pyproject.toml under
+# [tool.complexipy].
+lint-complexity:
+    uv run complexipy
+
+# Find dead code with vulture. Scope lives in pyproject.toml under
+# [tool.vulture].
+lint-deadcode:
+    uv run vulture
+
+# Detect copy-pasted code with pylint, pared down in pyproject.toml to its
+# similarities checker alone -- the one message in pylint's catalog no
+# other tool in the chain covers. pylint takes its scan roots on the
+# command line rather than from config, so the scope lives here.
+lint-dup-code:
+    uv run pylint packages
+
+# Scan the hook scripts for insecure code patterns with bandit. This is
+# the static second pass behind ruff's `S` rules -- ruff ports only part
+# of bandit's checks and trails its releases. tests/ stays out: a suite
+# leans on assert (B101) and other shapes that read as findings there,
+# while ruff's `S` set still covers test code through per-file-ignores.
+lint-bandit:
+    uv run bandit -r packages/agent-tools-py/src -q
+
+# Aggregates the Go gates (via `lint-go-all`), the Python gates (via
+# `lint-py-all`), prose (vale), spelling (cspell), Markdown (rumdl),
+# config / JS / TS (biome), YAML (yamllint), TOML (tombi), shell
+# (shellcheck + shfmt), this Justfile's own formatting (just --fmt), and
+# the .editorconfig whitespace contract (editorconfig-checker).
 
 # Run every linter that operates on the source tree.
-lint: lint-go-all lint-prose lint-spelling lint-markdown lint-config lint-yaml lint-toml lint-shell lint-shell-fmt lint-just lint-editorconfig
+lint: lint-go-all lint-py-all lint-prose lint-spelling lint-markdown lint-config lint-yaml lint-toml lint-shell lint-shell-fmt lint-just lint-editorconfig
 
 # --modules-download-mode=vendor matches `just build`, so the linter
 # sees exactly the dependency set the compiler does and never falls back
@@ -368,7 +440,7 @@ lint-go-arch:
 
 # Lint prose in Markdown files and source comments via vale.
 lint-prose *args:
-    vale --output=project-agent.tmpl --glob='!{LICENSE,CHANGELOG.md,.vale/*,tmp/*,vendor/*,.claude/worktrees/*,COMMIT_AGENTMSG}' {{ if args == "" { "." } else { args } }}
+    vale --output=project-agent.tmpl --glob='!{LICENSE,CHANGELOG.md,.vale/*,tmp/*,vendor/*,.venv/*,.claude/worktrees/*,.pytest_cache/*,.complexipy_cache/*,COMMIT_AGENTMSG}' {{ if args == "" { "." } else { args } }}
 
 # Checks against the project dictionary at .cspell-words.txt. cspell
 # ignores binaries, generated files, and the vendor/ tree via the
@@ -520,13 +592,27 @@ lint-commit-msg:
     prek run --stage commit-msg --commit-msg-filename COMMIT_AGENTMSG
 
 # --- Test ---
+# The bare names aggregate both source languages; the -go and -py forms
+# are what a contributor reaches for while iterating on one of them. CI
+# and the nightly workflows invoke the language-specific recipes directly,
+# so a slow Python sweep never rides along with a Go job.
 
 # Run every test suite.
-test: test-go
+test: test-go test-py
 
 # Run the Go tests.
 test-go *args:
     go test ./... "$@"
+
+# Serial by default so a failing run prints a clean, ordered trace; pass
+# `just test-py -n auto` to fan the suite across xdist workers.
+# pytest-randomly reshuffles the order every run and prints the seed it
+# chose; reproduce a given order with
+# `just test-py -p randomly --randomly-seed=N`.
+
+# Run the Python tests.
+test-py *args:
+    uv run pytest "$@"
 
 # Slower than plain `just test-go`; pairs with goroutine-bearing code as it
 # lands. Native fuzz targets discovered by the nightly workflow rerun
@@ -576,8 +662,22 @@ mutate-go *args:
 mutate-go-all:
     go tool gremlins unleash --timeout-coefficient {{ gremlins_timeout_coefficient }} .
 
-# Run every mutation sweep.
-mutate: mutate-go-all
+# Run every mutation sweep. Both are slow enough to belong on a nightly
+# schedule rather than in the inner loop; this is the entry point for
+# running them locally before a release-bound PR.
+
+# Run mutation testing across both source languages.
+mutate: mutate-go-all mutate-py
+
+# cosmic-ray is the Python counterpart to gremlins. Scope, per-mutant
+# timeout, and the test command live in cosmic-ray.toml. The session
+# database lands under .cosmic-ray/ and is regenerated each run.
+
+# Run mutation testing over the hook scripts.
+mutate-py:
+    uv run cosmic-ray init cosmic-ray.toml .cosmic-ray/session.sqlite
+    uv run cosmic-ray exec cosmic-ray.toml .cosmic-ray/session.sqlite
+    uv run cr-report .cosmic-ray/session.sqlite --show-pending
 
 # Runs via tools/fuzz.sh, which lists every Fuzz* function under each
 # package and runs it for the FUZZ_TIME budget (default 30s); set
@@ -587,11 +687,20 @@ mutate: mutate-go-all
 # point powers both the inner loop and the scheduled sweep.
 
 # Run every fuzzing sweep.
-fuzz: fuzz-go
+fuzz: fuzz-go fuzz-py
 
 # Run native Go fuzz targets under [path] (default the entire module).
 fuzz-go path="./...":
     tools/fuzz.sh {{ path }}
+
+# hypofuzz drives the existing hypothesis property tests under
+# coverage-guided search, the Python analogue of the native Go fuzz
+# targets above. It never runs on a pull request: the nightly workflow
+# gives it a real budget, and this recipe is the local form.
+
+# Run the Python property tests under coverage-guided fuzzing.
+fuzz-py *args:
+    uv run hypothesis fuzz {{ args }} -- tests/property
 
 # The inner-loop coverage gate. Pair with `just mutate-go <path>` when
 # adding tests against survivor mutants. The total threshold remains
@@ -600,7 +709,25 @@ fuzz-go path="./...":
 # follow-up.
 
 # Run every coverage gate.
-cover: cover-go
+cover: cover-go cover-py
+
+# The Python floor is absolute rather than graduated: [tool.coverage] in
+# pyproject.toml sets fail_under = 100 with branch coverage on, so
+# anything unreachable belongs in exclude_also with a reason rather than
+# behind a lowered threshold. `--cov` with no value reads the configured
+# source, so the hook scripts get measured and the tests do not. This is
+# the inner-loop recipe: run it, read the Missing column, write the test
+# that reaches the gap.
+
+# Run the Python tests with branch coverage and enforce the 100% floor.
+cover-py:
+    uv run pytest --cov --cov-branch
+
+# Re-print the report and re-check the threshold against whatever data
+# .coverage already holds, without rerunning the suite. Locally it
+# re-checks after an exclude_also edit without paying for another run.
+cover-py-check:
+    uv run coverage report
 
 # Run the Go tests with coverage, print the per-function breakdown, and enforce the `.testcoverage.yml` thresholds.
 cover-go:
@@ -779,7 +906,31 @@ check-all: check test-go-race fuzz gitleaks
 # rather than enumerate the scanner set in YAML.
 
 # Security-only sub-aggregator.
-security: vuln gomodscan gitleaks
+security: vuln gomodscan gitleaks audit
+
+# --- Dependencies ---
+
+# Check that uv.lock is in sync with pyproject.toml. CI runs this on every
+# PR; contributors run `uv lock` and commit the result. The Go side has
+# `vendor-check` for the same job.
+lock-check:
+    uv lock --check
+
+# The Python analogue of `vuln`: export the locked closure to a pylock
+# file, query each pinned version against the PyPI advisory database, and
+# exit nonzero on any match. --no-emit-project drops the unversioned
+# workspace root, which pip-audit would otherwise skip with a note. The
+# export and the HTTP cache both land in a throwaway dir the trap removes
+# on exit, so the run stays hermetic and never leans on a writable
+# per-user cache location.
+
+# Audit the locked Python dependencies against the advisory database.
+[script]
+audit:
+    work=$(mktemp -d)
+    trap 'rm -rf "$work"' EXIT
+    uv export --quiet --format pylock.toml --no-emit-project -o "$work/pylock.toml"
+    uv run pip-audit --cache-dir "$work/cache" --locked "$work"
 
 # --- Utilities ---
 

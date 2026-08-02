@@ -90,11 +90,47 @@ jobs:
 
       # Vale's style packages are downloaded, not vendored, so
       # `lint-prose` fails on a bare checkout without this.
-      - name: Sync Vale styles
+      - name: Sync Vale styles and Python dependencies
         run: just install-tools
 
       - name: Run lint gates
         run: just lint
+
+  # The Python suite covers the package under packages/, which is pure
+  # standard library and carries no platform-specific behavior, so this runs
+  # on one slot rather than the os matrix the Go tests need. The coverage
+  # floor is absolute (fail_under = 100 with branch coverage, set in
+  # pyproject.toml), so `cover-py` is both the test run and the gate --
+  # there is no per-slot data to combine downstream.
+  test-py:
+    name: test (python)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up just
+        uses: tbhb/github-actions/.github/actions/setup-just@d40ae6bd774fdf78c631c4d851ed9d22ee840ca1 # v0.1.0
+
+      # Installs the interpreter named in .python-version and restores the
+      # locked dependency closure from uv.lock.
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+
+      - name: Check that uv.lock matches pyproject.toml
+        run: just lock-check
+
+      - name: Run tests with branch coverage
+        run: just cover-py
 
   test:
     name: "test (${{ matrix.os }})"
