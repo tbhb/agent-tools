@@ -26,7 +26,7 @@ GNU
 GPG
 GUAC
 HTTPClient
-HTTPS
+HTTPS|https
 IDs?
 InferWidth
 IsMarkdown
@@ -243,7 +243,7 @@ parseLine
 parseable
 passthrough
 pluggable
-preToolUse
+preToolUse|PreToolUse
 printf
 queryCase
 queryRequest
@@ -275,7 +275,7 @@ stdin
 stdlib
 stdout
 stripspace
-structural
+structural|Structural
 subcommands?
 subproject
 subshells?
