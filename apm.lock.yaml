@@ -325,7 +325,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:25b4e68f5b5cf3b7a2a1da79927bd268567b2b4ac6f8607da38059cd50a885c9
+  content_hash: sha256:40e79e3bf7e3455a3409b39c2c335e5c8d996529db5bb1fc4d60986ee411c560
 - kind: project-relative
   target: claude
   value: .claude/skills/rebase/scripts/marker-scan.sh
@@ -379,7 +379,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:b06b754c4bb1a28a6a10c9072f984d6a8b23c974d904d828f6d628ce918fdadb
+  content_hash: sha256:9b1e70ff2325e98e8d89862bc17d887dc68a58eefc919a22c60a25ac41565fe4
 - kind: project-relative
   target: claude
   value: .claude/skills/resolve-rebase-conflicts
@@ -724,13 +724,13 @@ local_deployed_file_hashes:
   .claude/skills/pr/tokens.json: sha256:084db2b3ac67a275519f7bb84f2d17c59ff7fbbec6f44078c095c110e2bdd18c
   .claude/skills/rebase/SKILL.md: sha256:bf45880197d67eac4121afa9f96924f17b3a7794a7de657a460802cf5090f55e
   .claude/skills/rebase/scripts/continue-rebase.sh: sha256:fb1ccf0da995591e1aedf7e036d5ae121ae960467970663a84c60e779ce79d6d
-  .claude/skills/rebase/scripts/guard-rebase.sh: sha256:25b4e68f5b5cf3b7a2a1da79927bd268567b2b4ac6f8607da38059cd50a885c9
+  .claude/skills/rebase/scripts/guard-rebase.sh: sha256:40e79e3bf7e3455a3409b39c2c335e5c8d996529db5bb1fc4d60986ee411c560
   .claude/skills/rebase/scripts/marker-scan.sh: sha256:98856035e530c7dec6decb59d78f0e7b4a14d89d203cfcad0630b6ddd26056f5
   .claude/skills/rebase/scripts/preflight.sh: sha256:3cd036e26f16e54ad3511ac53f51f792aa02e34730a383cbddfeb54a1421e57f
   .claude/skills/rebase/scripts/rebase-status.sh: sha256:f1540162c2b844a711aa08d28a041ffa2df7e73837e2b023d0106b75d9449dc4
   .claude/skills/rebase/scripts/start-rebase.sh: sha256:8d5692f8830f5348ef01f7bde46e543b8bb5eed562aec676bc96884c0576c32c
   .claude/skills/rebase/scripts/verify-rebase.sh: sha256:d0075dd6cb508c0920b1d224ac72c27a8a7a42d17f5faef465d34eda42f73625
-  .claude/skills/rebase/tokens.json: sha256:b06b754c4bb1a28a6a10c9072f984d6a8b23c974d904d828f6d628ce918fdadb
+  .claude/skills/rebase/tokens.json: sha256:9b1e70ff2325e98e8d89862bc17d887dc68a58eefc919a22c60a25ac41565fe4
   .claude/skills/resolve-rebase-conflicts/SKILL.md: sha256:5b64a3fdec0f2edfc88524760c8370e126267af64e7d90fd7500656bc303c7ed
   .claude/skills/resolve-rebase-conflicts/scripts/classify-conflicts.sh: sha256:6ae6eb37cce0e1073ebbc77e5e0da38773400e1e6a2e1049c7436da404291757
   .claude/skills/resolve-rebase-conflicts/scripts/conflict-shape.sh: sha256:0a1f238ebc623ad607f8070578ea3d0b3739f35c4869075fbcd8f7bc3300295e

@@ -12,11 +12,11 @@
 #      share one global stash stack, and its indices shift whenever any
 #      worktree pushes, so a bare pop takes whatever sits at stash@{0}
 #      at that instant, which may belong to another session.
-#   2. Starting a rebase by hand is refused. The two settings that have
-#      to be off are operator preferences that can be on without anyone
-#      here knowing, and the pre-rebase tip has to be written down
-#      before the branch moves or the verification at the end has
-#      nothing to compare against.
+#   2. Starting a rebase by hand is refused unless it pins the two
+#      settings itself. Both are operator preferences that can be on
+#      without anyone here knowing, which is what the script exists to
+#      settle. A caller spelling them out has settled it already, so
+#      the rule reads the command rather than insisting on the script.
 #   3. `git rebase --continue` is refused. git checks that no path is
 #      unmerged and checks nothing else; a file staged with conflict
 #      markers still in it continues happily into a commit.
@@ -132,11 +132,25 @@ if [[ $command =~ ${AT_START}${GIT_CMD}rebase ]]; then
   # Everything that resumes or abandons an existing rebase, plus the
   # read-only forms, passes through. What is left is a start.
   if ! [[ $command =~ [[:space:]]--(abort|quit|edit-todo|show-current-patch|continue|skip)([[:space:]]|$) ]]; then
-    # The one sanctioned start by hand: the sweep that runs a gate at
-    # every commit, which is a verification rather than a move, and
-    # which has to pin the same setting the script pins.
-    if [[ $command =~ [[:space:]]--exec([[:space:]]|=) ]] &&
-      [[ $command =~ rebase\.updateRefs=false ]]; then
+    # What this rule protects is the settings, not the script. A start
+    # that spells both of them out has already done the thing the
+    # script exists to guarantee, so two forms pass without it.
+    #
+    # The commit skill's last step is the first. That workflow ends in
+    # a rebase of its own and writes both knobs out longhand. Refusing
+    # it would put one skill in this package in the way of another's
+    # documented command, which is the collision the shared guard
+    # rules warn about: claim the forms your own scripts wrap, and no
+    # more. What it gives up is the pre-rebase record, and
+    # verify-rebase.sh already falls back to ORIG_HEAD without it.
+    #
+    # The gate sweep is the second, running a recipe at every commit.
+    # That one is a verification rather than a move, so pinning
+    # updateRefs is enough; a fixup! commit it collapsed would have to
+    # exist in the range first, and nothing here creates one.
+    if [[ $command =~ rebase\.updateRefs=false ]] &&
+      { [[ $command =~ rebase\.autoSquash=false ]] ||
+        [[ $command =~ [[:space:]]--exec([[:space:]]|=) ]]; }; then
       exit 0
     fi
     deny "Start the rebase through the script:
@@ -147,10 +161,14 @@ It pins rebase.updateRefs and rebase.autoSquash off, which are operator
 preferences that can be on without this session knowing. updateRefs moves
 other local branches pointing into the replayed range; autoSquash collapses
 a fixup! commit that earned its own review. It also records the pre-rebase
-tip, which is the only thing verify-rebase.sh can compare the result to.
+tip, which is what verify-rebase.sh compares the result against.
 
-Running a gate at every commit is the exception, and it pins the same
-setting:
+Spelling both settings out passes too, which is the form the commit skill
+uses at the end of its own run:
+
+  git -c rebase.updateRefs=false -c rebase.autoSquash=false rebase --autostash <base>
+
+So does the sweep that runs a gate at every commit:
 
   git -c rebase.updateRefs=false rebase --exec 'just lint' <base>"
   fi
