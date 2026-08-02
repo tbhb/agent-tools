@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file. See [conven
 - - -
 <!-- release -->
 
+## [v0.3.1](https://github.com/tbhb/repotools/compare/08897dcadc2db76afb525c7840d2a14564831399..v0.3.1) - 2026-08-02
+
+### Bug Fixes
+
+- sign the release tag in CI and push through the app token (#13) - ([6d7d6e3](https://github.com/tbhb/repotools/commit/6d7d6e3e6917c9a0d016f3f8103518344ef1801e)) - [@tbhb](https://github.com/tbhb)
+
+### Build system
+
+- pin the toolchain with mise from local runs through CI (#12) - ([ec746f3](https://github.com/tbhb/repotools/commit/ec746f30b30a123d63f3a07edbc2a52fcd4d62b5)) - [@tbhb](https://github.com/tbhb)
+
+### Continuous Integration
+
+- permit the mise lock refresh and drop the dead vale rules (#11) - ([08897dc](https://github.com/tbhb/repotools/commit/08897dcadc2db76afb525c7840d2a14564831399)) - [@tbhb](https://github.com/tbhb)
+
+- - -
+
+<!-- release -->
+
 ## [v0.3.0](https://github.com/tbhb/repotools/compare/3be10c4ea0eb708758f44f45345b6a90b940ba7d..v0.3.0) - 2026-08-02
 
 ### Features
