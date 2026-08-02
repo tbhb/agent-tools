@@ -1,11 +1,11 @@
 ---
 # Nightly fuzzing sweep. Walks every native Go fuzz target in the module
-# and runs each one for a longer budget than the inner-loop `just fuzz-go`
+# and runs each one for a longer budget than the inner-loop `fuzz-go`
 # default, so corpus growth and crasher discovery happen off the critical
-# path rather than on every PR. The workflow invokes the same `just fuzz-go`
-# recipe contributors run locally, overriding only FUZZ_TIME, so the recipe
+# path rather than on every PR. The workflow invokes the same `fuzz-go`
+# task contributors run locally, overriding only FUZZ_TIME, so the task
 # stays the single source of truth for what gets fuzzed. Mirrors the
-# gremlins / mutate-go-all split where one recipe powers both the inner loop
+# gremlins / mutate-go-all split where one task powers both the inner loop
 # and the scheduled sweep.
 #
 # A crash writes its reproducing input under the package's
@@ -28,6 +28,10 @@ on:
 
 permissions:
   contents: read
+
+# Refuse a pin the committed lockfiles have not seen; see ci.yml.
+env:
+  MISE_LOCKED: "1"
 
 concurrency:
   # Serialize scheduled and manual runs so an on-demand dispatch never races
@@ -54,20 +58,18 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - name: Set up mise
+        uses: jdx/mise-action@7e36c90d9ab29c415a2384db3006f3ec8a8cc654 # v4.2.4
         with:
-          go-version-file: go.mod
-          check-latest: false
-
-      - name: Set up just
-        uses: ./.github/actions/setup-just
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.8.0
+          install_args: go
 
       - name: Run fuzz sweep
         env:
           # Scheduled runs carry no inputs, so fall back to the dispatch default.
           FUZZ_TIME: ${{ github.event.inputs.fuzz_time || '5m' }}
-        run: just fuzz-go
+        run: mise run fuzz-go
 
       - name: Upload crashers
         if: failure()

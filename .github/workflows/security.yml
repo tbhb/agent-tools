@@ -13,8 +13,8 @@
 # failing the run, so a warning-level deprecation does not gate a pull
 # request. The blocking govulncheck gate stays in `ci.yml`.
 #
-# Each job installs `just` from the SHA-pinned setup-just composite and
-# invokes the matching `just *-sarif` recipe, so the scan command stays
+# Each job installs the pinned go through a SHA-pinned jdx/mise-action
+# and invokes the matching `*-sarif` mise task, so the scan command stays
 # the single source of truth shared with local runs.
 
 name: security
@@ -28,6 +28,10 @@ on:
 
 permissions:
   contents: read
+
+# Refuse a pin the committed lockfiles have not seen; see ci.yml.
+env:
+  MISE_LOCKED: "1"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -51,17 +55,15 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - name: Set up mise
+        uses: jdx/mise-action@7e36c90d9ab29c415a2384db3006f3ec8a8cc654 # v4.2.4
         with:
-          go-version-file: go.mod
-          check-latest: false
-
-      - name: Set up just
-        uses: ./.github/actions/setup-just
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.8.0
+          install_args: go
 
       - name: Run govulncheck (SARIF)
-        run: just vuln-sarif govulncheck.sarif
+        run: mise run vuln-sarif govulncheck.sarif
 
       - name: Upload govulncheck SARIF
         uses: github/codeql-action/upload-sarif@f205ea1c3313d32999d8d6a48b4f6530d4437b38 # v4
@@ -86,17 +88,15 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - name: Set up mise
+        uses: jdx/mise-action@7e36c90d9ab29c415a2384db3006f3ec8a8cc654 # v4.2.4
         with:
-          go-version-file: go.mod
-          check-latest: false
-
-      - name: Set up just
-        uses: ./.github/actions/setup-just
+          # renovate: datasource=github-releases depName=jdx/mise
+          version: 2026.8.0
+          install_args: go
 
       - name: Run gomodscan (SARIF)
-        run: just gomodscan-sarif gomodscan.sarif
+        run: mise run gomodscan-sarif gomodscan.sarif
 
       - name: Upload gomodscan SARIF
         uses: github/codeql-action/upload-sarif@f205ea1c3313d32999d8d6a48b4f6530d4437b38 # v4

@@ -229,6 +229,7 @@ idiomatic_version_file_enable_tools
 injectable
 inline[ds]?
 inlining
+install_args
 ldflags
 listItem
 lookup[s]?
