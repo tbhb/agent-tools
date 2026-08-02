@@ -73,6 +73,10 @@ gremlins-report.json
 !.vale/config/
 .vale/config/*
 !.vale/config/templates/
+# ai-tells v1.28.0 ships its own copy of the agent output template into
+# this directory, which vale sync rewrites. Only the repo-local template
+# is tracked.
+.vale/config/templates/ai-tells-agent.tmpl
 !.vale/config/vocabularies/
 .vale/config/vocabularies/*
 !.vale/config/vocabularies/project/
