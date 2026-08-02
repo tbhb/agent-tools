@@ -127,7 +127,7 @@ Never `git add -A` or `git add .`. During a rebase those sweep in whatever an ea
 
 ## Step 5: hand back
 
-Say what each path was and how you settled it. Name anything you took a whole side on, and anything a generator still has to rewrite.
+Say what each path was and how you resolved it. Name anything you took a whole side on, and anything a generator still has to rewrite.
 
 Then return to the `rebase` skill, which continues the replay through `continue-rebase.sh`. That script reads the staged blobs for markers once more before it advances.
 

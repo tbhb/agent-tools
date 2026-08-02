@@ -33,7 +33,7 @@ The draft's subject ends in the pull request number, so read the draft first and
 - `gh pr diff <number>` for what those commits actually changed
 - `gh pr view <number> --json title,body` for the published description
 
-Read the commit bodies rather than skimming the subjects. A subject names what a commit did. The reason sits in the body, and a reason is the first thing a squash loses.
+Read the commit bodies rather than skimming the subjects. A subject names what a commit did. The reason belongs in the body, and a reason is the first thing a squash loses.
 
 Read them through `gh` rather than from local refs. This skill also runs against pull requests nobody here authored, and often nothing local holds those commits at all.
 
