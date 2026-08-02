@@ -83,6 +83,18 @@ for line in sys.stdin.read().split("\n"):
     python3 -c 'import json,sys; print(json.load(sys.stdin)["input_tokens"])'
 }
 
+# net and the callers below do arithmetic on what count prints, and an
+# empty string evaluates to zero there rather than stopping. Checking the
+# text keeps a failed request from reaching tokens.json as a negative.
+require_count() {
+  case $1 in
+  '' | *[!0-9]*)
+    printf 'skill-tokens: token count failed for %s (got %s)\n' "$2" "${1:-empty}" >&2
+    exit 1
+    ;;
+  esac
+}
+
 # The envelope every request pays, measured with a one-token payload.
 baseline=$(printf 'x' | count) || {
   printf 'skill-tokens: the ant call failed. Check what ant auth status reports.\n' >&2
@@ -124,7 +136,7 @@ text = pathlib.Path(sys.argv[1]).read_text()
 out = pathlib.Path(sys.argv[2])
 m = re.match(r"^---\n(.*?)\n---\n(.*)$", text, re.S)
 frontmatter, body = (m.group(1), m.group(2)) if m else ("", text)
-d = re.search(r"^description: >-\n((?:  .*\n)+)", frontmatter, re.M)
+d = re.search(r"^description: >-\n((?:  .*(?:\n|$))+)", frontmatter, re.M)
 description = re.sub(r"\s+", " ", d.group(1)).strip() if d else ""
 (out / "frontmatter").write_text(frontmatter)
 (out / "body").write_text(body)
@@ -135,6 +147,10 @@ PY
   fm=$(net "$tmp/frontmatter")
   desc=$(net "$tmp/description")
   body=$(net "$tmp/body")
+  require_count "$total" "$skill manifest"
+  require_count "$fm" "$skill frontmatter"
+  require_count "$desc" "$skill description"
+  require_count "$body" "$skill body"
 
   # Bundled files, which cost nothing until something opens them.
   bundled=""
