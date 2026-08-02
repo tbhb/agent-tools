@@ -95,6 +95,7 @@ endswith
 enisa
 errcheck
 errchkjson
+errexit
 errname
 errorlint
 esac
@@ -223,6 +224,7 @@ nonamedreturns
 nonbreaking
 noprefix
 nosprintfhostport
+nvmrc
 openssf
 openvex
 orbstack
@@ -242,6 +244,7 @@ pflag
 pgregory
 pipeable
 pipefail
+pipx
 pkgsite
 prealloc
 predeclared
@@ -354,6 +357,7 @@ unreviewed
 unsets
 usestdlibvars
 usetesting
+vendir
 vendormod
 venv
 vexgen

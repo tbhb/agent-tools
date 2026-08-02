@@ -26,6 +26,8 @@ exclude = [
   # explicit and durable.
   "Cargo.lock",
   "uv.lock",
+  "mise.lock",
+  ".config/mise/mise.lock",
 ]
 # Honor .gitignore/.ignore so generated trees (.cosmic-ray/, .rumdl_cache/, target/,
 # .venv/, node_modules/, apm_modules/) are skipped without enumerating each here.

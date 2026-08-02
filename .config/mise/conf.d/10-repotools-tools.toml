@@ -1,0 +1,50 @@
+#:schema https://mise.jdx.dev/schema/mise.json
+# Baseline tool pins shared across the tbhb repos. This drop-in is both
+# this repository's configuration and the source of the shared payload a
+# later phase packages with vendir: repotools dogfoods what it publishes,
+# so the shared pins live here rather than in the root mise.toml, which
+# holds only repo-specific pins.
+#
+# mise reads only top-level .config/mise/conf.d/*.toml (never a
+# subdirectory), and the root mise.toml overrides any pin here, which is
+# what lets a consumer keep a different version without editing a
+# vendored file. Tools pinned here lock to the sibling lockfile at
+# .config/mise/mise.lock rather than the root mise.lock, so this
+# repository commits both lockfiles.
+#
+# Renovate's built-in mise manager matches conf.d drop-ins explicitly and
+# derives the datasource from each backend, so no `# renovate:` markers
+# are needed on these pins.
+
+[tools]
+biome = "2.5.6"
+cocogitto = "7.0.0"
+cspell = "10.0.1"
+# editorconfig-checker builds from source: v3.9.0 publishes no release
+# assets, and the aqua package tops out at 3.8.0 and installs the binary
+# under its per-platform asset name rather than the name lint-editorconfig
+# invokes. Integrity comes from the Go checksum database rather than a
+# mise.lock digest. Renovate's go datasource cannot resolve a cmd/
+# subpackage path, so the custom manager in .github/renovate.json5 strips
+# the suffix for it.
+"go:github.com/editorconfig-checker/editorconfig-checker/v3/cmd/editorconfig-checker" = "v3.9.0"
+# Required by the go: backend above, which compiles rather than
+# downloads. Matches the go.mod toolchain directive; go.mod stays the
+# authority for module builds, because GOTOOLCHAIN=auto fetches the
+# directive's version whenever this pin trails it.
+go = "1.26.5"
+# Still needed: the Justfile survives for the container-pinned gates and
+# the APM delegation recipes, and lint-just gates its formatting.
+just = "1.57.0"
+# cspell ships only as an npm package. Homebrew was installing node too --
+# its formula's shebang already pointed at one. The difference is that
+# this node is pinned and locked.
+node = "24.18.1"
+prek = "0.4.11"
+rumdl = "0.2.48"
+tombi = "1.2.5"
+vale = "3.17.0"
+# pipx-backed, which is uv underneath. Locks by version only, with no
+# per-platform digest -- the same integrity trade as the go: backend
+# above.
+yamllint = "1.38.0"

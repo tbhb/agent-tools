@@ -12,6 +12,12 @@ vendor/** linguist-vendored -text
 go.sum -diff
 *.lock -diff
 
+# The mise lockfiles are the exception to the -diff rule above: they
+# hold the toolchain download digests, and a version bump's diff is the
+# only place a reviewer sees those digests change. The bare basename
+# matches both ./mise.lock and .config/mise/mise.lock.
+mise.lock diff
+
 # Conflict resolution policy, read by the resolve-rebase-conflicts skill
 # through `git check-attr rebase-resolve`. apm regenerates this lockfile
 # wholesale, so merging two versions of it produces something neither

@@ -194,6 +194,7 @@ devFallback
 devel
 devs
 diffstat
+disable_tools
 embedpg
 env
 errFindings
@@ -224,6 +225,7 @@ heredocs?
 hookio
 httpcache
 httptest
+idiomatic_version_file_enable_tools
 injectable
 inline[ds]?
 inlining
@@ -233,6 +235,7 @@ lookup[s]?
 maliciousIDPrefix
 malscan
 memoization
+mise('s)?
 modroot
 msg
 msgFile
@@ -299,6 +302,7 @@ uniqueid
 untracked
 uv
 variadic
+vendir
 vendoredModule
 vendormod
 versionsCase
