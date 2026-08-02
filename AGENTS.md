@@ -78,7 +78,7 @@ Copy this shape for the next rule.
 
 `internal/markdown` holds the rule itself, `internal/hookio` the payload decoding and deny envelope every check shares, and `cmd/guard-markdown` a thin layer of glue over the two. Keep the glue thin for a concrete reason. `.testcoverage.yml` excludes `main.go` and nothing else, so logic placed there goes unmeasured. Shared plumbing living in its own package also means a second check writes only its own rule. Give each check a standalone binary, and `agenthooks` stays a dispatcher instead of accumulating one subcommand per rule.
 
-APM can deploy a hook's executable. A package-root `hooks/` directory lands under `.claude/hooks/<package>/hooks/`, which a declaration then references through `${CLAUDE_PLUGIN_ROOT}`. The `go-lint` hook reaches consumers that way. `guard-markdown` takes the other route on purpose: `go install` puts it on PATH, so the declaration names a bare command and no file has to travel beside it.
+APM can deploy a hook's executable. A package-root `hooks/` directory lands under `.claude/hooks/<package>/hooks/`, which a declaration then references through `${CLAUDE_PLUGIN_ROOT}`. Nothing here takes that route now, so the directory is absent. `guard-markdown` takes the other one: `go install` puts it on PATH, so the declaration names a bare command and no file has to travel beside it.
 
 ## Recipe naming
 

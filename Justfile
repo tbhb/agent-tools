@@ -543,7 +543,7 @@ check-tombi-version:
     fi
 
 # Covers the standalone scripts the actionlint image never opens
-# (hooks/go-lint.sh, tools/fuzz.sh). `--others` puts a brand new script in
+# (tools/fuzz.sh and its neighbors). `--others` puts a brand new script in
 # the gate before anyone stages it, which is when its first shellcheck
 # violation is cheapest to fix; without it a script escapes the gate for
 # exactly as long as it is newest. `--exclude-standard` is what keeps a

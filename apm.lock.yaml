@@ -4,15 +4,6 @@ dependencies: []
 deployments:
 - kind: project-relative
   target: claude
-  value: .claude/hooks/agent-tools/hooks/go-lint.sh
-  runtime: null
-  scope: project
-  owners:
-  - .
-  active_owner: .
-  content_hash: sha256:43246da28ccda66e17acafae220197c6c95403292b342b44d7fc437453438f6c
-- kind: project-relative
-  target: claude
   value: .claude/rules/worktree-wip.md
   runtime: null
   scope: project
@@ -471,7 +462,6 @@ deployments:
   active_owner: .
   content_hash: sha256:c27073b0132f9288e7169af6c432c9ef7e0abeaa2d67f371ea8fcd8355a0181c
 local_deployed_files:
-- .claude/hooks/agent-tools/hooks/go-lint.sh
 - .claude/rules/worktree-wip.md
 - .claude/skills/commit
 - .claude/skills/commit/SKILL.md
@@ -524,7 +514,6 @@ local_deployed_files:
 - .claude/skills/write-pr-description/scripts/guard-draft.sh
 - .claude/skills/write-pr-description/tokens.json
 local_deployed_file_hashes:
-  .claude/hooks/agent-tools/hooks/go-lint.sh: sha256:43246da28ccda66e17acafae220197c6c95403292b342b44d7fc437453438f6c
   .claude/rules/worktree-wip.md: sha256:0204082643d1ea505ae20eaf93e7d94dd52b65046f3e4f290ec7bbc5c6093634
   .claude/skills/commit/SKILL.md: sha256:4824db4b92411a473798fb858b45ab3bcc60feb961be178bbdebd3f939aa4595
   .claude/skills/commit/scripts/commit.sh: sha256:5d60d85e655062fd7c63dfac3d4b0615c2aac8f166a41833bc248db1e3ddeb36
