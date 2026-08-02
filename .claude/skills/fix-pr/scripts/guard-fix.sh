@@ -53,6 +53,23 @@ job's full log stays available:
   gh run view <run-id> --job <job-id> --log"
 fi
 
+# Amending means replacing the branch rather than extending it, and a
+# bare --force replaces it whatever arrived in the meantime. The lease
+# makes the push refuse instead, which is the whole difference between
+# rewriting a commit you wrote and discarding work that landed while you
+# were busy.
+if [[ $command =~ ${AT_START}git[[:space:]]+push ]] &&
+  [[ $command =~ (--force([[:space:]]|$)|[[:space:]]-f([[:space:]]|$)) ]] &&
+  ! [[ $command =~ --force-with-lease ]]; then
+  deny "A bare force push overwrites whatever the remote has, including commits
+this worktree never saw. Use the lease instead:
+
+  git push --force-with-lease origin HEAD
+
+It refuses when the remote moved since your last fetch, which is exactly
+the case a bare --force would destroy."
+fi
+
 if [[ $command =~ ${AT_START}gh[[:space:]]+pr[[:space:]]+checks ]] &&
   [[ $command =~ (--watch|--fail-fast) ]]; then
   deny "Waiting on checks belongs to the watch-pr skill, which streams each result

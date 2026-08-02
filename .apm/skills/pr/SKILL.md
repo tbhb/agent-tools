@@ -106,7 +106,16 @@ Now call `AskUserQuestion` with `question` set to `How far should I take this?`,
 | `Open and watch` | `Open it, watch the checks, and report the result without changing anything.` |
 | `Open only` | `Open it and hand back.` |
 
-Record the answer. Step 7 routes on it without asking again.
+Ask a second question in the same call, so the operator answers both at once. Set `question` to `How should fix commits land?`, `header` to `Fixes`, `multiSelect` to `false`, and give these two options:
+
+| Label | Description |
+| --- | --- |
+| `Separate commits` | `Each fix lands as its own commit. History keeps the record of what broke.` |
+| `Amend and force-push` | `Fixes fold into the commit that caused them, pushed with --force-with-lease.` |
+
+Neither answer is the safe default in general. A separate commit suits a branch under review, where a reviewer needs to see what changed since they last looked. Amending suits a branch nobody has read yet, where a lint fix of its own is noise the squash message would have to account for.
+
+Record both answers. Step 7 routes on the first and passes the second to `fix-pr` in its arguments, so neither gets asked again.
 
 A fifth path stays available without an option of its own. Where the operator wants the description changed, redraft it, put it back through the review, and return here.
 

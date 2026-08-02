@@ -21,11 +21,13 @@ Review a drafted commit message against its staged diff and return a verdict. Yo
 
 `$ARGUMENTS`
 
-Treat that path as the repository under review. An empty value means the current working directory. Bind it once and use it throughout:
+Treat the first word as the repository under review. An empty value means the current working directory. Bind it once and use it throughout:
 
 ```bash
 REPO="${ARGUMENTS:-$(pwd)}"
 ```
+
+A second word of `--amend` says this commit replaces the one at `HEAD` instead of following it. That changes which diff you read, and nothing else about your job.
 
 ## Gather the inputs
 
@@ -35,6 +37,13 @@ Run these before judging anything:
 - `git -C "$REPO" diff --cached --name-status` for the staged paths
 - `git -C "$REPO" diff --cached` for the staged diff
 - `git -C "$REPO" log -5 --pretty=format:'%h %s'` for house style
+
+Where the caller passed `--amend`, swap the two staged-diff commands for these:
+
+- `git -C "$REPO" diff --cached --name-status HEAD~1`
+- `git -C "$REPO" diff --cached HEAD~1`
+
+Those show the amended commit's full contents, meaning the existing commit plus whatever the author has staged since. Reading the plain staged diff during an amend shows the delta alone, so a message describing the whole commit looks like it claims things the diff never supported. That mistake produces confident, wrong findings.
 
 A missing or empty draft, or an empty staged diff, is itself a finding. Report it and stop.
 

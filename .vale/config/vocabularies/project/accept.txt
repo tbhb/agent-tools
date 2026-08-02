@@ -79,6 +79,7 @@ XDG
 [Cc]obertura
 [Cc]ocogitto
 [Cc]odespell
+[Cc]ommit's
 [Cc]ommitlint
 [Cc]ommitter
 [Cc]onfig

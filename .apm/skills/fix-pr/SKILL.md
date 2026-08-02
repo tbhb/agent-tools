@@ -70,9 +70,14 @@ Re-run the reproducer until it passes.
 
 ## Step 4: commit
 
-Run the `commit` skill. It owns the message, the review, and the gates, and this workflow adds nothing to that.
+How the fix lands is the caller's choice. `$ARGUMENTS` carries it when `pr` routed here, and where it doesn't, ask before committing with `AskUserQuestion`: `question` set to `How should this fix land?`, `header` set to `Fixes`, `multiSelect` set to `false`, and these options:
 
-Where the fix splits into unrelated groups, the commit skill says so and takes them one at a time.
+| Label | Description |
+| --- | --- |
+| `Separate commit` | `The fix lands as its own commit. History keeps the record of what broke.` |
+| `Amend and force-push` | `The fix folds into the commit that caused it, pushed with --force-with-lease.` |
+
+Either way, the `commit` skill takes it from there, and it owns the message and the review and the gates exactly as it always does. One thing changes for an amend: pass `--amend` after the repository root when invoking `review-commit-message`, so it reads `git diff --cached HEAD~1` rather than the staged delta. Skip that and the reviewer judges a whole message against a partial diff, returning findings that look certain and are wrong. Where the fix splits into unrelated groups the commit skill says so and takes them one at a time, which suits a separate commit better than an amend.
 
 ## Step 5: bring the description forward
 
@@ -94,9 +99,19 @@ Don't edit `PR_AGENTDESC.md` here. A guard hook refuses it, and the writer owes 
 
 ## Step 6: push and hand back
 
+A separate commit pushes normally:
+
 ```text
 git push origin HEAD
 ```
+
+An amend rewrote the branch, so it needs the lease:
+
+```text
+git push --force-with-lease origin HEAD
+```
+
+Never a bare `--force`. A guard hook refuses it, because the lease is the difference between replacing your own commit and discarding whatever arrived while you worked.
 
 Report what failed, what caused it, and what the fix changed. Then say the checks are running again.
 
