@@ -179,6 +179,7 @@ iotamixing
 keylength
 koalaman
 ldflags
+libgit
 linuxbrew
 llen
 localmodule
@@ -297,6 +298,7 @@ shellcheck
 shfmt
 shlex
 sidechain
+signingkey
 sigstore
 singledispatch
 sismember
