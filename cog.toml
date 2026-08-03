@@ -1,13 +1,36 @@
 tag_prefix = "v"
 
-# Keep the APM package manifest version in lockstep with the tag cog
-# is about to cut. The hook runs before the version commit, so the
-# rewritten apm.yml lands inside that commit and one vX.Y.Z tag
-# serves both consumer paths (apm install #vX.Y.Z, go install
-# @vX.Y.Z). perl rather than sed keeps the in-place edit portable
-# across the BSD sed on macOS dev hosts and GNU sed on CI runners.
+# Keep every published version literal in lockstep with the tag cog is
+# about to cut. The hooks run before the version commit, so each
+# rewrite lands inside that commit and one vX.Y.Z tag serves every
+# consumer path (apm install #vX.Y.Z, go install @vX.Y.Z, a
+# .pre-commit-config.yaml rev, the Python package's own version). perl
+# rather than sed keeps the in-place edit portable across the BSD sed
+# on macOS dev hosts and GNU sed on CI runners.
+#
+# Only apm.yml was maintained here to begin with. The other five each
+# took a hand edit, no gate read them, and #25 realigned them by hand.
+# The braces on the README and hook-manifest patterns are perl's
+# delimiter choice rather than anything regex-specific: those patterns
+# carry a literal slash, and `s{}{}` spells that without escaping it.
+#
+# uv.lock is the one site a version bump breaks rather than merely
+# leaving stale. It records the version of the editable repotools
+# package, `uv lock --check` gates the two against each other, and the
+# release job carries no uv to regenerate it, so the rewrite has to be
+# textual like the rest. It needs two lines of context because every
+# package in the lockfile has a `version =` line, which is what -0777
+# and the /m anchor are for.
+#
+# tools/check-versions.sh asserts the result. Adding a seventh site
+# means a line there and a hook here, in that order.
 pre_bump_hooks = [
   "perl -pi -e 's/^version: .*/version: {{version}}/' apm.yml",
+  "perl -pi -e 's/^version = .*/version = \"{{version}}\"/' packages/repotools/pyproject.toml",
+  "perl -pi -e 's{rev: v[0-9.]+}{rev: v{{version}}}' .pre-commit-hooks.yaml",
+  "perl -pi -e 's{tbhb/repotools#v[0-9.]+}{tbhb/repotools#v{{version}}}' README.md",
+  "perl -pi -e 's{rev: v[0-9.]+}{rev: v{{version}}}' README.md",
+  "perl -0777 -pi -e 's/^name = \"repotools\"\nversion = .*/name = \"repotools\"\nversion = \"{{version}}\"/m' uv.lock",
 ]
 
 [changelog]

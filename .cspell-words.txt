@@ -116,6 +116,7 @@ funcmap
 funcs
 funlen
 fuzztime
+getline
 getset
 ghassignees
 ghlabels
@@ -250,6 +251,7 @@ pipeable
 pipefail
 pipx
 pkgsite
+postflight
 prealloc
 predeclared
 prek

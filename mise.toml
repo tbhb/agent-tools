@@ -281,6 +281,7 @@ run = [
   "mise run lint-editorconfig",
   "mise run lint-skills",
   "mise run lint-script-hygiene",
+  "mise run check-versions",
 ]
 
 # Same membership as the old lint-go-all recipe.
@@ -429,6 +430,16 @@ run = "bash tools/skill-limits.sh"
 description = "Refuse a script whose output user configuration could reshape"
 run = "bash tools/check-script-hygiene.sh"
 
+# Six files carry the version, and cog.toml's pre_bump_hooks rewrite all
+# six during a bump. This is the witness that they did, and the thing
+# that catches a seventh site added without a hook. It runs in the lint
+# aggregate rather than only at release time because between releases the
+# literals correctly name the last released version rather than HEAD,
+# which makes the assertion true at every commit.
+[tasks.check-versions]
+description = "Check the published version literals against the latest release tag"
+run = "bash tools/check-versions.sh"
+
 # Count what each skill costs in context and write tokens.json beside it.
 # Needs the `ant` CLI authenticated; kept out of `lint` because it calls
 # the token-counting API.
@@ -545,16 +556,21 @@ run = "go test ./..."
 description = "Run the Go tests with the race detector"
 run = "go test -race ./..."
 
-# The shell hooks under scripts/ answer to bats rather than to
-# `go test`, so they get a third suite alongside the two language ones.
-# It joins the `test` aggregate because the commit-message gates every
-# repository here installs are exactly the code a regression should
+# The shell scripts under scripts/ and tools/ answer to bats rather than
+# to `go test`, so they get a third suite alongside the two language
+# ones. It joins the `test` aggregate because the commit-message gates
+# every repository here installs are exactly the code a regression should
 # stop. The bats pin means the suites pass under the same runner
 # everywhere rather than whichever bats a contributor happens to have.
+#
+# Recursive from tests/ rather than pointed at one directory: the mirror
+# rule puts a script's suite beside the directory it tests, so naming
+# them individually means a new mirror never runs at all. Directories
+# holding Python suites carry no .bats file and are skipped.
 [tasks.test-hooks]
-description = "Run the bats suites for the shell hooks under scripts/"
-usage = 'arg "<path>" default="tests/scripts"'
-run = "bats $usage_path"
+description = "Run the bats suites for the shell scripts under scripts/ and tools/"
+usage = 'arg "<path>" default="tests"'
+run = "bats --recursive $usage_path"
 
 # Serial by default so a failing run prints a clean, ordered trace; pass
 # `mise run test-py -n auto` to fan the suite across xdist workers.
