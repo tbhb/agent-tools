@@ -30,7 +30,7 @@ set -euo pipefail
 export LC_ALL=C
 export PYTHONUTF8=1
 unset CDPATH GREP_OPTIONS
-IFS=$(printf ' \t\n')
+IFS=$' \t\n'
 
 mode=${1:?usage: conflict-shape.sh <mode> <path> <ancestor> <base-side> <replayed-side>}
 shift

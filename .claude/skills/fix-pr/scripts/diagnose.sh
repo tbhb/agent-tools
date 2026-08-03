@@ -28,7 +28,7 @@ export GH_PAGER=cat
 export GH_PROMPT_DISABLED=1
 export PYTHONUTF8=1
 unset CDPATH GH_REPO GH_HOST GREP_OPTIONS
-IFS=$(printf ' \t\n')
+IFS=$' \t\n'
 
 readonly LOG_LINES=${FIX_PR_LOG_LINES:-80}
 

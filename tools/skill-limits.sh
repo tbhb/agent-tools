@@ -28,7 +28,7 @@ set -euo pipefail
 export LC_ALL=C
 export PYTHONUTF8=1
 unset CDPATH GREP_OPTIONS
-IFS=$(printf ' \t\n')
+IFS=$' \t\n'
 
 readonly NAME_MAX=64
 readonly DESC_MAX=1024
