@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file. See [conven
 - - -
 <!-- release -->
 
+## [v0.6.0](https://github.com/tbhb/repotools/compare/1f1e78e755f924112c90f4c7f31838fdf2749df8..v0.6.0) - 2026-08-03
+
+### Features
+
+- (**skills**) hand review-squash-message its inputs up front (#32) - ([19bed45](https://github.com/tbhb/repotools/commit/19bed45bfdf6be19df044a0bb8f9e5c448cd47ab)) - [@tbhb](https://github.com/tbhb)
+- (**tools**) report each skill's tool calls and its time on the clock (#30) - ([0c891d4](https://github.com/tbhb/repotools/commit/0c891d414ba61df2dc7858a2767cf891fde068ed)) - [@tbhb](https://github.com/tbhb)
+
+### Bug Fixes
+
+- (**tools**) name the release ref rather than inferring it (#38) - ([d766538](https://github.com/tbhb/repotools/commit/d7665385f0e2dac7dcfeacf676ef805a677c4988)) - [@tbhb](https://github.com/tbhb)
+- verify a pinned preset reference at the ref it names (#37) - ([444f921](https://github.com/tbhb/repotools/commit/444f921633380c28a7c2dfabe88fdb35f627f0ff)) - [@tbhb](https://github.com/tbhb)
+
+### Build system
+
+- scope Python coverage from the task instead of a member list (#35) - ([ff44888](https://github.com/tbhb/repotools/commit/ff44888d896d181bfc2af6a2ce5145e42ff6683d)) - [@tbhb](https://github.com/tbhb)
+- pre-approve the commit, pr, and merge confirmations per session (#36) - ([6f27794](https://github.com/tbhb/repotools/commit/6f277944a6751a9ab9b5881906afef37d0d2d06a)) - [@tbhb](https://github.com/tbhb)
+- install every workspace member and pin what resolves them (#34) - ([1f1e78e](https://github.com/tbhb/repotools/commit/1f1e78e755f924112c90f4c7f31838fdf2749df8)) - [@tbhb](https://github.com/tbhb)
+
+### Continuous Integration
+
+- create the release commit through the API so GitHub signs it (#39) - ([de08aa8](https://github.com/tbhb/repotools/commit/de08aa8615af97b4c9d73e782f3ab56027ace327)) - [@tbhb](https://github.com/tbhb)
+
+- - -
+
+<!-- release -->
+
 ## [v0.5.0](https://github.com/tbhb/repotools/compare/2b68005951deb9096af2e59b460b9f366867ae2c..v0.5.0) - 2026-08-03
 
 ### Bug Fixes
