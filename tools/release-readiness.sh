@@ -42,8 +42,10 @@ IFS=$' \t\n'
 root=$(command git rev-parse --show-toplevel)
 cd "$root"
 
-# release.yml pushes to main and nothing else, so a release cut from
-# any other branch would push a tag onto commits main has never seen.
+# A remote branch, not a local one. release.yml checks this branch out
+# fresh on the runner and pushes the release commit and tag back to it,
+# so it names the thing being released rather than anything on this
+# machine.
 readonly RELEASE_BRANCH=main
 
 failures=0
@@ -54,15 +56,6 @@ fail() {
   failures=$((failures + 1))
 }
 
-# --- On the release branch ---
-
-branch=$(command git rev-parse --abbrev-ref HEAD)
-if [ "$branch" = "$RELEASE_BRANCH" ]; then
-  ok "on $RELEASE_BRANCH"
-else
-  fail "on $RELEASE_BRANCH" "HEAD is on $branch; release.yml bumps and pushes $RELEASE_BRANCH"
-fi
-
 # --- Clean working tree ---
 
 dirty=$(command git status --porcelain)
@@ -72,7 +65,19 @@ else
   fail "working tree clean" "$(printf '%s' "$dirty" | tr '\n' ' ')"
 fi
 
-# --- Current with the remote ---
+# --- HEAD is the commit being released ---
+#
+# Commits, not branch names, and the difference is the whole check.
+#
+# Nothing local reaches the tag. `gh workflow run` dispatches on GitHub,
+# release.yml checks the release branch out fresh at full depth, and cog
+# bumps that. So every check in this script asks one question: whether
+# the operator's picture of the release is accurate. A local branch name
+# says nothing about that, and only one checkout in a repository can
+# hold main, so an earlier check asserting the name failed by
+# construction in every agent worktree this repository is worked in.
+# HEAD standing at the commit origin's release branch points at settles
+# the question instead, under any branch name and detached alike.
 #
 # ls-remote rather than a fetch. Reading the remote answers the question
 # without writing a remote-tracking ref, which keeps this task read-only
@@ -82,11 +87,11 @@ fi
 local_head=$(command git rev-parse HEAD)
 remote_head=$(command git ls-remote origin "refs/heads/$RELEASE_BRANCH" | cut -f1)
 if [ -z "$remote_head" ]; then
-  fail "current with origin/$RELEASE_BRANCH" "origin has no $RELEASE_BRANCH"
+  fail "HEAD is origin/$RELEASE_BRANCH" "origin has no $RELEASE_BRANCH"
 elif [ "$local_head" = "$remote_head" ]; then
-  ok "current with origin/$RELEASE_BRANCH"
+  ok "HEAD is origin/$RELEASE_BRANCH"
 else
-  fail "current with origin/$RELEASE_BRANCH" "HEAD is $local_head, origin has $remote_head"
+  fail "HEAD is origin/$RELEASE_BRANCH" "HEAD is $local_head, origin/$RELEASE_BRANCH is $remote_head"
 fi
 
 # --- Version literals ---

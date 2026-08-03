@@ -45,7 +45,7 @@ fail_readiness() {
 
   run "$SCRIPT" 0.5.0
   [ "$status" -eq 0 ]
-  [ "$(cat "$GH_LOG")" = "workflow run release.yml -f version=0.5.0" ]
+  [ "$(cat "$GH_LOG")" = "workflow run release.yml --ref main -f version=0.5.0" ]
 }
 
 @test "dispatches with no input where no version is given" {
@@ -53,7 +53,7 @@ fail_readiness() {
 
   run "$SCRIPT"
   [ "$status" -eq 0 ]
-  [ "$(cat "$GH_LOG")" = "workflow run release.yml" ]
+  [ "$(cat "$GH_LOG")" = "workflow run release.yml --ref main" ]
   [[ $output == *"cog bump --auto"* ]]
 }
 
