@@ -45,6 +45,19 @@ report() {
 dirs=("$@")
 if [ ${#dirs[@]} -eq 0 ]; then
   dirs=(.apm/skills/*/)
+  # Then the skills that live under .claude/ alone. A repo-local skill
+  # has no .apm/ source, so the glob above cannot reach it, while the
+  # limits it has to meet are the platform's and apply just the same.
+  # The .claude/ copy of a published skill is a mirror of one already in
+  # the list, so asking whether .apm/ holds a skill of the same name
+  # separates the two and keeps the next local skill covered without an
+  # edit here.
+  for candidate in .claude/skills/*/; do
+    [ -d "$candidate" ] || continue
+    skill=${candidate#.claude/skills/}
+    skill=${skill%/}
+    [ -d ".apm/skills/$skill" ] || dirs+=("$candidate")
+  done
 fi
 
 for dir in "${dirs[@]}"; do

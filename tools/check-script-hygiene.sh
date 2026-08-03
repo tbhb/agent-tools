@@ -53,6 +53,20 @@ if [ ${#files[@]} -eq 0 ]; then
   done < <(command git -c core.quotePath=false ls-files \
     --cached --others --exclude-standard \
     '.apm/skills/*/scripts/*.sh' 'hooks/*.sh' 'scripts/*.sh' 'tools/*.sh')
+
+  # Then the skills that live under .claude/ alone. A repo-local skill
+  # has no .apm/ source, so the glob above cannot reach its scripts,
+  # while the .claude/ copy of a published skill is a mirror of one it
+  # already scanned and would report every finding twice. Asking whether
+  # .apm/ holds a skill of the same name separates the two, and keeps
+  # the next local skill covered without an edit here.
+  while IFS= read -r f; do
+    skill=${f#.claude/skills/}
+    skill=${skill%%/*}
+    [ -d ".apm/skills/$skill" ] && continue
+    files+=("$f")
+  done < <(command git -c core.quotePath=false ls-files \
+    --cached --others --exclude-standard '.claude/skills/*/scripts/*.sh')
 fi
 
 # The files the structural pass below scans: everything that exists and
