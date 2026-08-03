@@ -353,12 +353,16 @@ description = "Detect copy-pasted Python code with pylint"
 run = "uv run pylint packages"
 
 # The static second pass behind ruff's `S` rules -- ruff ports only part
-# of bandit's checks and trails its releases. Pointing the scan at the
-# package's src/ keeps the tests out: a suite leans on assert (B101),
+# of bandit's checks and trails its releases. Pointing the scan at each
+# member's src/ keeps the tests out: a suite leans on assert (B101),
 # while ruff's `S` set still covers test code through per-file-ignores.
+# The glob is what makes this scale past one workspace member -- named
+# literally, a second member's source would never be read and this gate
+# would stay green over code it never saw. Scanning packages/ whole
+# would take the tests back in and fail on their asserts.
 [tasks.lint-bandit]
 description = "Scan the Python source for insecure code patterns with bandit"
-run = "uv run bandit -r packages/repotools/src -q"
+run = "uv run bandit -r packages/*/src -q"
 
 # The glob excludes the LICENSE (canonical Apache 2.0 text), the
 # auto-generated changelog, vale's own style packages, scratch dirs,
