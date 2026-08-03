@@ -17,6 +17,13 @@
 # are needed on these pins.
 
 [tools]
+# actionlint, bats, golangci-lint, and shellcheck ran from SHA-pinned
+# container images until the de-containerization pass. The images were a
+# digest-pinning mechanism, not an isolation choice, and mise.lock now
+# records a digest for every aqua-backed release asset, so the tools run
+# as plain pinned binaries.
+actionlint = "1.7.12"
+bats = "1.14.0"
 biome = "2.5.6"
 cocogitto = "7.0.0"
 cspell = "10.0.1"
@@ -28,13 +35,21 @@ cspell = "10.0.1"
 # subpackage path, so the custom manager in .github/renovate.json5 strips
 # the suffix for it.
 "go:github.com/editorconfig-checker/editorconfig-checker/v3/cmd/editorconfig-checker" = "v3.9.0"
-# Required by the go: backend above, which compiles rather than
-# downloads. Matches the go.mod toolchain directive; go.mod stays the
+# go-arch-lint is absent from the aqua registry, so it builds from
+# source like editorconfig-checker above. Its main package sits at the
+# module root, no cmd/ suffix, so Renovate's built-in mise manager
+# resolves this pin through the go datasource without the custom
+# suffix-stripping manager.
+"go:github.com/fe3dback/go-arch-lint" = "v1.15.0"
+# Required by the go: backends above, which compile rather than
+# download. Matches the go.mod toolchain directive; go.mod stays the
 # authority for module builds, because GOTOOLCHAIN=auto fetches the
 # directive's version whenever this pin trails it.
 go = "1.26.5"
-# Still needed: the Justfile survives for the container-pinned gates and
-# the APM delegation recipes, and lint-just gates its formatting.
+golangci-lint = "2.12.2"
+# Still needed: the Justfile survives for the Windows-run Go test and
+# coverage recipes and the APM delegation recipes, and lint-just gates
+# its formatting.
 just = "1.57.0"
 # cspell ships only as an npm package. Homebrew was installing node too --
 # its formula's shebang already pointed at one. The difference is that
@@ -42,6 +57,7 @@ just = "1.57.0"
 node = "24.18.1"
 prek = "0.4.11"
 rumdl = "0.2.48"
+shellcheck = "0.11.0"
 tombi = "1.2.5"
 vale = "3.17.0"
 # pipx-backed, which is uv underneath. Locks by version only, with no

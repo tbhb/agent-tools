@@ -106,31 +106,17 @@
     },
   ],
 
-  // Renovate has built-in managers for GitHub Actions and Dockerfile FROM
-  // lines — those don't need customManagers. The markers below appear
-  // across the tbhb repositories, so they live in the shared preset;
-  // managers for repo-specific files (composite-action defaults, workflow
-  // image pins, Go module groupings) stay inline in the repo that needs
-  // them.
+  // Renovate has built-in managers for GitHub Actions, Dockerfile FROM
+  // lines, and the mise config files — those don't need customManagers.
+  // The retired Justfile docker-image manager used to live here: it read
+  // `# renovate:`-marked version + digest pairs out of each repo's
+  // Justfile for the container-run gates, and the de-containerization
+  // pass turned those into mise pins the built-in manager tracks. The
+  // marker below appears across the tbhb repositories, so it lives in
+  // the shared preset; managers for repo-specific files
+  // (composite-action defaults, workflow image pins, Go module
+  // groupings) stay inline in the repo that needs them.
   customManagers: [
-    // Justfile docker-image pins. Each marker pairs a tag-form version
-    // with a tag@sha256:digest image string on the immediately following
-    // two lines. Renovate updates both atomically (the tag appears on both
-    // lines and autoReplaceGlobalMatch defaults to true). The matchStrings
-    // pattern matches each marker block independently, so one entry covers
-    // every such pin in the file.
-    //
-    //   # renovate: datasource=docker depName=rhysd/actionlint
-    //   actionlint_version := "1.7.12"
-    //   actionlint_image := "docker.io/rhysd/actionlint:1.7.12@sha256:..."
-    {
-      customType: "regex",
-      managerFilePatterns: ["/^Justfile$/"],
-      matchStrings: [
-        "# renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+\\S+_version := \"(?<currentValue>.*?)\"\\s+\\S+_image := \".*?@(?<currentDigest>sha256:[a-f0-9]+)\"",
-      ],
-    },
-
     // .vale.ini `Packages` block. Each entry is a GitHub release-asset URL
     // whose path already carries owner/repo and the version tag, so the
     // marker the other managers rely on is unnecessary — and Vale's

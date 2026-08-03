@@ -53,10 +53,10 @@
   ],
 
   // Managers for the pins inside the workflows and mise config this repo
-  // defines. The shared preset covers the Justfile and .vale.ini markers
-  // every repo has; these read files only a repo hosting the shared
-  // workflows contains. `customManagers` is a mergeable array, so these
-  // append to the preset's rather than replacing them.
+  // defines. The shared preset covers the .vale.ini markers every repo
+  // has; these read files only a repo hosting the shared workflows
+  // contains. `customManagers` is a mergeable array, so these append to
+  // the preset's rather than replacing them.
   customManagers: [
     // Workflow `run:` steps pinning a Docker image to a
     // `<NAME>_IMAGE="reg/name:tag@sha256:..."` shell assignment, with the
