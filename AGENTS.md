@@ -87,7 +87,9 @@ Never a bare `git stash pop` around any of this. `.claude/rules/worktree-wip.md`
 
 ## Prose lint output
 
-`just lint-prose` and the prek vale hook already emit the agent output template, which this repository tracks at `.vale/config/templates/project-agent.tmpl` next to the `project` style rules. It prints one self-contained line per finding (location, severity, rule, the exact matched text, and the replacement when the rule carries one) plus a totals line, so you can fix every finding without follow-up searching. Pass `--output=project-agent.tmpl` yourself only when you invoke vale directly. Empty output means a clean run, and the exit code carries the result.
+`just lint-prose` and the prek vale hook already emit the agent output template, which arrives with the `ai-tells` package: `vale sync` writes it to `.vale/config/templates/ai-tells-agent.tmpl`. It prints one self-contained line per finding (location, severity, rule, the exact matched text, and the replacement when the rule carries one) plus a totals line, so you can fix every finding without follow-up searching. Pass `--output=ai-tells-agent.tmpl` yourself only when you invoke vale directly. Empty output means a clean run, and the exit code carries the result.
+
+That template is a published interface rather than a convenience. The scoping probes in `fix-prose` and `write-prose-fix` count its finding lines with `grep -c '^[0-9]'`, and the replacement probe reads its `replace_with=` field, so reshaping either one is a breaking change for this repository and for every consumer reading the output. Nothing here should reintroduce a repo-local template under a different name. The earlier private copy resolved only in this tree, which left those probes broken wherever that name was absent.
 
 ## Never hard-wrap Markdown
 

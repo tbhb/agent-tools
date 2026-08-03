@@ -360,7 +360,7 @@ run = "uv run bandit -r packages/repotools/src -q"
 # repo-specific.
 [tasks.lint-prose]
 extends = "repotools:lint-prose"
-run = "vale --output=project-agent.tmpl --glob='!{LICENSE,CHANGELOG.md,.vale/*,tmp/*,vendor/*,.venv/*,.claude/worktrees/*,.pytest_cache/*,.complexipy_cache/*,COMMIT_AGENTMSG,PR_AGENTDESC.md,SQUASH_AGENTMSG}' $usage_paths"
+run = "vale --output=ai-tells-agent.tmpl --glob='!{LICENSE,CHANGELOG.md,.vale/*,tmp/*,vendor/*,.venv/*,.claude/worktrees/*,.pytest_cache/*,.complexipy_cache/*,COMMIT_AGENTMSG,PR_AGENTDESC.md,SQUASH_AGENTMSG}' $usage_paths"
 
 # This repository's own check, applied to itself. `go run` rather than an
 # installed binary so the gate reflects the working tree: a change to the
@@ -464,7 +464,7 @@ run = "uv run --script tools/fix_prose_replacements.py $usage_file"
 extends = "repotools:lint-pr-description"
 run = [
   "bash .claude/skills/pr/scripts/validate-description.sh",
-  "vale --output=project-agent.tmpl PR_AGENTDESC.md",
+  "vale --output=ai-tells-agent.tmpl PR_AGENTDESC.md",
   "cspell --config .cspell.jsonc --no-summary --no-progress PR_AGENTDESC.md",
 ]
 

@@ -77,7 +77,7 @@ rc=0
 readonly CONTROL='This is a very robust and comprehensive design that does not use contractions and it is significantly better.'
 
 probe=$(printf '%s\n' "$CONTROL" |
-  vale --path="$file" --output=project-agent.tmpl 2>/dev/null |
+  vale --path="$file" --output=ai-tells-agent.tmpl 2>/dev/null |
   grep -c '^[0-9]' || true)
 
 if [ "${probe:-0}" -eq 0 ]; then
@@ -88,7 +88,7 @@ fi
 # --- the gates -------------------------------------------------------
 # Each runs whatever the ones before it reported. Collecting output and
 # printing it together is the entire point of this script.
-vale --output=project-agent.tmpl "$file" || rc=1
+vale --output=ai-tells-agent.tmpl "$file" || rc=1
 
 cspell --config .cspell.jsonc --no-summary --no-progress "$file" || rc=1
 

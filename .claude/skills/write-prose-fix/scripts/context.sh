@@ -93,7 +93,7 @@ section "whether that silence means anything"
 readonly CONTROL='This is a very robust and comprehensive design that does not use contractions and it is significantly better.'
 if command -v vale >/dev/null 2>&1; then
   hits=$(printf '%s\n' "$CONTROL" |
-    vale --path="$target" --output=project-agent.tmpl 2>/dev/null |
+    vale --path="$target" --output=ai-tells-agent.tmpl 2>/dev/null |
     grep -c '^[0-9]' || true)
   if [ "${hits:-0}" -eq 0 ]; then
     printf 'UNSCOPED: no .vale.ini section matches %s, so vale loads no\n' "$target"
@@ -111,7 +111,7 @@ section "what a replacement pass would clear"
 # count is here so the fixer knows what the recipe below is worth before
 # running it.
 if command -v vale >/dev/null 2>&1; then
-  auto=$(vale --output=project-agent.tmpl "$target" 2>/dev/null |
+  auto=$(vale --output=ai-tells-agent.tmpl "$target" 2>/dev/null |
     grep -c 'replace_with=' || true)
   printf '%s of the vale findings carry a replacement.\n' "${auto:-0}"
   if [ "${auto:-0}" -gt 0 ]; then

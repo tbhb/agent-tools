@@ -75,7 +75,7 @@ readonly CONTROL='This is a very robust and comprehensive design that does not u
 
 if command -v vale >/dev/null 2>&1; then
   hits=$(printf '%s\n' "$CONTROL" |
-    vale --path="$rel" --output=project-agent.tmpl 2>/dev/null |
+    vale --path="$rel" --output=ai-tells-agent.tmpl 2>/dev/null |
     grep -c '^[0-9]' || true)
   if [ "${hits:-0}" -eq 0 ]; then
     printf 'scoping:  UNSCOPED (no .vale.ini section matches this path)\n'

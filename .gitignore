@@ -65,18 +65,15 @@ gremlins-report.json
 .claude/worktrees/
 .claude/settings.local.json
 
-# Vale synced packages (keep the repo-local style, its output template,
-# and its vocabulary). Each negation needs the parent un-ignored first —
-# git can't re-include a child whose ancestor directory stays excluded.
+# Vale synced packages (keep the repo-local style and its vocabulary).
+# Each negation needs the parent un-ignored first — git can't re-include
+# a child whose ancestor directory stays excluded. The agent output
+# template is no longer among the tracked files: the ai-tells package
+# ships it and vale sync writes it under .vale/config/templates/.
 .vale/*
 !.vale/project/
 !.vale/config/
 .vale/config/*
-!.vale/config/templates/
-# ai-tells v1.28.0 ships its own copy of the agent output template into
-# this directory, which vale sync rewrites. Only the repo-local template
-# is tracked.
-.vale/config/templates/ai-tells-agent.tmpl
 !.vale/config/vocabularies/
 .vale/config/vocabularies/*
 !.vale/config/vocabularies/project/
