@@ -88,6 +88,14 @@ includes = [
 # the same binary, and the local lint-apm and apm-sync tasks stop
 # resolving whatever apm PATH happens to offer.
 apm = "0.26.0"
+# ast-grep matches shell structurally for check-script-hygiene.sh. The
+# rules it replaced were grep patterns, which cannot tell a command from
+# the same words inside a string: the bare-git-output rule's only match
+# across all 48 scripts was a quoted example that needed a hand-written
+# `# hygiene-ok` to suppress. It stays a repo-local pin because the
+# hygiene gate is repo-local; the skills it checks deploy, the checker
+# does not.
+ast-grep = "0.45.0"
 gitleaks = "8.30.1"
 jq = "1.8.2"
 shfmt = "3.13.1"
@@ -446,7 +454,7 @@ run = "bash tools/lint-draft.sh $usage_file"
 # report quoted.
 [tasks.fix-prose-replacements]
 extends = "repotools:fix-prose-replacements"
-run = "bash tools/fix-prose-replacements.sh $usage_file"
+run = "uv run --script tools/fix_prose_replacements.py $usage_file"
 
 # The pull request counterpart. The validator is mechanical and offline;
 # vale and cspell then read the prose, under the same [*.md] rules the
@@ -522,7 +530,7 @@ run = ["just test-go", "mise run test-py", "mise run test-hooks"]
 # everywhere rather than whichever bats a contributor happens to have.
 [tasks.test-hooks]
 description = "Run the bats suites for the shell hooks under scripts/"
-usage = 'arg "<path>" default="test"'
+usage = 'arg "<path>" default="tests/scripts"'
 run = "bats $usage_path"
 
 # Serial by default so a failing run prints a clean, ordered trace; pass

@@ -1,0 +1,18 @@
+---
+# An external difftool replaces the patch wholesale, so every diff whose
+# output gets parsed says --no-ext-diff explicitly. gitr pins the config
+# that reshapes a diff's formatting, but diff.external replaces the
+# generator itself, and no -c setting in the wrapper covers that.
+#
+# The negative condition is the reason this one belongs here rather than
+# in grep: `has` inspects the argument nodes, so a flag appearing inside
+# an adjacent string cannot satisfy it.
+id: diff-without-no-ext-diff
+language: bash
+severity: error
+message: "gitr diff without --no-ext-diff; diff.external would replace the patch entirely"
+rule:
+  pattern: gitr diff $$$ARGS
+  not:
+    has:
+      regex: '^--no-ext-diff$'

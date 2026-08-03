@@ -35,7 +35,7 @@ set -euo pipefail
 # because it makes a relative path resolve somewhere else entirely.
 export LC_ALL=C
 unset CDPATH GREP_OPTIONS
-IFS=$(printf ' \t\n')
+IFS=$' \t\n'
 
 payload=$(cat)
 

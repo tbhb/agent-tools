@@ -115,7 +115,10 @@ ignore-imports = true
 ignore-docstrings = true
 
 [tool.pyrefly]
-project-includes = ["packages"]
+# .claude/ stays out for the reason given at [tool.pytest]: it is a deployed
+# copy of .apm/, and including both reports every error twice.
+project-includes = ["packages", ".apm", "tools", "tests"]
+project-excludes = [".claude"]
 # The strict preset is pyrefly's hardest baseline: it demands parameter
 # annotations and refuses implicit Any. The errors table below names each
 # diagnostic kind at error severity on top of it, so the gate holds even
@@ -324,10 +327,19 @@ addopts = [
   "--strict-config",
   "--import-mode=importlib",
 ]
-testpaths = ["packages"]
+# tests/ mirrors the source tree: tests/skills/<skill>/scripts/ covers
+# .apm/skills/<skill>/scripts/, and tests/tools/ covers tools/. They sit
+# outside the trees they test because APM deploys every file under a skill
+# directory, and a consumer repo has no pytest to run them with. The
+# structure also gives skill evals an obvious home later.
+testpaths = ["packages", "tests"]
 
 [tool.ruff]
 line-length = 88
+# Same reasoning as testpaths above. Ruff walks from the invocation root, so
+# without this every finding in a skill script is reported once against the
+# source and once against its deployment.
+exclude = [".claude"]
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -370,11 +382,25 @@ max-complexity = 15
 # boolean-trap rule has nothing to warn about at these call sites.
 "packages/*/tests/**" = ["S101", "PLR2004", "INP001", "FBT001"]
 
+# The same allowances for the tests that sit beside the script they cover
+# rather than under a tests/ directory. They pair by name with their subject,
+# so a rename that orphans one is visible in the diff. S603 and S607 join the
+# list because driving the script under test as a subprocess is the point:
+# its contract is the command line, not its functions.
+"**/test_*.py" = ["S101", "PLR2004", "INP001", "FBT001", "S603", "S607"]
+
 # T201: a skill script is a command-line tool whose output is the
 # product. print is the interface, not a stray debug statement, so the
 # rule that catches one catches the other here. Every other rule still
 # applies, because these scripts ship to consumer repositories.
 "**/skills/*/scripts/*.py" = ["T201"]
+
+# tools/ holds the repo-local standalone scripts, which are command-line
+# tools for the same reason and get the same allowance. S603 and S607 join
+# it because these scripts invoke vale and git by bare name on purpose: the
+# pinned toolchain puts them on PATH, and hardcoding an absolute path would
+# defeat that.
+"tools/*.py" = ["T201", "S603", "S607"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

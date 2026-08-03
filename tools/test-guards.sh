@@ -26,7 +26,7 @@ set -uo pipefail
 # because it makes a relative path resolve somewhere else entirely.
 export LC_ALL=C
 unset CDPATH GREP_OPTIONS
-IFS=$(printf ' \t\n')
+IFS=$' \t\n'
 
 root=$(git rev-parse --show-toplevel)
 SCRIPTS="$root/.apm/skills/fix-prose/scripts"

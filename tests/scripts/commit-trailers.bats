@@ -4,7 +4,7 @@
 # table cases from the Go trailers package the script replaces.
 
 setup() {
-  SCRIPT="${BATS_TEST_DIRNAME}/../scripts/commit-trailers.sh"
+  SCRIPT="${BATS_TEST_DIRNAME}/../../scripts/commit-trailers.sh"
 }
 
 # --- Rule 1: Assisted-by format ---

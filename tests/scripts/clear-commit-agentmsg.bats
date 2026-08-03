@@ -8,7 +8,7 @@
 # "ask git for the worktree root, then delete the draft under it".
 
 setup() {
-  SCRIPT="${BATS_TEST_DIRNAME}/../scripts/clear-commit-agentmsg.sh"
+  SCRIPT="${BATS_TEST_DIRNAME}/../../scripts/clear-commit-agentmsg.sh"
   STUB_DIR="${BATS_TEST_TMPDIR}/stub"
   ROOT="${BATS_TEST_TMPDIR}/root"
   mkdir -p "$STUB_DIR" "$ROOT"

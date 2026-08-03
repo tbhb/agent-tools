@@ -9,6 +9,7 @@ ENV
 Equalf
 Errorf
 Honnef
+Magika
 PYTHONUTF
 RLENGTH
 RSTART
@@ -99,6 +100,7 @@ errexit
 errname
 errorlint
 esac
+evals
 exitcode
 exptostd
 extensionless
@@ -287,6 +289,7 @@ rstrip
 ruleid
 rumdl
 runuser
+rustc
 ryl
 s2c2f
 sadd
@@ -299,6 +302,7 @@ securityscorecards
 sed
 setext
 setnx
+sgconfig
 shellcheck
 shfmt
 shlex
@@ -349,6 +353,7 @@ tmpl
 tolower
 tombi
 toplevel
+tostring
 tparallel
 trimpath
 typesscopes

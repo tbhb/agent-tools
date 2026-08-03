@@ -1,0 +1,22 @@
+---
+# Output these scripts parse goes through the gitr wrapper, which pins
+# log.showSignature, the color settings, core.quotePath, and the diff
+# prefix settings. An operator's config reshapes all of them, and the
+# agent reads this output.
+#
+# Structural matching is what makes this rule usable. The grep version
+# needed a negated character class purely to stop `git` from matching
+# inside `gitr`, a comment-stripping pre-pass, and a
+# `# hygiene-ok` escape hatch for quoted examples. Across all 48 scripts
+# its only match was one of those quoted examples. Matching a command
+# node instead means a string containing the same words is not a match,
+# so none of the three workarounds is needed here.
+id: bare-git-output
+language: bash
+severity: error
+message: "parses git output without gitr; log.showSignature and the diff prefix settings reshape this"
+rule:
+  any:
+    - pattern: git log $$$
+    - pattern: git show $$$
+    - pattern: git diff $$$
