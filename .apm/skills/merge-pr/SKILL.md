@@ -126,6 +126,8 @@ This step is mandatory, and the merge script enforces it. A clean verdict signs 
 
 Fix everything it returns. Push back only where it's demonstrably wrong about the commits, and say why.
 
+A finding names one instance rather than the fault itself. Fix the instance, then read the rest of the message for the same fault, because a reviewer that found one instance finds the next one on the next round.
+
 ## Step 5: run the commit-msg gates
 
 ```text
