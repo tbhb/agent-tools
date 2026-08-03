@@ -69,6 +69,7 @@ includes = [
   ".repotools/tasks/format.toml",
   ".repotools/tasks/git-hooks.toml",
   ".repotools/tasks/lint.toml",
+  ".repotools/tasks/security.toml",
   ".repotools/tasks/toolchain.toml",
 ]
 
@@ -96,7 +97,6 @@ apm = "0.26.0"
 # hygiene gate is repo-local; the skills it checks deploy, the checker
 # does not.
 ast-grep = "0.45.0"
-gitleaks = "8.30.1"
 jq = "1.8.2"
 shfmt = "3.13.1"
 uv = "0.12.1"
@@ -637,32 +637,6 @@ description = "Emit the govulncheck results as SARIF to <file> for the security.
 usage = 'arg "<file>"'
 run = 'go tool govulncheck -format sarif ./... > "$usage_file"'
 
-# gitleaks exits 0 when the underlying git invocation fails: it logs the
-# error, reports "0 commits scanned", then prints "no leaks found". A
-# repository it cannot resolve therefore reads as a clean scan. Assert
-# the walk reached at least one commit so an empty scan fails loudly.
-# The output goes to a file rather than through a pipe so gitleaks' own
-# exit code survives.
-[tasks.gitleaks]
-description = "Scan the working tree and full git history for committed secrets"
-run = '''
-#!/usr/bin/env bash
-set -eu
-log=$(mktemp)
-trap 'rm -f "$log"' EXIT
-
-status=0
-gitleaks git --verbose . >"$log" 2>&1 || status=$?
-cat "$log"
-
-if ! grep -qE '[1-9][0-9]* commits scanned' "$log"; then
-    echo "gitleaks walked 0 commits, so this scan proves nothing." >&2
-    echo "Check that the repository resolves from $(pwd)." >&2
-    exit 1
-fi
-exit "$status"
-'''
-
 # gomodscan flags dependencies that pkg.go.dev marks as retracted or
 # deprecated (S2C2F SCA-3), and dependencies the OSV malicious-package
 # registry flags as malware (S2C2F ING-3). It reads vendor/modules.txt
@@ -694,7 +668,7 @@ description = "Security-only sub-aggregator"
 run = [
   "mise run vuln",
   "mise run gomodscan",
-  "mise run gitleaks",
+  "mise run repotools:gitleaks",
   "mise run audit",
 ]
 
@@ -781,7 +755,7 @@ run = [
   "mise run check",
   "just test-go-race",
   "mise run fuzz",
-  "mise run gitleaks",
+  "mise run repotools:gitleaks",
 ]
 
 # --- APM ---

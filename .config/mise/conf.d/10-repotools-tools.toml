@@ -24,11 +24,11 @@
 # are needed on these pins.
 
 [tools]
-# actionlint, bats, golangci-lint, and shellcheck ran from SHA-pinned
-# container images until the de-containerization pass. The images were a
-# digest-pinning mechanism, not an isolation choice, and mise.lock now
-# records a digest for every aqua-backed release asset, so the tools run
-# as plain pinned binaries.
+# actionlint, bats, gitleaks, golangci-lint, and shellcheck ran from
+# SHA-pinned container images until the de-containerization pass. The
+# images were a digest-pinning mechanism, not an isolation choice, and
+# mise.lock now records a digest for every aqua-backed release asset, so
+# the tools run as plain pinned binaries.
 actionlint = "1.7.12"
 bats = "1.14.0"
 biome = "2.5.6"
@@ -42,6 +42,11 @@ cspell = "10.0.1"
 # subpackage path, so the custom manager in .github/renovate.json5 strips
 # the suffix for it.
 "go:github.com/editorconfig-checker/editorconfig-checker/v3/cmd/editorconfig-checker" = "v3.9.0"
+# The secret scanner behind repotools:gitleaks. It reached this drop-in
+# a release after its four siblings above: the de-containerization pass
+# pinned it in the root mise.toml, which is repo-local, so consumers kept
+# running it from ghcr.io/gitleaks/gitleaks until the pin moved here.
+gitleaks = "8.30.1"
 # go-arch-lint is absent from the aqua registry, so it builds from
 # source like editorconfig-checker above. Its main package sits at the
 # module root, no cmd/ suffix, so Renovate's built-in mise manager

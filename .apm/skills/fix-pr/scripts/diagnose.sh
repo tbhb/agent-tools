@@ -110,7 +110,7 @@ reproducer() {
   *test*) printf 'just test\n' ;;
   *vendor*) printf 'just vendor-check\n' ;;
   *vuln*) printf 'just vuln\n' ;;
-  *gitleaks* | *secret*) printf 'just gitleaks\n' ;;
+  *gitleaks* | *secret*) printf 'mise run repotools:gitleaks\n' ;;
   *apm* | *validate*) printf 'apm install --frozen && apm audit --ci\n' ;;
   *fuzz*) printf 'just fuzz\n' ;;
   *) printf '(no local recipe maps to this job; read the log)\n' ;;
