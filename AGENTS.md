@@ -119,6 +119,22 @@ Python tooling covers `packages/`. It came from `proofhouse/proofhouse-python-to
 
 The `[tool.pyrefly.errors]` table pins every diagnostic kind pyrefly knows. That catalog is version-specific, and an unknown name fails the entire config load, so regenerate the table on every pyrefly bump. Naming an unknown kind makes pyrefly print the full list of accepted values.
 
+## Releases
+
+The release happens in CI and nowhere else. `.github/workflows/release.yml` runs on dispatch. It mints an app token and runs `cog bump`, then SSH-signs the tag with a repository secret under the tagger identity GitHub verifies that key against.
+
+No local command reproduces that, so this repository has no bump-version task and no local tagging path. Cocogitto owns the version and derives it inside CI, and a second bumper on a development box would be a second source for one number.
+
+Three repo-local tasks stand around that workflow. They're primitives rather than a workflow of their own, and no orchestrator composes them yet: the sequencing stays with the operator until they have run against a few real releases. Each exits non-zero on failure. None prompts for anything, and none fixes anything. Readiness reports rather than cleaning the tree or moving a literal, because nobody can run a primitive that mutates on the way to an answer just to ask a question.
+
+- `mise run check-repotools-release-readiness` runs before a dispatch. It checks that `HEAD` is on main, the working tree is clean, the branch is current with origin, the checks on `HEAD` are green, the version literals name the latest tag, and the changelog previews. `check-all` is deliberately absent from that list, because it reaches `tidy`, and a preflight composing `go mod tidy` would rewrite `go.mod` on its way to an answer. The checks-green probe covers the same gates by asking GitHub what they concluded about this exact commit, which is the better answer anyway: it came from a clean runner on every platform in the matrix. Run `check-all` by hand where a local sweep is what you want. Readiness also prints the version `cog bump --auto` would derive. That number comes from the Conventional Commit types since the last tag, so a run of fixes and chores yields a patch where the operator wanted a minor, and #25 exists because nobody saw that difference until after the tag.
+- `mise run release-repotools [X.Y.Z]` dispatches the workflow and passes the version through, or omits it for the automatic path. It refuses where readiness fails. It stays thin deliberately. The target for release management here is a continuously updated release pull request whose merge tags and publishes. Under that model releasing is merging, so this is the piece that gets superseded while the other two survive.
+- `mise run verify-repotools-release [vX.Y.Z]` runs after the workflow run finishes. Its sharp assertion is that the tag carries an annotation and a signature rather than merely existing, because cog drives libgit2 and can only make a lightweight tag, which `push --follow-tags` leaves behind silently. The workflow deletes and re-creates the tag signed to compensate, so a check asking only whether the tag exists would pass in exactly the case that workaround exists for. The bump also runs under `--skip-ci`, which leaves this task as the only thing reading the release commit before consumers pin it.
+
+The tag is the whole release. Every consumer resolves the ref directly through apm, the Go module proxy, a `.pre-commit-config.yaml` rev, or a workflow pin, so this repository publishes no GitHub Release object, release assets, or built artifacts. Verification looks for none of those, and finding none is the correct answer rather than a gap.
+
+`mise run check-versions` is the fourth piece and the only one `mise run lint` composes. `cog.toml`'s `pre_bump_hooks` rewrite six published version literals during a bump, and that task is the witness that they did. It carries no prefix because it gates a tree rather than releasing a product, which is what the `repotools` qualifier on the other three marks.
+
 ## Verifying Claude Code behavior
 
 The public Claude Code docs don't always match the installed version. When the behavior of a hook or harness feature matters (which events fire, in what order, whether an event can block, what its stdin payload carries), confirm it against the installed `claude` binary rather than trusting the docs or prior memory.
