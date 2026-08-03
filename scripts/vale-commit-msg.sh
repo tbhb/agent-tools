@@ -54,10 +54,18 @@ fi
 # which matched the generic `[*.md]` scope and silently skipped the
 # `ai-tells-commits` rules that only the `[{COMMIT_EDITMSG,...}]` scope
 # enables. Piping the cleaned text on stdin and labelling it via
-# `--path` with the message basename drives both format resolution
-# (`[formats]` maps the extensionless name to markdown) and scope
-# selection, so the commit-message tells now fire. The basename keeps
-# the match working whether `$1` arrives relative or absolute.
+# `--path` with the message basename selects that scope. The basename
+# keeps the match working whether `$1` arrives relative or absolute.
+#
+# `--ext` picks the parser, and it has to be passed explicitly. vale
+# keys `[formats]` on a file extension, and these buffers have none, so
+# no entry there reaches them and the text parses as plain lines. That
+# leaves a backticked CLI flag looking like prose, which is how a rule
+# such as DoubleHyphen fires on `--all-files` written inside backticks
+# and no wording clears it. Naming the markdown parser makes a code
+# span a code span again. It does not widen the scope: `--path` still
+# decides that, so the `ai-tells-commits` rules keep firing rather than
+# falling back to the generic `[*.md]` set this comment warns about.
 #
 # sed cuts from the scissors marker through EOF. The pattern matches
 # the scissors text loosely (any number of dashes, optional spacing
@@ -67,4 +75,4 @@ fi
 # rules.
 sed -E '/^[#;] *-+ *>8 *-+ *$/,$d' "$msg_file" |
   git stripspace --strip-comments |
-  vale ${output_flag:+"$output_flag"} --path="$(basename "$msg_file")"
+  vale ${output_flag:+"$output_flag"} --path="$(basename "$msg_file")" --ext=.md
