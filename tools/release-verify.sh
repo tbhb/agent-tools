@@ -10,6 +10,13 @@
 # asking only whether the tag exists would pass in exactly the case the
 # workaround exists for.
 #
+# The commit under that tag gets the same treatment, and for a reason
+# this task learned the hard way: it read the tag alone, and every
+# release CI cut from v0.3.0 through v0.5.0 shipped a verified tag over
+# an unsigned commit. A good tag implies nothing about the object beneath
+# it. The two are signed by different parties here, so they are two
+# assertions rather than one.
+#
 # It matters more than it looks, because the bump runs under --skip-ci
 # and CI never validates the release commit. That is deliberate, and it
 # leaves this task as the only thing standing between a bad release
@@ -41,6 +48,12 @@ cd "$root"
 # the signing key against. Changing it in one place alone produces a tag
 # that signs correctly and still shows as unverified.
 readonly TAGGER='Tony Burns <tony@tonyburns.net>'
+
+# The identity createCommitOnBranch commits under, which is the release
+# App's bot user rather than anything the runner chooses. The local part
+# is that user's numeric id, so recreating the App changes this address
+# and the release identity along with it.
+readonly RELEASE_AUTHOR='tbhb-releases[bot] <278792582+tbhb-releases[bot]@users.noreply.github.com>'
 readonly RELEASE_BRANCH=main
 
 failures=0
@@ -110,6 +123,36 @@ else
   fail "tagger is $TAGGER" "the tag names $tagger, which is not the identity the signing key verifies against"
 fi
 
+# --- The release commit is signed, under the release App ---
+#
+# Signed by GitHub rather than by the runner, and that is the whole
+# design rather than a detail. release.yml has GitHub create this commit
+# through createCommitOnBranch, because a signature comes from a key the
+# signer holds and a GitHub App has none to hold. So an unsigned commit
+# here means it came off the runner, where nothing could have signed it
+# as the App in the first place.
+#
+# Read out of the commit object, the way the tagger check above reads
+# the tag object. A `git log --format` read would need the gitr wrapper
+# to keep log.showSignature out of its output, and there is no wrapper
+# in this script to reach for.
+
+tag_commit=$(command git rev-parse "refs/tags/$tag^{commit}")
+commit_object=$(command git cat-file commit "$tag_commit")
+
+if printf '%s\n' "$commit_object" | grep -q '^gpgsig'; then
+  ok "the release commit carries a signature"
+else
+  fail "the release commit carries a signature" "$tag_commit has none, so it was written on the runner rather than by createCommitOnBranch"
+fi
+
+commit_author=$(printf '%s\n' "$commit_object" | sed -n 's/^author \(.*\) [0-9][0-9]* [-+][0-9]*$/\1/p')
+if [ "$commit_author" = "$RELEASE_AUTHOR" ]; then
+  ok "the release commit is authored by $RELEASE_AUTHOR"
+else
+  fail "the release commit is authored by $RELEASE_AUTHOR" "it names $commit_author, which is not the identity createCommitOnBranch commits under"
+fi
+
 # --- The remote carries the same tag object ---
 
 remote_tag=$(command git ls-remote origin "refs/tags/$tag" | cut -f1)
@@ -139,6 +182,21 @@ if [ "$remote_tag" = "$local_tag" ] && [ -n "$remote_tag" ]; then
   esac
 fi
 
+# --- GitHub verifies the release commit ---
+#
+# The other half of the same question, asked about the object under the
+# tag. It reads a verdict on a signature GitHub itself produced, so
+# anything but valid means the commit on the remote is not the one this
+# checkout just read.
+
+commit_verified=$(gh api "repos/{owner}/{repo}/commits/$tag_commit" \
+  --jq '"\(.commit.verification.verified) \(.commit.verification.reason)"' 2>/dev/null || true)
+case $commit_verified in
+'true '*) ok "GitHub reports the release commit verified" ;;
+'') fail "GitHub reports the release commit verified" "the API returned nothing for $tag_commit" ;;
+*) fail "GitHub reports the release commit verified" "GitHub says $commit_verified" ;;
+esac
+
 # --- Reachable from the release branch ---
 #
 # Against the remote-tracking ref rather than the local branch. These
@@ -148,7 +206,6 @@ fi
 # to what the remote actually reports keeps a stale fetch caught while
 # leaving the answer the same wherever it runs.
 
-tag_commit=$(command git rev-parse "refs/tags/$tag^{commit}")
 tracking=$(command git rev-parse -q --verify "refs/remotes/origin/$RELEASE_BRANCH" || true)
 remote_branch=$(command git ls-remote origin "refs/heads/$RELEASE_BRANCH" | cut -f1)
 if [ -z "$tracking" ] || [ "$tracking" != "$remote_branch" ]; then
