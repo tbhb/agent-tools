@@ -37,6 +37,21 @@ lockfile = true
 # lives in conf.d and no .nvmrc exists here.
 idiomatic_version_file_enable_tools = []
 
+# Source the uv-built .venv when mise activates in this directory.
+# Without it a mise shell here exports no VIRTUAL_ENV and puts no
+# .venv/bin on PATH, so an editor or a bare `python` picks up whatever
+# interpreter is global while every task goes through `uv run` and sees
+# the right one. That gap is invisible until something outside a task
+# reads it. "source" rather than "create|source": bootstrap owns
+# creation through `uv sync`, and this should attach to a venv, never
+# conjure one. mise finds the project by walking up for uv.lock, which is
+# committed here.
+#
+# Convenience only. MISE_SAFE=1 discards this whole block (see the
+# idiomatic_version_file note above), and nothing in the gate path
+# depends on it, because every Python task spells out `uv run`.
+python.uv_venv_auto = "source"
+
 # Just ran [script] recipes under `bash -eu`. mise has no project-level
 # counterpart: it defaults to `sh -c -o errexit`, and it refuses a
 # `unix_default_inline_shell_args` override from a non-global config on
@@ -51,6 +66,22 @@ idiomatic_version_file_enable_tools = []
 # carrying a repo-specific literal.
 [env]
 REPOTOOLS_LOCK_PLATFORMS = "linux-x64,linux-arm64,macos-arm64,windows-x64"
+
+# Finish the arrangement the [settings] block above sets up: mise leaves
+# the interpreter to uv, and this makes uv provision it rather than
+# settle for one it found. uv's default preference is "managed", which
+# prefers a managed build but still accepts a system interpreter that
+# satisfies .python-version -- a Homebrew 3.14 would do, and then the
+# build differs by machine with nothing reporting it. "only-managed"
+# turns that fallback into an error.
+#
+# It is set here because pyproject.toml cannot express it. uv reads
+# python-preference from uv.toml or the environment alone, and silently
+# ignores it under [tool.uv]: an invalid value there parses clean while
+# the same value in uv.toml is rejected by name. A uv.toml is not the
+# answer either, since [tool.uv] here defines package and
+# constraint-dependencies, which a uv.toml is not allowed to express.
+UV_PYTHON_PREFERENCE = "only-managed"
 
 # The live half of the shared payload, selected file by file. Includes
 # are the selection mechanism: vendir delivers every task file, and this
@@ -353,12 +384,16 @@ description = "Detect copy-pasted Python code with pylint"
 run = "uv run pylint packages"
 
 # The static second pass behind ruff's `S` rules -- ruff ports only part
-# of bandit's checks and trails its releases. Pointing the scan at the
-# package's src/ keeps the tests out: a suite leans on assert (B101),
+# of bandit's checks and trails its releases. Pointing the scan at each
+# member's src/ keeps the tests out: a suite leans on assert (B101),
 # while ruff's `S` set still covers test code through per-file-ignores.
+# The glob is what makes this scale past one workspace member -- named
+# literally, a second member's source would never be read and this gate
+# would stay green over code it never saw. Scanning packages/ whole
+# would take the tests back in and fail on their asserts.
 [tasks.lint-bandit]
 description = "Scan the Python source for insecure code patterns with bandit"
-run = "uv run bandit -r packages/repotools/src -q"
+run = "uv run bandit -r packages/*/src -q"
 
 # The glob excludes the LICENSE (canonical Apache 2.0 text), the
 # auto-generated changelog, vale's own style packages, scratch dirs,

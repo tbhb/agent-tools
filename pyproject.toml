@@ -24,6 +24,17 @@ dependencies = []
 # tooling never runs in the test matrix, so those slots should not have
 # to install (or build) it.
 [dependency-groups]
+# Every workspace member, in one group the others pull in. Membership in
+# [tool.uv.workspace] puts a package in the lockfile; it does not install
+# it, so a member absent from this list resolves and then never reaches
+# .venv. Naming them here rather than reaching for `uv sync
+# --all-packages` is deliberate: a plain `uv sync` is exact and
+# uninstalls whatever the synced groups do not name, so the flag on one
+# invocation is undone by the next task that omits it, and every `uv run`
+# in mise.toml would need it too. Adding a member here is the one
+# manual step, and it announces itself -- testpaths covers packages/, so
+# an undeclared member fails collection on the import.
+members = ["repotools"]
 dev = [
   { include-group = "test" },
   "bandit>=1.9.4",
@@ -40,7 +51,6 @@ dev = [
   "pyrefly>=1.0.0",
   "ruff>=0.15.17",
   "vulture>=2.16",
-  "repotools",
 ]
 # pytest-cov rides in the test group, not dev: a CI test matrix syncs
 # only this group and every slot captures its own coverage data.
@@ -51,6 +61,7 @@ dev = [
 # on the same logic: randomly's per-run reordering happens on every
 # invocation once installed, and the slots pass `-n auto` to xdist.
 test = [
+  { include-group = "members" },
   "hypothesis>=6.155.2",
   "pytest>=9.0.3",
   "pytest-cov>=7.1.0",
@@ -62,6 +73,12 @@ test = [
 [tool.uv]
 # Virtual root: sync the groups and the members, build nothing here.
 package = false
+# mise pins uv in [tools], but that pin binds only where mise resolves
+# PATH. An editor, a hook, or a contributor's own install runs whatever
+# uv it finds, and a resolver from another minor line rewrites uv.lock in
+# ways `uv lock --check` then reports as drift. This floor is uv refusing
+# to run rather than the lockfile churning. Move it with the mise pin.
+required-version = ">=0.12.1,<0.13"
 # cosmic-ray drags GitPython in transitively and constrains nothing, so
 # the resolver is free to settle on a release carrying the 2026 argument
 # and option injection advisories (GHSA-94p4-4cq8-9g67 and the seven
@@ -73,9 +90,11 @@ constraint-dependencies = ["gitpython>=3.1.55"]
 [tool.uv.workspace]
 members = ["packages/*"]
 
-# The member joins the dev group rather than the root's runtime
-# dependencies, so an editable install of it lands in .venv and the suite
-# can import it without a src-path hack.
+# Resolve each member from the workspace rather than from PyPI, which is
+# what makes the install editable and lets the suite import it without a
+# src-path hack. This table pairs with the members dependency group
+# above: the group decides what gets installed, this decides where it
+# comes from, and a new member needs an entry in both.
 [tool.uv.sources]
 repotools = { workspace = true }
 
@@ -295,6 +314,15 @@ branch = true
 # and property gates are what prove the tests pin behavior. Naming the
 # import package rather than a path keeps the editable install and a built
 # wheel measuring the same thing.
+#
+# One import name per workspace member, and adding the next one is a
+# manual step with no gate behind it -- a member missing from this list
+# is not measured at all, which the 100% floor below reads as nothing to
+# report rather than as a failure. Do not reach for `source = ["packages"]`
+# to dodge that: measured against a module no test imports, the import
+# name reports it at 0% and fails the floor, while the directory form
+# never discovers it and stays at 100%. The path form trades a loud
+# failure for a silent one.
 source = ["repotools"]
 # Store paths relative to the project root so per-slot data files from a
 # CI matrix combine cleanly across operating systems — an absolute
