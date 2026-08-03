@@ -39,8 +39,7 @@ lockfile = true
 # `mise install` fetched python 3.14.6 before this setting existed. The
 # similarly named idiomatic_version_file_disable_tools reads back but
 # does nothing. node is dropped from the allowlist too: the node pin
-# lives in conf.d and no .nvmrc exists here. The pipx backend behind
-# yamllint is unaffected; it resolves through uv.
+# lives in conf.d and no .nvmrc exists here.
 idiomatic_version_file_enable_tools = []
 
 # Just ran [script] recipes under `bash -eu`. mise has no project-level
@@ -77,8 +76,7 @@ includes = [
 # are the tools only this repository uses. python is deliberately absent:
 # uv owns the interpreters, reading .python-version and provisioning its
 # own managed builds, and a second python from mise would give the same
-# interpreter two owners. The pipx backend behind yamllint resolves
-# through uv as well.
+# interpreter two owners.
 [tools]
 # 0.26.0 or newer: through 0.19.0 the hooks-ownership sidecar
 # .claude/apm-hooks.json was written after the lockfile snapshot, so
@@ -243,7 +241,7 @@ if [ -n "$files" ]; then shellcheck $files; fi
 '''
 
 # Aggregates the Go gates, the Python gates, prose (vale), spelling
-# (cspell), Markdown (rumdl), config / JS / TS (biome), YAML (yamllint),
+# (cspell), Markdown (rumdl), config / JS / TS (biome), YAML (ryl),
 # TOML (tombi), shell (shellcheck + shfmt), the Justfile's and this
 # config's own formatting, and the .editorconfig whitespace contract. An
 # ordered run array rather than `depends`, which runs in parallel and

@@ -98,8 +98,8 @@ repos:
         types_or: [markdown, go]
         exclude: ^CHANGELOG\.md$
 
-      - id: yamllint
-        name: Check YAML files with yamllint
+      - id: ryl
+        name: Check YAML files with ryl
         entry: tools/mise-bootstrap run repotools:lint-yaml
         language: system
         types: [yaml]

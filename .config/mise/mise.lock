@@ -72,6 +72,10 @@ url = "https://github.com/biomejs/biome/releases/download/%40biomejs/biome%402.5
 url_api = "https://api.github.com/repos/biomejs/biome/releases/assets/492555468"
 provenance = "github-attestations"
 
+[[tools."cargo:ryl"]]
+version = "0.21.0"
+backend = "cargo:ryl"
+
 [[tools.cocogitto]]
 version = "7.0.0"
 backend = "aqua:cocogitto/cocogitto"
@@ -331,7 +335,3 @@ url_api = "https://api.github.com/repos/vale-cli/vale/releases/assets/496928426"
 checksum = "sha256:7294214b10104bdcbad027f2a59b0e468f24edb739ea03befcef6d491bdcf58f"
 url = "https://github.com/vale-cli/vale/releases/download/v3.17.0/vale_3.17.0_Windows_64-bit.zip"
 url_api = "https://api.github.com/repos/vale-cli/vale/releases/assets/496928444"
-
-[[tools.yamllint]]
-version = "1.38.0"
-backend = "pipx:yamllint"

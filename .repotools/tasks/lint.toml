@@ -29,10 +29,31 @@ description = "Lint JSON / JS / TS via biome"
 usage = 'arg "<paths>..." default="."'
 run = "biome check --files-ignore-unknown=true $usage_paths"
 
+# Both flags beyond --strict exist to hold ryl to yamllint's behavior,
+# and dropping either changes what the gate reports.
+#
+# -c pins the config. Left to discover one, ryl resolves a config per
+# directory the way ruff and biome do, so a nested .yamllint.yaml
+# anywhere in the tree governs its own subtree -- this repository vendors
+# one under vendor/github.com/spf13/viper/, and it produced six findings
+# in a tree yamllint calls clean. yamllint has no such notion: one config
+# covers the whole run. Naming the file restores that.
+#
+# -f auto -o - sends findings to stdout. ryl writes the console formats
+# to stderr by default where yamllint uses stdout, which would break any
+# caller that redirects or pipes this task's output. -o - binds to the
+# preceding --format and is rejected without one, so the otherwise
+# redundant `-f auto` names the default explicitly: colored on a
+# terminal, plain when piped, which is what yamllint's own default does.
+#
+# ryl resolves ignore-from-file entries relative to the config file
+# rather than the working directory. Both land on the repository root
+# here, since the config sits there and mise runs tasks from the project
+# root, so .gitignore and .yamllintignore resolve identically.
 ["repotools:lint-yaml"]
-description = "Lint YAML via yamllint (--strict; config in .yamllint.yaml)"
+description = "Lint YAML via ryl (--strict; config in .yamllint.yaml)"
 usage = 'arg "<paths>..." default="."'
-run = "yamllint --strict $usage_paths"
+run = "ryl --strict -c .yamllint.yaml -f auto -o - $usage_paths"
 
 # The COMMIT_AGENTMSG exclusions keep a work-in-progress commit-message
 # draft out of the tree-wide check; the commit-msg stage owns those under
@@ -52,8 +73,8 @@ run = "just --fmt --check --unstable"
 # actionlint walks `.github/workflows/` by default, parses each
 # workflow, and flags unknown actions, mis-typed expressions, shellcheck
 # issues inside `run:` blocks, and SHA-pin drift. Complements the
-# yamllint gate (which checks YAML structure) with workflow-shape rules
-# yamllint can't see. shellcheck is pinned in the baseline drop-in
+# ryl gate (which checks YAML structure) with workflow-shape rules a
+# YAML linter can't see. shellcheck is pinned in the baseline drop-in
 # beside actionlint because actionlint shells out to whatever
 # `shellcheck` binary it finds: the container image this task replaces
 # bundled one, and without that pin the `run:`-block checks would
