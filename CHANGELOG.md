@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file. See [conven
 - - -
 <!-- release -->
 
+## [v0.3.2](https://github.com/tbhb/repotools/compare/d00af6c7211527f4880e007ff2e96f63987666f6..v0.3.2) - 2026-08-03
+
+### Bug Fixes
+
+- scope the fix-prose guard release to a single edit (#18) - ([9b269d9](https://github.com/tbhb/repotools/commit/9b269d90429a4da30c46e1f8860f79dcf8b47c29)) - [@tbhb](https://github.com/tbhb)
+- release the fix-prose lock when its document no longer exists (#16) - ([0811139](https://github.com/tbhb/repotools/commit/0811139c65ecd93d3c45cae0eb4f608382e41d44)) - [@tbhb](https://github.com/tbhb)
+
+### Build system
+
+- package the shared mise tasks and pins as a vendir payload (#17) - ([803bdfe](https://github.com/tbhb/repotools/commit/803bdfea2f0d03a77c41b2a86c97463ff861cbc1)) - [@tbhb](https://github.com/tbhb)
+- convert the container-run gates to mise tool pins (#15) - ([5cd9ce1](https://github.com/tbhb/repotools/commit/5cd9ce160e535f817d365b6f30b289f58276066c)) - [@tbhb](https://github.com/tbhb)
+
+### Continuous Integration
+
+- remove the unused setup composites and their Renovate manager (#14) - ([d00af6c](https://github.com/tbhb/repotools/commit/d00af6c7211527f4880e007ff2e96f63987666f6)) - [@tbhb](https://github.com/tbhb)
+
+- - -
+
+<!-- release -->
+
 ## [v0.3.1](https://github.com/tbhb/repotools/compare/08897dcadc2db76afb525c7840d2a14564831399..v0.3.1) - 2026-08-02
 
 ### Bug Fixes
