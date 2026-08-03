@@ -32,6 +32,18 @@ IFS=$' \t\n'
 root=$(command git rev-parse --show-toplevel)
 cd "$root"
 
+# Named rather than left to the default, and readiness reads the same
+# name. A bare `gh workflow run` resolves to the repository's default
+# branch, which is right today by coincidence of configuration rather
+# than by statement, and `on: workflow_dispatch` constrains nothing:
+# it takes no branch filter, so any ref carrying the workflow file can
+# run it. release.yml's checkout takes the dispatched ref while its push
+# step names main outright, so a dispatch against anything else would
+# bump that ref's tree and push the result onto main. Saying the branch
+# here costs one flag and makes the target the same statement readiness
+# verified.
+readonly RELEASE_BRANCH=main
+
 version=${1:-}
 if [ -n "$version" ]; then
   # release.yml passes this straight to `cog bump --version`, which
@@ -55,11 +67,11 @@ if ! bash tools/release-readiness.sh; then
 fi
 
 if [ -n "$version" ]; then
-  printf '\ndispatching: gh workflow run release.yml -f version=%s\n' "$version"
-  gh workflow run release.yml -f version="$version"
+  printf '\ndispatching: gh workflow run release.yml --ref %s -f version=%s\n' "$RELEASE_BRANCH" "$version"
+  gh workflow run release.yml --ref "$RELEASE_BRANCH" -f version="$version"
 else
-  printf '\ndispatching: gh workflow run release.yml (cog bump --auto)\n'
-  gh workflow run release.yml
+  printf '\ndispatching: gh workflow run release.yml --ref %s (cog bump --auto)\n' "$RELEASE_BRANCH"
+  gh workflow run release.yml --ref "$RELEASE_BRANCH"
 fi
 
 printf 'dispatched. Follow it with: gh run list --workflow=release.yml\n'
