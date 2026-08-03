@@ -67,7 +67,7 @@ readonly CONFIG_FILES=(
   .cspell.jsonc
   .cspell-words.txt
   .pre-commit-config.yaml
-  Justfile
+  mise.toml
 )
 
 # Comment forms that silence a checker in place. The vale pattern
@@ -182,7 +182,7 @@ case $mode in
   while IFS= read -r path; do
     [ -n "$path" ] || continue
     case $path in
-    .vale/* | .vale.ini | .cspell* | .pre-commit-config.yaml | Justfile)
+    .vale/* | .vale.ini | .cspell* | .pre-commit-config.yaml | mise.toml)
       report "$path" 1 linter-config-changed \
         "the fixer changed linter configuration, which clears findings by changing the rules rather than the prose; revert it and record the finding as unresolved"
       ;;

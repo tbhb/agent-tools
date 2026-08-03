@@ -118,7 +118,7 @@ fi
 
 section "what a replacement pass would clear"
 # Findings whose rule carries its own correction need no judgment. The
-# count is here so the fixer knows what the recipe below is worth before
+# count is here so the fixer knows what the task below is worth before
 # running it.
 if command -v vale >/dev/null 2>&1; then
   found=$(vale --output=ai-tells-agent.tmpl "$target" 2>&1)
@@ -131,7 +131,7 @@ if command -v vale >/dev/null 2>&1; then
     auto=$(printf '%s\n' "$found" | grep -c 'replace_with=' || true)
     printf '%s of the vale findings carry a replacement.\n' "${auto:-0}"
     if [ "${auto:-0}" -gt 0 ]; then
-      printf 'Clear them first with:\n  just fix-prose-replacements %s\n' "$target"
+      printf 'Clear them first with:\n  mise run fix-prose-replacements %s\n' "$target"
     fi
   fi
 else
