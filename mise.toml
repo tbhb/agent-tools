@@ -974,3 +974,42 @@ set -eu
 v=$([[ -n "${1:-}" ]] && echo "v$1" || echo "..$(git rev-parse HEAD)")
 cog changelog --at "$v" -t full_hash | rumdl check -d MD041 --fix --stdin
 '''
+
+# --- Release ---
+
+# Three primitives around the release, not a workflow. The eventual
+# shape is obvious enough -- readiness, dispatch, wait, verify, behind
+# one orchestrator -- and building it now would settle the sequencing
+# before anything here has run against a real release. Readiness and
+# verification are also the durable pair: they hold whatever triggers a
+# release, while the dispatcher is the piece a release-pull-request
+# model would supersede.
+#
+# Every one of them exits non-zero on failure, prompts for nothing, and
+# fixes nothing. Reporting is the whole job, because a primitive that
+# mutates on the way to an answer cannot be run to ask a question.
+#
+# They carry the repotools qualifier because they release this product
+# rather than whatever repository they run in, which is the opposite of
+# the repotools: prefix on the shared payload. check-versions stays
+# unprefixed for the same reason: it gates a tree rather than releasing
+# a product.
+
+[tasks.check-repotools-release-readiness]
+description = "Report whether repotools is ready to release, and the version cog would derive"
+run = "bash tools/release-readiness.sh"
+
+# Dispatches release.yml rather than releasing. The workflow SSH-signs
+# the tag with a repository secret under an identity GitHub verifies
+# server-side, so nothing local reproduces it, and a local bump would be
+# a second source for one number.
+[tasks.release-repotools]
+description = "Dispatch the release workflow, optionally with an explicit X.Y.Z"
+run = "bash tools/release-dispatch.sh"
+
+# Run after the workflow lands. The bump goes out under --skip-ci, so no
+# CI run ever reads the release commit and this is what stands between a
+# bad one and every consumer pinning the tag.
+[tasks.verify-repotools-release]
+description = "Check that a release tag is annotated, signed, reachable, and matched by the version literals"
+run = "bash tools/release-verify.sh"
