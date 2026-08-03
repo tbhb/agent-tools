@@ -31,7 +31,7 @@ set -euo pipefail
 # because it makes a relative path resolve somewhere else entirely.
 export LC_ALL=C
 unset CDPATH GREP_OPTIONS
-IFS=$(printf ' \t\n')
+IFS=$' \t\n'
 
 git_dir=$(command git rev-parse --absolute-git-dir 2>/dev/null) || {
   printf 'Not inside a git repository, so no lock is held here.\n' >&2
