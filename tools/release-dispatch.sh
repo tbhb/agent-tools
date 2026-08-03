@@ -53,12 +53,16 @@ if [ -n "$version" ]; then
     printf 'release-dispatch: pass the version without a leading v (got %s)\n' "$version" >&2
     exit 1
     ;;
-  [0-9]*.[0-9]*.[0-9]*) ;;
-  *)
+  esac
+  # A regular expression rather than a glob, because a glob cannot say
+  # "digits and nothing else". Every * in `[0-9]*.[0-9]*.[0-9]*` matches
+  # any run of characters, so that pattern accepts 1.2.3-rc1 and anything
+  # else built around two dots. Cog takes what it is given and tags it,
+  # and nothing downstream reads a tag of that shape.
+  if [[ ! $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     printf 'release-dispatch: %s is not an X.Y.Z version\n' "$version" >&2
     exit 1
-    ;;
-  esac
+  fi
 fi
 
 if ! bash tools/release-readiness.sh; then

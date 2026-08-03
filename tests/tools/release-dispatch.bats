@@ -84,3 +84,20 @@ fail_readiness() {
   [[ $output == *"is not an X.Y.Z version"* ]]
   [ ! -f "$GH_LOG" ]
 }
+
+# The shapes a version check has to refuse. The earlier glob,
+# `[0-9]*.[0-9]*.[0-9]*`, read every * as any run of characters, so the
+# first three cleared it and reached cog, which would have tagged
+# exactly what it was handed. `1.2.x` failed that glob too, since the
+# pattern wanted a digit after the last dot, and it is here to keep the
+# non-numeric case covered.
+@test "refuses a version carrying a prerelease or build suffix" {
+  pass_readiness
+
+  for bad in 1.2.3-rc1 1.2.3+build 1.2.3.4 1.2.x; do
+    run "$SCRIPT" "$bad"
+    [ "$status" -eq 1 ]
+    [[ $output == *"is not an X.Y.Z version"* ]]
+    [ ! -f "$GH_LOG" ]
+  done
+}
