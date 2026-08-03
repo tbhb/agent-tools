@@ -9,6 +9,7 @@ ENV
 Equalf
 Errorf
 Honnef
+Magika
 PYTHONUTF
 RLENGTH
 RSTART
@@ -99,6 +100,7 @@ errexit
 errname
 errorlint
 esac
+evals
 exitcode
 exptostd
 extensionless

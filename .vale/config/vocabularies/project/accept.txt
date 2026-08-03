@@ -36,6 +36,7 @@ JTBD
 Justfile
 MCP
 MITM
+Magika
 MaxWidth
 MinEvidence
 MinRun

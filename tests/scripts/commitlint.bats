@@ -4,7 +4,7 @@
 # that replaces the Go commitlint binary.
 
 setup() {
-  SCRIPT="${BATS_TEST_DIRNAME}/../scripts/commitlint.sh"
+  SCRIPT="${BATS_TEST_DIRNAME}/../../scripts/commitlint.sh"
 }
 
 # write_msg writes its stdin to a temp file and echoes the path.

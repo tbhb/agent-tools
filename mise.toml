@@ -446,7 +446,7 @@ run = "bash tools/lint-draft.sh $usage_file"
 # report quoted.
 [tasks.fix-prose-replacements]
 extends = "repotools:fix-prose-replacements"
-run = "bash tools/fix-prose-replacements.sh $usage_file"
+run = "uv run --script tools/fix_prose_replacements.py $usage_file"
 
 # The pull request counterpart. The validator is mechanical and offline;
 # vale and cspell then read the prose, under the same [*.md] rules the
@@ -522,7 +522,7 @@ run = ["just test-go", "mise run test-py", "mise run test-hooks"]
 # everywhere rather than whichever bats a contributor happens to have.
 [tasks.test-hooks]
 description = "Run the bats suites for the shell hooks under scripts/"
-usage = 'arg "<path>" default="test"'
+usage = 'arg "<path>" default="tests/scripts"'
 run = "bats $usage_path"
 
 # Serial by default so a failing run prints a clean, ordered trace; pass
