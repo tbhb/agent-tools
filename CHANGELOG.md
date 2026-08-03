@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file. See [conven
 - - -
 <!-- release -->
 
+## [v0.5.0](https://github.com/tbhb/repotools/compare/2b68005951deb9096af2e59b460b9f366867ae2c..v0.5.0) - 2026-08-03
+
+### Bug Fixes
+
+- use the published vale agent template and read vale's exit status (#26) - ([2b68005](https://github.com/tbhb/repotools/commit/2b68005951deb9096af2e59b460b9f366867ae2c)) - [@tbhb](https://github.com/tbhb)
+
+### Build system
+
+- add the release readiness, dispatch, and verification tasks (#31) - ([044bae4](https://github.com/tbhb/repotools/commit/044bae4070de881ff5fd9c71bd86f5f07042dfa1)) - [@tbhb](https://github.com/tbhb)
+- move a consumer between repotools releases with one command (#28) - ([83de50f](https://github.com/tbhb/repotools/commit/83de50fd4f8ffee9f4c2fcca2041febe5b16d6a5)) - [@tbhb](https://github.com/tbhb)
+- rewrite every published version literal during a bump (#29) - ([6223b87](https://github.com/tbhb/repotools/commit/6223b87d9fe5754bc9efd4e71296fb277daf4294)) - [@tbhb](https://github.com/tbhb)
+- retire the Justfile and run every gate through mise (#27) - ([fa6adbc](https://github.com/tbhb/repotools/commit/fa6adbcf0a64962e7ed8fc08f5a6fd845e5040ed)) - [@tbhb](https://github.com/tbhb)
+
+- - -
+
+<!-- release -->
+
 ## [v0.4.0](https://github.com/tbhb/repotools/compare/1e0a27d2bb8020f69e57cf86ab1c7e9353037ad7..v0.4.0) - 2026-08-03
 
 ### Bug Fixes
