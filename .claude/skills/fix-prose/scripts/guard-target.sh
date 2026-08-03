@@ -45,6 +45,26 @@ lock="$git_dir/fix-prose.lock"
 [ -s "$lock" ] || exit 0
 locked=$(head -1 "$lock")
 
+# A lock outlives the document it named. Every file this guard protects
+# is removed at the end of the workflow that produced it: the post-commit
+# hook deletes COMMIT_AGENTMSG once a commit lands, and merge-pr clears
+# PR_AGENTDESC.md and SQUASH_AGENTMSG. The next workflow then writes a
+# new document at the same path, and a lock matching on the path alone
+# refuses that write. Three recorded blocks were exactly that, a fresh
+# commit draft caught by the previous commit's lock, and each one was
+# answered by deleting the lock outright within seconds.
+#
+# So an absent path stands the guard down: the run that armed it is over,
+# whatever became of it. Releasing from here rather than from a step at
+# the end of the workflow is what makes that hold, because an abandoned
+# run skips a closing step by definition while this check runs on
+# whichever edit arrives next. The commit guard's HEAD mark is scoped the
+# same way and for the same reason.
+if [ ! -e "$locked" ]; then
+  rm -f "$lock"
+  exit 0
+fi
+
 path=$(jq -r '.tool_input.file_path // ""' <<<"$payload")
 [ -n "$path" ] || exit 0
 case $path in
