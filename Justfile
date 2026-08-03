@@ -157,7 +157,7 @@ lint-draft file:
 # commit's preflight prints this by name when a git hook is missing, so the
 # advice it gives has to resolve to something runnable.
 prek-install:
-    {{ mise }} run prek-install
+    {{ mise }} run repotools:prek-install
 
 # Recipes fix-pr prints as the local reproduction for a failing check. A
 # name that resolves to nothing here sends the agent to a command that

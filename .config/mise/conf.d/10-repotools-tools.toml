@@ -1,7 +1,7 @@
 #:schema https://mise.jdx.dev/schema/mise.json
 # Baseline tool pins shared across the tbhb repos. This drop-in is both
-# this repository's configuration and the source of the shared payload a
-# later phase packages with vendir: repotools dogfoods what it publishes,
+# this repository's configuration and the source vendir syncs into every
+# consumer's .config/mise/conf.d: repotools dogfoods what it publishes,
 # so the shared pins live here rather than in the root mise.toml, which
 # holds only repo-specific pins.
 #
@@ -9,8 +9,15 @@
 # subdirectory), and the root mise.toml overrides any pin here, which is
 # what lets a consumer keep a different version without editing a
 # vendored file. Tools pinned here lock to the sibling lockfile at
-# .config/mise/mise.lock rather than the root mise.lock, so this
-# repository commits both lockfiles.
+# .config/mise/mise.lock rather than the root mise.lock; each repo
+# generates and commits that lockfile itself, because the platform lists
+# differ per repo.
+#
+# These pins are also what the shared tasks under .repotools/tasks run
+# against. A task file cannot carry [tools], and a version literal
+# inside one would sit outside Renovate's view, so the tasks declare no
+# tools of their own and resolve every binary through this table -- or
+# through a consumer's deliberate override of it.
 #
 # Renovate's built-in mise manager matches conf.d drop-ins explicitly and
 # derives the datasource from each backend, so no `# renovate:` markers

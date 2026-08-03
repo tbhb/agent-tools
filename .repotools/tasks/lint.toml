@@ -1,9 +1,9 @@
-#:schema https://mise.jdx.dev/schema/mise.json
-# Shared lint tasks. Same namespace, override, and tool-pinning rules as
-# the format drop-in. Only gates whose bodies are identical between the
-# consuming repos live here; a gate whose scope or idiom is repo-specific
-# (lint-prose's glob, lint-editorconfig's file listing) stays in the
-# consumer's root mise.toml.
+# Shared lint tasks. Same task-file syntax, namespace, selection, and
+# pin rules as format.toml in this directory. Only gates whose bodies
+# are identical between the consuming repos live here; a gate whose
+# scope or idiom is repo-specific (lint-prose's glob,
+# lint-editorconfig's file listing) stays in the consumer's root
+# mise.toml.
 
 # tombi lint-checks every tracked *.toml, validated offline against
 # embedded SchemaStore schemas where one exists. The format gate runs in
@@ -12,47 +12,41 @@
 # --offline keeps the check hermetic against SchemaStore;
 # --error-on-warnings promotes warnings to hard failures. Scope lives in
 # the consumer's tombi.toml, so this task passes no path args.
-[tasks."repotools:lint-toml"]
+["repotools:lint-toml"]
 description = "Lint and format-check TOML via tombi"
-tools = { tombi = "1.2.5" }
 run = [
   "tombi format --check --diff",
   "tombi lint --offline --error-on-warnings",
 ]
 
-[tasks."repotools:lint-markdown"]
+["repotools:lint-markdown"]
 description = "Lint Markdown structure against .rumdl.toml"
 usage = 'arg "<paths>..." default="."'
-tools = { rumdl = "0.2.48" }
 run = "rumdl check $usage_paths"
 
-[tasks."repotools:lint-config"]
+["repotools:lint-config"]
 description = "Lint JSON / JS / TS via biome"
 usage = 'arg "<paths>..." default="."'
-tools = { biome = "2.5.6" }
 run = "biome check --files-ignore-unknown=true $usage_paths"
 
-[tasks."repotools:lint-yaml"]
+["repotools:lint-yaml"]
 description = "Lint YAML via yamllint (--strict; config in .yamllint.yaml)"
 usage = 'arg "<paths>..." default="."'
-tools = { yamllint = "1.38.0" }
 run = "yamllint --strict $usage_paths"
 
 # The COMMIT_AGENTMSG exclusions keep a work-in-progress commit-message
 # draft out of the tree-wide check; the commit-msg stage owns those under
 # the stricter commit scope.
-[tasks."repotools:lint-spelling"]
+["repotools:lint-spelling"]
 description = "Check spelling against the project dictionary (.cspell-words.txt)"
 usage = 'arg "<paths>..." default="."'
-tools = { cspell = "10.0.1" }
 run = "cspell --config .cspell.jsonc --no-summary --no-progress --no-must-find-files --exclude COMMIT_AGENTMSG --exclude PR_AGENTDESC.md --exclude SQUASH_AGENTMSG $usage_paths"
 
 # Format-check the Justfile with just's own formatter. --check reports
 # the difference and exits non-zero without touching the file;
 # repotools:format-just is the in-place fixer.
-[tasks."repotools:lint-just"]
+["repotools:lint-just"]
 description = "Format-check the Justfile with just's own formatter"
-tools = { just = "1.57.0" }
 run = "just --fmt --check --unstable"
 
 # actionlint walks `.github/workflows/` by default, parses each
@@ -74,7 +68,10 @@ run = "actionlint"
 # gated. It does not overlap with lint-toml: mise fmt is the stricter of
 # the two (it insists on exploded arrays above a width threshold where
 # tombi accepts either), and a file mise fmt has normalized passes tombi
-# unchanged. `mise fmt` with no flag is the in-place fixer.
-[tasks."repotools:lint-mise"]
+# unchanged. `mise fmt` with no flag is the in-place fixer. Its scope is
+# the config files mise discovers -- mise.toml and the conf.d drop-ins.
+# It does not read included task files like this one; tombi is the
+# format gate for those.
+["repotools:lint-mise"]
 description = "Format-check the mise config with mise's own formatter"
 run = "mise fmt --check"

@@ -187,7 +187,7 @@ repos:
       # lockfile entry.
       - id: check-toolchain
         name: mise check-toolchain
-        entry: tools/mise-bootstrap run check-toolchain
+        entry: tools/mise-bootstrap run repotools:check-toolchain
         language: system
         files: ^(mise\.(toml|lock)|\.config/mise/(conf\.d/.*\.toml|mise\.lock))$
         pass_filenames: false
