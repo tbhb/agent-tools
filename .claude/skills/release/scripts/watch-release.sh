@@ -167,10 +167,22 @@ done
 
 if [ "${conclusion:-}" = "success" ]; then
   printf 'RELEASE RUN SUCCEEDED %s\n' "$run_url"
-  printf 'Next: git fetch origin --tags, then mise run verify-repotools-release\n'
+  printf 'Next: refresh the release clone, then run verify-repotools-release\n'
   exit 0
 fi
 
+# A failed run says no tag was cut. It does not say the branch is where
+# it was, and this workflow is built so that it often is not: the
+# release commit reaches the branch through createCommitOnBranch before
+# anything is tagged, so every step after that point fails with a commit
+# already pushed. A v0.6.0 attempt ended exactly there, leaving a
+# half-applied bump on main under no tag.
+#
+# So this reports what it watched and refuses to describe the
+# branch, because it never read the branch. Saying "nothing was
+# released" would be true of the tag and wrong about main, and the
+# reader would stop at the reassuring half.
 printf 'RELEASE RUN %s %s\n' "$(printf '%s' "${conclusion:-unknown}" | tr '[:lower:]' '[:upper:]')" "$run_url"
-printf 'Nothing was released. Read the run before dispatching again; a second release is worse than a stalled one.\n'
+printf 'No tag was cut. The branch may still have moved, because the release commit is pushed before the tag.\n'
+printf 'Read the run and the branch before dispatching again. A second release costs more than a stalled one.\n'
 exit 1

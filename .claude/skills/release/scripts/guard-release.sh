@@ -152,7 +152,35 @@ skill confirms it with the operator before anything is dispatched.
     deny "That is the dispatch endpoint release.yml runs from, reached around the
 task that gates it:
 
-  mise run release-repotools [X.Y.Z]"
+  bash .claude/skills/release/scripts/release-clone.sh run release-repotools [X.Y.Z]"
+  fi
+
+  # --- Release tasks outside the clone --------------------------------
+  #
+  # Every release task resolves its repository from the current
+  # directory, so a bare `mise run` reads whatever checkout the session
+  # happens to sit in. That checkout is not what gets released: the
+  # workflow builds main fresh on the runner. Readiness would then
+  # report a verdict about a tree nobody is releasing, and the dispatch
+  # would gate on it.
+  #
+  # `release-clone.sh run` is the same task against a clone of the
+  # release branch, which is the thing under discussion.
+
+  if [[ $segment =~ ^[[:space:]]*mise[[:space:]] ]] &&
+    [[ $segment =~ (check-repotools-release-readiness|release-repotools|verify-repotools-release) ]]; then
+    deny "A release task run here reads this checkout, and this checkout is not
+what gets released. The workflow builds the release branch fresh on the
+runner, so a verdict about the tree in front of you describes something
+else.
+
+Run it against the clone instead:
+
+  bash .claude/skills/release/scripts/release-clone.sh prepare
+  bash .claude/skills/release/scripts/release-clone.sh run <task> [args...]
+
+That works from any worktree, leaves this checkout untouched, and says
+up front which local work the release does not carry."
   fi
 
 done <<EOF
