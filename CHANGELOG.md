@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file. See [conven
 - - -
 <!-- release -->
 
+## [v0.4.0](https://github.com/tbhb/repotools/compare/1e0a27d2bb8020f69e57cf86ab1c7e9353037ad7..v0.4.0) - 2026-08-03
+
+### Bug Fixes
+
+- name the markdown parser when linting a commit message (#24) - ([cab0890](https://github.com/tbhb/repotools/commit/cab0890bfe2a887aabf877a4e44444fe0ddeb13a)) - [@tbhb](https://github.com/tbhb)
+- correct the script defects the gates couldn't see (#22) - ([de2c6dd](https://github.com/tbhb/repotools/commit/de2c6ddfb2d2dba527b6c26c59311946d01758a9)) - [@tbhb](https://github.com/tbhb)
+- scrub the git environment around the vendored payload sync (#21) - ([634e7f9](https://github.com/tbhb/repotools/commit/634e7f9fac7c21c0238504d0aa7afeecea8f0dde)) - [@tbhb](https://github.com/tbhb)
+
+### Build system
+
+- move the gitleaks pin and task into the shared payload (#23) - ([afd036c](https://github.com/tbhb/repotools/commit/afd036c222be3f8749b8c139afd8d19717439c5c)) - [@tbhb](https://github.com/tbhb)
+- lint YAML with ryl in place of yamllint (#20) - ([5515549](https://github.com/tbhb/repotools/commit/55155490865c3ccf2c147f8ed1212eb7719a3858)) - [@tbhb](https://github.com/tbhb)
+- pin the apm CLI through mise instead of a curl step (#19) - ([e57f334](https://github.com/tbhb/repotools/commit/e57f334affa3509305c95dca24e91204010335ef)) - [@tbhb](https://github.com/tbhb)
+
+- - -
+
+<!-- release -->
+
 ## [v0.3.2](https://github.com/tbhb/repotools/compare/d00af6c7211527f4880e007ff2e96f63987666f6..v0.3.2) - 2026-08-03
 
 ### Bug Fixes
