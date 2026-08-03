@@ -760,9 +760,19 @@ run = "go tool go-test-coverage --config .testcoverage.yml"
 # fail_under = 100 with branch coverage on, so anything unreachable
 # belongs in exclude_also with a reason rather than behind a lowered
 # threshold.
+#
+# The scope is here rather than in pyproject.toml, unlike every other
+# Python gate, because coverage cannot discover workspace members on its
+# own and this is what stops the alternative from being a hand-kept
+# list. Its config accepts no glob, and a directory only works when it
+# holds the package itself: `source = ["packages"]` measures whatever
+# the tests import and never notices a module nothing imports, whether
+# or not include_namespace_packages is set. Expanding the same glob
+# lint-bandit uses gives one --cov per member, so a new member scopes
+# itself, and an unimported module still lands at 0% against the floor.
 [tasks.cover-py]
 description = "Run the Python tests with branch coverage and enforce the 100% floor"
-run = "uv run pytest --cov --cov-branch"
+run = 'uv run pytest --cov-branch $(printf -- "--cov=%s " packages/*/src)'
 
 # Re-print the report and re-check the threshold against whatever data
 # .coverage already holds, without rerunning the suite.

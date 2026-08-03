@@ -180,6 +180,7 @@ checkOrder
 closesRun
 codeIndent
 collectFindings
+complexipy
 configs
 cooldown
 cooldowns?
