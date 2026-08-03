@@ -16,8 +16,13 @@
 # Two checks run, because the validator alone is not enough. It reports a
 # config as valid without ever resolving the presets named in `extends`, so
 # a second step verifies each `github>owner/repo//path` reference actually
-# exists. Without it a broken reference lands green and only surfaces later,
-# when Renovate fails at runtime and quietly stops opening PRs.
+# exists, at the `#ref` it names where it names one. Without it a broken
+# reference lands green and only surfaces later, when Renovate fails at
+# runtime and quietly stops opening PRs.
+#
+# That step's script has a bats suite at
+# `tests/workflows/check-preset-refs.bats`, which extracts it from this file
+# and runs it against a stub API.
 name: Validate Renovate configuration
 
 on:
@@ -104,6 +109,11 @@ jobs:
 
           const selfRepo = process.env.GITHUB_REPOSITORY;
           const token = process.env.GH_TOKEN;
+          // Actions sets GITHUB_API_URL on every runner, so reading it costs
+          // nothing here and gives the bats suite somewhere to point a stub
+          // API. The tests need that seam: this script never runs against
+          // github.com under test.
+          const api = process.env.GITHUB_API_URL ?? "https://api.github.com";
 
           const refs = new Set();
           for (const file of process.argv.slice(2)) {
@@ -119,22 +129,29 @@ jobs:
 
           let failed = 0;
           for (const ref of [...refs].sort()) {
-            // Only the `github>owner/repo//path` form appears in these repos.
+            // Two forms appear in these repos: `github>owner/repo//path` and
+            // the same with a `#ref` suffix pinning it to a tag or a commit.
             // Anything else fails rather than being skipped: a silently ignored
             // reference is the exact failure this check exists to prevent.
-            const match = /^github>([^/#:]+)\/([^/#:]+)\/\/([^#:]+)$/.exec(ref);
+            const match =
+              /^github>([^/#:]+)\/([^/#:]+)\/\/([^#:]+)(?:#([^#:]+))?$/.exec(ref);
             if (!match) {
               console.log(`FAIL  ${ref} (unrecognized reference shape)`);
               failed += 1;
               continue;
             }
-            const [, owner, repo, path] = match;
+            const [, owner, repo, path, pinned] = match;
             const slug = `${owner}/${repo}`;
+            const at = pinned ? `ref ${pinned}` : "default branch";
 
-            if (slug === selfRepo) {
-              // Self-reference: check this PR's tree rather than the default
-              // branch, so a preset added or renamed in this same PR resolves
-              // against what will actually land.
+            if (slug === selfRepo && !pinned) {
+              // Unpinned self-reference: check this PR's tree rather than the
+              // default branch, so a preset added or renamed in this same PR
+              // resolves against what will actually land. A *pinned* self-
+              // reference names one commit instead, which the PR tree cannot
+              // answer for, so it falls through to the fetch like any other —
+              // checking the tree there would pass on the strength of a file
+              // the named ref may not carry.
               if (existsSync(path)) {
                 console.log(`ok    ${slug}//${path} (this repo, PR tree)`);
               } else {
@@ -144,19 +161,22 @@ jobs:
               continue;
             }
 
-            const response = await fetch(
-              `https://api.github.com/repos/${slug}/contents/${path}`,
-              {
-                headers: {
-                  accept: "application/vnd.github+json",
-                  ...(token ? { authorization: `Bearer ${token}` } : {}),
-                },
+            // `?ref=` is what makes a pinned reference mean anything. Without
+            // it the API answers for the default branch, so a reference pinned
+            // to a commit where the preset is absent would be reported as
+            // resolving on the strength of a file that exists on main today.
+            const url = new URL(`${api}/repos/${slug}/contents/${path}`);
+            if (pinned) url.searchParams.set("ref", pinned);
+            const response = await fetch(url, {
+              headers: {
+                accept: "application/vnd.github+json",
+                ...(token ? { authorization: `Bearer ${token}` } : {}),
               },
-            );
+            });
             if (response.ok) {
-              console.log(`ok    ${slug}//${path} (default branch)`);
+              console.log(`ok    ${slug}//${path} (${at})`);
             } else {
-              console.log(`FAIL  ${slug}//${path} (HTTP ${response.status})`);
+              console.log(`FAIL  ${slug}//${path} (${at}, HTTP ${response.status})`);
               failed += 1;
             }
           }
@@ -172,7 +192,7 @@ jobs:
             [ -f "${preset}" ] && configs+=("${preset}")
           done
           docker run --rm --entrypoint node \
-            -e GITHUB_REPOSITORY -e GH_TOKEN \
+            -e GITHUB_REPOSITORY -e GH_TOKEN -e GITHUB_API_URL \
             -v "${{ github.workspace }}:/repo" \
             -v "${RUNNER_TEMP}/check-preset-refs.mjs:/check-preset-refs.mjs:ro" \
             -w /repo "${RENOVATE_IMAGE}" \
