@@ -1,0 +1,13 @@
+# Agent instructions
+
+Everything here is internal to this repository. No manifest publishes these files, and the APM package doesn't carry them. The only references from elsewhere in the tree are documentation naming the directory and the `generated_by` provenance string that `skill-tokens.sh` writes into each `tokens.json`. That makes this the opposite of [`../scripts/`](../scripts/AGENTS.md), whose every filename is a published entry point, so a rename here costs a grep across this repository and nothing more.
+
+Reach for this directory when a gate needs a program rather than a task body. Reach for `scripts/` only when consumers run the thing themselves.
+
+These back the lint and build gates. `check-script-hygiene.sh` refuses a script whose output an operator's configuration could reshape, and it owns the rules that stay text-matched while `.ast-grep/rules/` owns the structural ones. `skill-tokens.sh` measures what each skill costs in context and writes `tokens.json` beside each `SKILL.md`. It asks git for its file list rather than walking the filesystem, because a walk also finds build artifacts, and sending a compiled `.pyc` to the token counter lands a negative count in a file nothing gates on. `skill-limits.sh` checks each skill against the platform's name and description limits. `lint-draft.sh`, `test-guards.sh`, `fuzz.sh`, and `go-ldflags.sh` serve their matching tasks, and `mise-bootstrap` is the committed shim that runs the pinned mise where PATH has none.
+
+Tests live in [`../tests/tools/`](../tests/tools/), mirroring this directory, and `mise run test-py` runs them. Only `fix_prose_replacements.py` has a suite today. It drives the script as a subprocess with a stub `vale` on PATH, because the contract worth asserting is the command line rather than the functions behind it. A new program here should arrive with a suite beside it under that mirror.
+
+A Python program here is a standalone uv script: a `#!/usr/bin/env -S uv run --script` shebang, plus the inline metadata block from Python Enhancement Proposal 723 pinning `requires-python`. Keep them dependency-free while they can be. Shared logic that outgrows one file goes to a sibling module first, and to a published `repotools-common` package only once something outside this repository needs it, since a deployed skill script can't import from `packages/` and this project builds no wheel.
+
+Don't write a shell script whose body is another language behind a shell wrapper. It happened twice here, and no gate caught either one: the code scanning workflow flagged a script under `.apm/` because it scans the APM package, while the twin sitting in this directory went unreported because that scan never looks here.
