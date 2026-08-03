@@ -99,9 +99,10 @@ members = ["packages/*"]
 repotools = { workspace = true }
 
 [tool.complexipy]
-# Scope lives here rather than in the mise task so editor and
-# pre-commit invocations of a bare `complexipy` measure the same tree
-# the CI gate does.
+# Scope lives here rather than in the mise task so a bare `complexipy`
+# measures the same tree the CI gate does. No prek hook runs this one,
+# so the invocation that relies on it is the task's own bare call, plus
+# whatever a contributor types.
 paths = ["packages"]
 # Sonar's default cognitive complexity ceiling; complexipy ships the
 # same default, but an unpinned threshold would let an upstream default
@@ -309,21 +310,21 @@ variance-mismatch = "error"
 # still leave one side of a conditional never taken, which is the exact
 # failure mode the structural-skip branches in the detector would hide.
 branch = true
-# Coverage instruments the shipped package, never the tests. A test file
-# with no assertion would otherwise count itself as covered; the mutation
-# and property gates are what prove the tests pin behavior. Naming the
-# import package rather than a path keeps the editable install and a built
-# wheel measuring the same thing.
+# No source key. The cover-py task passes one --cov per workspace member
+# instead, because naming them here means a list somebody has to extend,
+# and a member left off it is measured not at all rather than badly. See
+# that task for why coverage cannot work the glob out for itself.
 #
-# One import name per workspace member, and adding the next one is a
-# manual step with no gate behind it -- a member missing from this list
-# is not measured at all, which the 100% floor below reads as nothing to
-# report rather than as a failure. Do not reach for `source = ["packages"]`
-# to dodge that: measured against a module no test imports, the import
-# name reports it at 0% and fails the floor, while the directory form
-# never discovers it and stays at 100%. The path form trades a loud
-# failure for a silent one.
-source = ["repotools"]
+# Coverage still instruments the shipped packages and never the tests: a
+# test file with no assertion would otherwise count itself as covered,
+# and the mutation and property gates are what prove the tests pin
+# behavior. The task's glob reaches each member's src/ alone, so the
+# suites stay outside it without an omit entry.
+#
+# The cost is that an invocation supplying no scope of its own measures
+# everything the run imports. A bare `pytest --cov`, and the coverage
+# profile the VS Code Python extension runs, both take that path. The
+# result is noisier rather than wrong, and neither is a gate.
 # Store paths relative to the project root so per-slot data files from a
 # CI matrix combine cleanly across operating systems — an absolute
 # Windows path and an absolute Linux path for the same module would
@@ -434,10 +435,11 @@ max-complexity = 15
 convention = "google"
 
 [tool.vulture]
-# Scope lives here rather than in the mise task so editor and
-# pre-commit invocations of a bare `vulture` scan the same tree the CI
-# gate does. No confidence threshold is lowered. There is no
-# vulture_allowlist.py yet: nothing here hides its caller from vulture's
-# static view. Add one (and name it in `paths`) the first time something
-# does, with a comment per entry explaining where the real caller lives.
+# Scope lives here rather than in the mise task so a bare `vulture`
+# scans the same tree the CI gate does, on the same footing as
+# [tool.complexipy] above: no prek hook runs it either. No confidence
+# threshold is lowered. There is no vulture_allowlist.py yet: nothing
+# here hides its caller from vulture's static view. Add one (and name it
+# in `paths`) the first time something does, with a comment per entry
+# explaining where the real caller lives.
 paths = ["packages"]
