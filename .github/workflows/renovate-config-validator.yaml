@@ -8,7 +8,7 @@
 # This workflow also exposes a `workflow_call` trigger so other tbhb
 # repositories can validate their Renovate config through it instead of
 # each carrying this setup. The job runs the pinned image directly against
-# the tree `actions/checkout` lays down — no local action or `just` recipe
+# the tree `actions/checkout` lays down — no local action or task
 # to drag in. The `config_path` input points it at the file to validate and
 # defaults to `.github/renovate.json5`; a repo that keeps its config at the
 # root passes `config_path: renovate.json5`.

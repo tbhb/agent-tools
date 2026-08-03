@@ -9,7 +9,7 @@
 # carrying this setup. A caller passes the App credentials as the
 # `RENOVATE_CLIENT_ID` and `RENOVATE_PRIVATE_KEY` secrets (or
 # `secrets: inherit`); checkout and the renovate action run against the
-# caller's tree, so the job needs no local action or `just` recipe to stay
+# caller's tree, so the job needs no local action or task to stay
 # self-contained.
 #
 # Execution depends on the tbhb-renovate App credentials reaching the run:

@@ -3,7 +3,7 @@
 
   // The repository-level policy comes from two shared presets this repo
   // now holds itself: renovate-config.json5 has the rules plus the
-  // Justfile and Vale custom managers used by every repo, and
+  // Vale custom manager used by every repo, and
   // renovate-go-config.json5 has the Go-module specifics (gomodTidy and
   // the go-deps grouping) shared by every Go repo. Both resolve after
   // platform initialization, with token auth.

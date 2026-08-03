@@ -70,7 +70,7 @@ func newRootCmd(s streams) *cobra.Command {
 			"One binary serves three callers. With --hook it reads a Claude\n" +
 			"PreToolUse payload on stdin and denies a Write or Edit before wrapped\n" +
 			"prose reaches disk. With paths it reports violations and exits nonzero,\n" +
-			"which is what pre-commit and the just recipes consume. With --fix it\n" +
+			"which is what pre-commit and the mise tasks consume. With --fix it\n" +
 			"joins the offending paragraphs in place.\n\n" +
 			"A CHANGELOG.md is exempt in every mode. A generator builds it from\n" +
 			"commit messages, which are hard-wrapped under their own gate, so the\n" +

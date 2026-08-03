@@ -13,7 +13,7 @@
 #
 # The body budget is a recommendation rather than a limit, and it is
 # measured in tokens, so tools/skill-tokens.sh carries that check where
-# the real counts already are. This script stays offline so `just lint`
+# the real counts already are. This script stays offline so `mise run lint`
 # needs no network.
 #
 # Findings print one per line in the shape the vale template uses.

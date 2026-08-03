@@ -2,7 +2,7 @@
 # lint-draft — run every prose gate over one drafted document, in a
 # single call, and report all of it at once.
 #
-# The recipes this replaces each run one checker. `just lint-prose x.md`
+# The tasks this replaces each run one checker. `mise run lint-prose x.md`
 # runs vale and says nothing about spelling or structure, so a document
 # that clears it can still fail cspell and rumdl afterwards. Answering
 # them one at a time is how a twenty-line file turns into four rounds:
@@ -57,7 +57,7 @@ file=${1:-}
 # so it would report every source file as unscoped.
 case $file in
 *.go | *.py | *.sh)
-  printf '%s:1 [error] wrong-recipe  source file; use just lint-prose\n' "$file"
+  printf '%s:1 [error] wrong-task  source file; use mise run lint-prose\n' "$file"
   exit 2
   ;;
 esac

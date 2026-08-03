@@ -13,9 +13,9 @@
 # vendir syncs both payload halves into every consumer at the same
 # paths, so nothing relocates between publisher and consumer.
 #
-# What stays in the Justfile: thin delegation recipes for the names the
-# APM primitives invoke, since those skills still spell their gates
-# `just <recipe>`. Nothing there does work of its own.
+# Every gate lives here or in the payload. The Justfile that used to
+# stand between the published skills and their gates is gone: those
+# skills now invoke `mise run <task>` directly.
 
 [settings]
 # Record resolved versions, URLs, and digests in the lockfiles. Each
@@ -133,7 +133,7 @@ run = ["vale sync", "uv sync"]
 # -buildvcs=false avoids stamping VCS state, required for bit-for-bit
 # matches against CI builds. tools/go-ldflags.sh computes the reproducible
 # build metadata (committer date rather than build time, abbreviated
-# hashes pinned to 7) that the Justfile used to hold in variables.
+# hashes pinned to 7) that Justfile variables used to hold.
 
 [tasks.build]
 description = "Build every binary into the bin directory"
@@ -259,8 +259,7 @@ if [ -n "$files" ]; then shellcheck $files; fi
 
 # Aggregates the Go gates, the Python gates, prose (vale), spelling
 # (cspell), Markdown (rumdl), config / JS / TS (biome), YAML (ryl),
-# TOML (tombi), shell (shellcheck + shfmt), the Justfile's and this
-# config's own formatting, and the .editorconfig whitespace contract. An
+# TOML (tombi), this config's own formatting, and the .editorconfig whitespace contract. An
 # ordered run array rather than `depends`, which runs in parallel and
 # interleaves several linters' findings into one unreadable stream --
 # the agent output template exists to make a finding self-contained.
@@ -278,7 +277,6 @@ run = [
   "mise run repotools:lint-toml",
   "mise run lint-shell",
   "mise run lint-shell-fmt",
-  "mise run repotools:lint-just",
   "mise run repotools:lint-mise",
   "mise run lint-editorconfig",
   "mise run lint-skills",
@@ -321,7 +319,7 @@ run = "uv run ruff format --check"
 # under [tool.ruff].
 # Extra invocation args append to the command line, so
 # `mise run lint-ruff packages/` scopes the check the way the old
-# `just lint-ruff packages/` did. A `usage` variadic with an empty
+# the lint-ruff recipe did. A `usage` variadic with an empty
 # default is not equivalent: it passes a literal empty argument, which
 # ruff rejects with E902.
 [tasks.lint-ruff]
@@ -525,8 +523,7 @@ fi
 
 # --- Test ---
 # The CI matrix runs this family on Windows, which is why it stayed in
-# the Justfile until a probe settled the question the carve-out rested
-# on. mise runs a bash-shebang body on windows-2025 under Git Bash, and
+# Just until a probe settled the question the carve-out rested on. mise runs a bash-shebang body on windows-2025 under Git Bash, and
 # its own go pin resolves there too, so both the recipes and the
 # setup-go step they leaned on are gone.
 
@@ -666,8 +663,7 @@ run = [
 # into one combined report -- a merge only the binary format supports
 # losslessly. The covdir is absolute because `go test` runs each
 # package's binary from that package's directory, which would scatter a
-# relative path. MISE_PROJECT_ROOT stands in for the Justfile's
-# justfile_directory(): on Windows it arrives as a native path while $PWD
+# relative path. MISE_PROJECT_ROOT stands in for justfile_directory(): on Windows it arrives as a native path while $PWD
 # is the Git Bash form, and go needs the native one.
 [tasks.cover-go-binary]
 description = "Run the Go tests into <covdir> as binary coverage, then render Cobertura XML"

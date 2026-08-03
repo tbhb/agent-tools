@@ -164,17 +164,9 @@ repos:
         types: [shell]
         pass_filenames: false
 
-      # --fmt reads and writes the whole Justfile, so this hook checks
-      # rather than fixes; run `mise run repotools:format-just` to apply.
-      - id: just-fmt
-        name: just --fmt --check
-        entry: tools/mise-bootstrap run repotools:lint-just
-        language: system
-        files: ^Justfile$
-        pass_filenames: false
-
-      # Format-check the mise config files with mise's own formatter, the
-      # same argument just-fmt makes for the Justfile.
+      # Format-check the mise config files with mise's own formatter.
+      # mise fmt reads and writes a whole file, so this hook checks
+      # rather than fixes; run `mise fmt` to apply.
       - id: mise-fmt
         name: mise fmt --check
         entry: tools/mise-bootstrap run repotools:lint-mise

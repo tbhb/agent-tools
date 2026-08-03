@@ -13,7 +13,7 @@ import "runtime/debug"
 // signal to consult runtime/debug rather than as a real version.
 const devFallback = "DEV"
 
-// Build-time variables. The Justfile and goreleaser config both set these via
+// Build-time variables. The mise build task and goreleaser config both set these via
 // -ldflags "-X github.com/tbhb/repotools/internal/buildmeta.<Var>=<value>"
 // at link time. The defaults below apply when the build passes no ldflags.
 //
