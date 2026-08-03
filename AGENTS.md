@@ -105,7 +105,7 @@ APM can deploy a hook's executable. A package-root `hooks/` directory lands unde
 
 ## Tasks and recipes
 
-mise pins the toolchain and holds most task definitions. `mise.toml` has the repo-specific pins and tasks. The drop-ins under `.config/mise/conf.d/` hold the pins and `repotools:`-namespaced tasks shared with the sibling repos, which this repository dogfoods the way it dogfoods its APM package. The tree commits both lockfiles, `mise.lock` and `.config/mise/mise.lock`, and `check-toolchain` gates the installed set against them.
+mise pins the toolchain and holds most task definitions. `mise.toml` has the repo-specific pins and tasks, and it selects the shared payload this repository dogfoods: the conf.d drop-ins plus the task files under `.repotools/tasks/`, which vendir syncs into every consumer at the same paths. The tree commits both lockfiles, and `repotools:check-toolchain` gates the installed set against them.
 
 The Justfile survives for two reasons. The Go test and coverage recipes stay there because the CI matrix runs them on Windows, where `just` under Git Bash has a working record while mise's handling of bash-shebang task bodies remains untested. Thin delegation recipes cover every name an APM primitive invokes, and each forwards to the corresponding mise task through the committed `tools/mise-bootstrap` shim, so the pinned mise runs even where PATH has none.
 

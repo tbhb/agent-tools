@@ -4,10 +4,14 @@
 # could not pin a version, and holds every recipe that provisions its
 # tools from the pins.
 #
-# The split: the conf.d drop-ins hold what the shared payload publishes
-# (baseline pins and the repotools:-namespaced tasks), and this file
+# The split: the conf.d drop-ins hold the inert half of the shared
+# payload (baseline pins, the REPOTOOLS_DIR anchor), the task files
+# under .repotools/tasks hold the live half (the repotools:-namespaced
+# tasks, selected below through [task_config] includes), and this file
 # holds what is specific to this repository. Root pins override drop-in
 # pins, which is the consumer-override mechanism working at home.
+# vendir syncs both payload halves into every consumer at the same
+# paths, so nothing relocates between publisher and consumer.
 #
 # What stayed in the Justfile, and why:
 #
@@ -47,6 +51,28 @@ idiomatic_version_file_enable_tools = []
 # difference until CI: macOS /bin/sh is bash in POSIX mode and tolerates
 # [[ ]], while the ubuntu runners' /bin/sh is dash and does not.
 
+# The platform list this repository's two lockfiles cover. The shared
+# repotools:check-toolchain task reads it for its failure hint, so the
+# hint prints a runnable `mise lock` command without the shared body
+# carrying a repo-specific literal.
+[env]
+REPOTOOLS_LOCK_PLATFORMS = "linux-x64,linux-arm64,macos-arm64,windows-x64"
+
+# The live half of the shared payload, selected file by file. Includes
+# are the selection mechanism: vendir delivers every task file, and this
+# table names the ones this repository actually takes. vendir.toml is
+# deliberately absent -- it carries the drift gate for vendored
+# consumers, and this repository is the publisher, with no vendir.yml
+# and nothing vendored to check.
+[task_config]
+includes = [
+  ".repotools/tasks/fix.toml",
+  ".repotools/tasks/format.toml",
+  ".repotools/tasks/git-hooks.toml",
+  ".repotools/tasks/lint.toml",
+  ".repotools/tasks/toolchain.toml",
+]
+
 # The shared baseline pins live in .config/mise/conf.d/. The pins below
 # are the tools only this repository uses. python is deliberately absent:
 # uv owns the interpreters, reading .python-version and provisioning its
@@ -72,7 +98,7 @@ description = "Set up the dev environment, refresh Vale styles, and install git 
 run = [
   "mise run install-toolchain",
   "mise run install-tools",
-  "mise run prek-install",
+  "mise run repotools:prek-install",
 ]
 
 [tasks.install-toolchain]
@@ -86,34 +112,10 @@ run = "mise install"
 description = "Refresh non-mise tooling (Vale style packages, Python dependencies)"
 run = ["vale sync", "uv sync"]
 
-# Replaces check-tombi-version, which only warned. This gates:
-# --dry-run-code exits 1 when a pinned tool is missing.
-#
-# MISE_LOCKED=1 makes a version absent from the lockfiles a failure
-# rather than something mise silently fetches and re-locks, which is what
-# would let a Renovate PR bumping a pin alone pass while the committed
-# digests drift.
-#
-# The empty MISE_CONFIG_DIR is what scopes that check to this repository.
-# `locked` applies to the merged tool set, so without it the gate fails
-# on whatever unlocked tools a developer happens to declare in their own
-# ~/.config/mise/config.toml -- tools this repo neither declares nor
-# uses.
-[tasks.check-toolchain]
-description = "Gate the installed toolchain against the mise config and lockfiles"
-run = '''
-#!/usr/bin/env bash
-set -euo pipefail
-empty_cfg=$(mktemp -d)
-trap 'rm -rf "$empty_cfg"' EXIT
-if MISE_CONFIG_DIR="$empty_cfg" MISE_LOCKED=1 mise install --dry-run-code; then
-  echo "toolchain matches the mise config and lockfiles"
-else
-  echo "toolchain is out of date, or a pin is missing from a lockfile" >&2
-  echo "         run 'mise run install-toolchain', or 'mise lock --platform linux-x64,linux-arm64,macos-arm64,windows-x64' after moving a pin" >&2
-  exit 1
-fi
-'''
+# The lockfile gate moved to the shared payload as
+# repotools:check-toolchain -- its body was byte-identical across the
+# repos, and the one repo-specific piece, the platform list in the
+# failure hint, travels through REPOTOOLS_LOCK_PLATFORMS above.
 
 # --- Build ---
 # CGO_ENABLED=0 removes the host C toolchain as a build input.
@@ -238,7 +240,7 @@ if [ -n "$files" ]; then shellcheck $files; fi
 # interleaves several linters' findings into one unreadable stream --
 # the agent output template exists to make a finding self-contained.
 [tasks.lint]
-description = "Run every linter that operates on the source tree"
+extends = "repotools:lint"
 run = [
   "mise run lint-go-all",
   "mise run lint-py-all",
@@ -337,11 +339,11 @@ run = "uv run bandit -r packages/repotools/src -q"
 # auto-generated changelog, vale's own style packages, scratch dirs,
 # vendored code, the gitignored agent worktrees (whose nested vendor
 # trees otherwise crash vale), and the agent drafts, which their own
-# gates check under the stricter commit scope. Repo-specific, so it stays
-# out of the shared drop-ins.
+# gates check under the stricter commit scope. The name and usage come
+# from the skill-contract template; the glob is why the body stays
+# repo-specific.
 [tasks.lint-prose]
-description = "Lint prose in Markdown files and source comments via vale"
-usage = 'arg "<paths>..." default="."'
+extends = "repotools:lint-prose"
 run = "vale --output=project-agent.tmpl --glob='!{LICENSE,CHANGELOG.md,.vale/*,tmp/*,vendor/*,.venv/*,.claude/worktrees/*,.pytest_cache/*,.complexipy_cache/*,COMMIT_AGENTMSG,PR_AGENTDESC.md,SQUASH_AGENTMSG}' $usage_paths"
 
 # This repository's own check, applied to itself. `go run` rather than an
@@ -411,14 +413,13 @@ run = "bash tools/check-script-hygiene.sh"
 description = "Measure skill token costs against the real tokenizer"
 run = "bash tools/skill-tokens.sh"
 
-# Surfaces message problems while iterating rather than at commit time.
-# Reads the draft from the repo-root COMMIT_AGENTMSG file and runs the
-# commit-msg stage through prek, which fires the four shared
-# commit-message hooks. The real gate stays the prek commit-msg hook on
-# .git/COMMIT_EDITMSG; this task only mirrors it.
+# The two draft gates whose bodies are byte-identical across repos come
+# whole from the skill-contract templates: name, interface, and body.
 [tasks.lint-commit-msg]
-description = "Pre-validate a drafted commit message against the commit-msg gates"
-run = "prek run --stage commit-msg --commit-msg-filename COMMIT_AGENTMSG"
+extends = "repotools:lint-commit-msg"
+
+[tasks.lint-squash-msg]
+extends = "repotools:lint-squash-msg"
 
 # Every other prose task runs one checker over many files. This runs
 # every checker over one drafted document, and reports all of them in a
@@ -427,8 +428,7 @@ run = "prek run --stage commit-msg --commit-msg-filename COMMIT_AGENTMSG"
 # section names loads no styles, reads the file, prints nothing, and
 # exits 0 -- byte for byte what a clean document produces.
 [tasks.lint-draft]
-description = "Lint one drafted document through every prose gate at once"
-usage = 'arg "<file>"'
+extends = "repotools:lint-draft"
 run = "bash tools/lint-draft.sh $usage_file"
 
 # About a third of a typical vale run needs no judgment: the rule's own
@@ -437,8 +437,7 @@ run = "bash tools/lint-draft.sh $usage_file"
 # rest, refusing any finding whose span no longer holds the text the
 # report quoted.
 [tasks.fix-prose-replacements]
-description = "Apply every vale finding that has its own replacement"
-usage = 'arg "<file>"'
+extends = "repotools:fix-prose-replacements"
 run = "bash tools/fix-prose-replacements.sh $usage_file"
 
 # The pull request counterpart. The validator is mechanical and offline;
@@ -446,20 +445,12 @@ run = "bash tools/fix-prose-replacements.sh $usage_file"
 # rest of the tree answers to. The draft is gitignored, so the tree-wide
 # tasks skip it and this one owns it.
 [tasks.lint-pr-description]
-description = "Validate a drafted pull request description"
+extends = "repotools:lint-pr-description"
 run = [
   "bash .claude/skills/pr/scripts/validate-description.sh",
   "vale --output=project-agent.tmpl PR_AGENTDESC.md",
   "cspell --config .cspell.jsonc --no-summary --no-progress PR_AGENTDESC.md",
 ]
-
-# The squash message merge-pr writes never passes through git's
-# commit-msg hook, because GitHub authors that commit rather than this
-# machine. Running the same four hooks over the draft here is what keeps
-# a squash commit answerable to the rules every other commit meets.
-[tasks.lint-squash-msg]
-description = "Pre-validate a drafted squash commit message against the commit-msg gates"
-run = "prek run --stage commit-msg --commit-msg-filename SQUASH_AGENTMSG"
 
 # Mirrors the vendor-drift check: contributors must run
 # `mise run fix-go` before pushing.
@@ -833,21 +824,8 @@ echo "Date:    $date"
 description = "Sync Vale styles and dictionaries"
 run = "vale sync"
 
-[tasks.prek]
-description = "Run pre-commit hooks on changed files"
-run = "prek"
-
-# Useful after a hook config change or before a release sweep.
-[tasks.prek-all]
-description = "Run pre-commit hooks on every file in the tree"
-run = "prek run --all-files"
-
-# post-commit removes the COMMIT_AGENTMSG draft once a commit succeeds.
-# Skip that stage and drafts accumulate across commits, which is how an
-# agent ends up committing a message it wrote for an earlier change.
-[tasks.prek-install]
-description = "Install the project's git hooks (commit-msg, pre-commit, pre-push, post-commit)"
-run = "prek install -t commit-msg -t pre-commit -t pre-push -t post-commit"
+# The prek entry points (prek, prek-all, prek-install) moved to the
+# shared payload under .repotools/tasks/git-hooks.toml.
 
 # --- Changelog ---
 

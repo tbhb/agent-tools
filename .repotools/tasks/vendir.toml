@@ -1,0 +1,42 @@
+# The vendir drift gate. Same task-file syntax, namespace, selection,
+# and pin rules as format.toml in this directory -- with two twists.
+#
+# repotools itself does not include this file: it is the publisher, so
+# it has no vendir.yml and nothing vendored to check. Selection working
+# in both directions is the point of the includes channel.
+#
+# And vendir is deliberately not pinned in the shared baseline drop-in.
+# A consumer needs vendir before the first sync ever runs -- the
+# bootstrap task is `vendir sync` then `mise install` -- so the pin has
+# to live in the consumer's own root mise.toml, ahead of the payload.
+
+# vendir has no check mode, so drift detection is a resync compared
+# against the git index. The index rather than HEAD, because the
+# pre-commit hook runs this on the very commit that updates the
+# vendored payload, when the fresh sync sits staged but uncommitted --
+# compared against HEAD, that commit could never pass its own gate. An
+# unsynced upstream bump still fails: the sync rewrites the worktree
+# and the index no longer matches it. The separate untracked check
+# exists because a file the sync newly adds is untracked, and untracked
+# files never fail a diff -- without it the gate would stay green while
+# the working tree held unreviewed payload. This only works because the
+# vendored content is committed.
+["repotools:check-vendored"]
+description = "Resync the vendored payload and fail if it drifted from what git holds"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+vendir sync
+rc=0
+git diff --stat --exit-code -- vendir.yml vendir.lock.yml .config/mise/conf.d .repotools || rc=1
+untracked=$(git ls-files --others --exclude-standard -- .config/mise/conf.d .repotools)
+if [ -n "$untracked" ]; then
+  printf '?? %s\n' $untracked
+  rc=1
+fi
+if [ "$rc" -ne 0 ]; then
+  echo "vendored payload drifted from what git holds -- review the resync above, then stage and commit it or fix vendir.yml" >&2
+  exit 1
+fi
+echo "vendored payload matches what git holds"
+'''
