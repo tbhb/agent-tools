@@ -52,28 +52,12 @@
     },
   ],
 
-  // Managers for the pins inside the composite actions and workflows this
-  // repo defines. The shared preset covers the Justfile and .vale.ini
-  // markers every repo has; these three read files only a repo hosting
-  // the shared workflows and actions contains. `customManagers` is a
-  // mergeable array, so these append to the preset's rather than
-  // replacing them.
+  // Managers for the pins inside the workflows and mise config this repo
+  // defines. The shared preset covers the Justfile and .vale.ini markers
+  // every repo has; these read files only a repo hosting the shared
+  // workflows contains. `customManagers` is a mergeable array, so these
+  // append to the preset's rather than replacing them.
   customManagers: [
-    // .github/actions/*/action.yml. Each version input default has the
-    // marker inline, after the value, so the regex reads the value first
-    // and the marker second.
-    //
-    //   default: '1.57.0'  # renovate: datasource=github-releases depName=casey/just
-    {
-      customType: "regex",
-      managerFilePatterns: [
-        "/^\\.github/actions/[^/]+/action\\.ya?ml$/",
-      ],
-      matchStrings: [
-        "default: '(?<currentValue>.*?)'\\s+# renovate: datasource=(?<datasource>.*?) depName=(?<depName>\\S+)",
-      ],
-    },
-
     // Workflow `run:` steps pinning a Docker image to a
     // `<NAME>_IMAGE="reg/name:tag@sha256:..."` shell assignment, with the
     // marker on the line above. Covers the Renovate engine image in
@@ -132,10 +116,9 @@
     },
 
     // The mise version the SHA-pinned jdx/mise-action installs in every
-    // workflow job, marked inline the same way the composite-action
-    // version inputs above are. The committed tools/mise-bootstrap shim
-    // embeds the same version; regenerate it with
-    // `mise generate bootstrap -V <version> -w tools/mise-bootstrap`
+    // workflow job, marked on the line above the value. The committed
+    // tools/mise-bootstrap shim embeds the same version; regenerate it
+    // with `mise generate bootstrap -V <version> -w tools/mise-bootstrap`
     // when this pin moves.
     //
     //   # renovate: datasource=github-releases depName=jdx/mise
