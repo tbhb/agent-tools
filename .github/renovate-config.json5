@@ -104,6 +104,40 @@
       groupName: "vale-styles",
       matchFileNames: [".vale.ini"],
     },
+
+    // One review surface for a repotools release, across every manager
+    // that sees one of its nine pin sites: `github-actions` for the four
+    // reusable-workflow callers, `pre-commit` for the hook `rev:`,
+    // `vendir` for the two payload refs, and the two custom managers
+    // below for `apm.yml` and the preset `extends`.
+    //
+    // Grouping by manager alone put those nine into at least three
+    // uncoordinated pull requests, with the apm pin in none of them
+    // because nothing tracked it — so a release half-applied itself by
+    // default, and the four workflow pins arrived bundled with unrelated
+    // third-party actions. A consumer's `repotools:check-pins` asserts
+    // the nine agree, and this is what makes that assertion reachable.
+    //
+    // THIS RULE MUST STAY LAST. `groupName` resolves to the last
+    // matching rule, verified in both directions against Renovate 44.7.1:
+    // placed after the three manager groups it takes all nine sites,
+    // and placed before them it silently loses the workflow and
+    // pre-commit pins back to `github-actions` and `pre-commit-hooks`
+    // while still looking like it applied.
+    //
+    // The two `depName` forms are what the managers actually emit, read
+    // off a local run rather than guessed: `github-actions`, `pre-commit`,
+    // and both custom managers report the bare `tbhb/repotools`, while
+    // `vendir` reports the clone URL. A `go:` pin on repotools' own
+    // binaries would introduce a third form and belongs here when one
+    // lands.
+    {
+      groupName: "repotools",
+      matchPackageNames: [
+        "tbhb/repotools",
+        "https://github.com/tbhb/repotools",
+      ],
+    },
   ],
 
   // Renovate has built-in managers for GitHub Actions, Dockerfile FROM
@@ -135,6 +169,53 @@
         "https://github\\.com/(?<depName>[^/]+/[^/]+)/releases/download/(?<currentValue>v[^/]+)/",
       ],
       datasourceTemplate: "github-releases",
+    },
+
+    // `apm.yml` dependency pins, which no built-in manager reads. That
+    // made the APM pin the only one of a consumer's nine repotools sites
+    // moved entirely by hand, and so the likeliest to drift.
+    //
+    //   dependencies:
+    //     apm:
+    //       - tbhb/repotools#v0.4.0
+    //
+    // The pattern takes any `owner/repo#tag` entry rather than repotools
+    // alone, so a second APM dependency is tracked the day it is added.
+    // `target:` entries and the manifest's own `version:` sit on lines
+    // with no `owner/repo#` shape and are left alone.
+    {
+      customType: "regex",
+      managerFilePatterns: ["/^apm\\.yml$/"],
+      matchStrings: [
+        "-\\s+(?<depName>[^\\s#]+/[^\\s#]+)#(?<currentValue>v[^\\s]+)",
+      ],
+      datasourceTemplate: "github-tags",
+    },
+
+    // The `extends` reference to this very preset, in each consumer's
+    // `.github/renovate.json5`. Unpinned it resolves against the default
+    // branch, which put the one file governing every other pin outside
+    // the discipline it enforces.
+    //
+    //   "github>tbhb/repotools//.github/renovate-config.json5#<sha>", // v0.4.0
+    //
+    // Renovate documents preset pinning with a tag suffix, but a full
+    // commit SHA resolves there too — verified against 44.7.1, with a
+    // nonexistent ref as the control — so the site keeps the SHA-plus-tag-
+    // comment convention every other pinned reference here uses. The
+    // comment is not decoration: it is the only human-readable version at
+    // that site, and `repotools:check-pins` reads it.
+    //
+    // A preset pinned to an old ref governs its own bump, so this manager
+    // takes effect one release after it lands, exactly as the
+    // `repotools:update-pins` task does.
+    {
+      customType: "regex",
+      managerFilePatterns: ["/^\\.github/renovate\\.json5$/"],
+      matchStrings: [
+        "\"github>(?<depName>[^/\"]+/[^/\"]+)//[^\"#]+#(?<currentDigest>[0-9a-f]{40})\",?\\s*//\\s*(?<currentValue>v[^\\s]+)",
+      ],
+      datasourceTemplate: "github-tags",
     },
   ],
 }

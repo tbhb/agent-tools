@@ -54,10 +54,11 @@ REPOTOOLS_LOCK_PLATFORMS = "linux-x64,linux-arm64,macos-arm64,windows-x64"
 
 # The live half of the shared payload, selected file by file. Includes
 # are the selection mechanism: vendir delivers every task file, and this
-# table names the ones this repository actually takes. vendir.toml is
-# deliberately absent -- it carries the drift gate for vendored
-# consumers, and this repository is the publisher, with no vendir.yml
-# and nothing vendored to check.
+# table names the ones this repository actually takes. vendir.toml and
+# pins.toml are deliberately absent -- one carries the drift gate for
+# vendored consumers and the other the tasks that move and read a
+# consumer's repotools pins, and this repository is the publisher, with
+# no vendir.yml, nothing vendored to check, and no pin of its own.
 [task_config]
 includes = [
   ".repotools/tasks/fix.toml",
