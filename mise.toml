@@ -11,10 +11,6 @@
 #
 # What stayed in the Justfile, and why:
 #
-#   - The container-pinned gates (golangci-lint, go-arch-lint, actionlint,
-#     shellcheck, bats). Their image digests are tracked by the shared
-#     Renovate preset's `^Justfile$` custom manager, and this phase does
-#     not convert container-run tools.
 #   - The Go test and coverage recipes the CI matrix runs on Windows.
 #     Ported task bodies are bash by the shebang rule below, and mise's
 #     handling of bash-shebang bodies on a Windows runner is unverified,
@@ -139,8 +135,10 @@ description = "Clean build artifacts"
 run = "rm -rf bin dist coverage.out coverage.html coverage.txt coverage.xml coverage.covdata*"
 
 # --- Format ---
-# format-go stays a Justfile recipe: it runs golangci-lint's formatters
-# from the pinned container image.
+
+[tasks.format-go]
+description = "Format Go code via golangci-lint's formatters"
+run = "golangci-lint fmt"
 
 # The in-place fixer paired with lint-shell-fmt's -d gate. shfmt reads
 # indent width and the final-newline setting from .editorconfig. The
@@ -168,8 +166,22 @@ description = "Format Python code in place via ruff's formatter"
 run = "uv run ruff format"
 
 # --- Fix ---
-# fix-go stays a Justfile recipe: it mixes `go fix` with golangci-lint
-# runs from the pinned container image.
+
+# `go fix` (Go 1.26+) runs the modernizer analyzers; the blog post
+# (https://go.dev/blog/gofix) recommends running it to a fixed point --
+# usually one extra pass picks up fixes that became valid after the
+# first round. golangci-lint fmt + --fix run afterward.
+# --modules-download-mode=vendor matches the build, so the linter sees
+# exactly the dependency set the compiler does and never falls back to
+# the module proxy.
+[tasks.fix-go]
+description = "Fix Go linting issues"
+run = [
+  "go fix ./...",
+  "go fix ./...",
+  "golangci-lint fmt",
+  "golangci-lint run --fix --modules-download-mode=vendor",
+]
 
 # Applies only ruff's safe autofixes; anything it leaves behind needs a
 # human. Pair with format-py, which handles layout rather than lint.
@@ -182,6 +194,41 @@ description = "Join every hard-wrapped Markdown paragraph back into one line"
 run = "mise run lint-markdown-wrap -- --fix"
 
 # --- Lint ---
+
+[tasks.lint-go]
+description = "Run Go linters via golangci-lint (vendor-mode)"
+run = "golangci-lint run --modules-download-mode=vendor"
+
+# The compiler covers cycles and cross-module visibility; this catches
+# the layer rules it can't (e.g., "cmd may depend on internal but not
+# the reverse").
+[tasks.lint-go-arch]
+description = "Enforce intra-project layering rules from .go-arch-lint.yml"
+run = "go-arch-lint check"
+
+# Covers the standalone scripts actionlint never opens (tools/fuzz.sh
+# and its neighbors). `--others` puts a brand new script in the gate
+# before anyone stages it, which is when its first shellcheck violation
+# is cheapest to fix; without it a script escapes the gate for exactly
+# as long as it is newest. `--exclude-standard` is what keeps a scratch
+# script out, so a throwaway belongs in .gitignore rather than outside
+# git's view. The `:!:vendor/**` pathspec drops the vendored upstream
+# scripts, which are reviewed at vendor-tidy time rather than held to
+# this project's style. The `:!:.claude/**` exclusion mirrors
+# format-shell: those scripts are byte copies that `apm install`
+# deploys. The emptiness guard matters because shellcheck with no path
+# arguments reads stdin and blocks. This is a distinct gate from the
+# shellcheck repotools:lint-workflows provides through actionlint: that
+# one only ever sees `run:` blocks embedded in workflow YAML, and never
+# opens the standalone scripts this gate covers.
+[tasks.lint-shell]
+description = "Lint every non-vendored *.sh git can see via shellcheck"
+run = '''
+#!/usr/bin/env bash
+set -eu
+files=$(git ls-files --cached --others --exclude-standard '*.sh' ':!:vendor/**' ':!:.claude/**')
+if [ -n "$files" ]; then shellcheck $files; fi
+'''
 
 # Aggregates the Go gates, the Python gates, prose (vale), spelling
 # (cspell), Markdown (rumdl), config / JS / TS (biome), YAML (yamllint),
@@ -202,7 +249,7 @@ run = [
   "mise run repotools:lint-config",
   "mise run repotools:lint-yaml",
   "mise run repotools:lint-toml",
-  "just lint-shell",
+  "mise run lint-shell",
   "mise run lint-shell-fmt",
   "mise run repotools:lint-just",
   "mise run repotools:lint-mise",
@@ -211,17 +258,15 @@ run = [
   "mise run lint-script-hygiene",
 ]
 
-# The container-run gates (golangci-lint, go-arch-lint, actionlint) stay
-# Justfile recipes; the go-tool gates run here. Same membership as the
-# old lint-go-all recipe.
+# Same membership as the old lint-go-all recipe.
 [tasks.lint-go-all]
 description = "Aggregate every Go-flavored lint gate"
 run = [
-  "just lint-go",
+  "mise run lint-go",
   "mise run lint-go-modernize",
   "mise run lint-go-deadcode",
-  "just lint-go-arch",
-  "just lint-workflows",
+  "mise run lint-go-arch",
+  "mise run repotools:lint-workflows",
 ]
 
 # The Python counterpart to lint-go-all, covering the source under
@@ -416,8 +461,8 @@ run = [
 description = "Pre-validate a drafted squash commit message against the commit-msg gates"
 run = "prek run --stage commit-msg --commit-msg-filename SQUASH_AGENTMSG"
 
-# Mirrors the vendor-drift check: contributors must run `just fix-go`
-# before pushing.
+# Mirrors the vendor-drift check: contributors must run
+# `mise run fix-go` before pushing.
 [tasks.lint-go-modernize]
 description = "Fail if `go fix` would modernize the tree"
 run = '''
@@ -425,7 +470,7 @@ run = '''
 set -eu
 diff_output=$(go fix -diff ./... 2>&1)
 if [[ -n "$diff_output" ]]; then
-    echo "go fix would modernize the tree — run 'just fix-go' and commit:" >&2
+    echo "go fix would modernize the tree — run 'mise run fix-go' and commit:" >&2
     echo "$diff_output" >&2
     exit 1
 fi
@@ -463,13 +508,23 @@ fi
 '''
 
 # --- Test ---
-# test-go, test-go-race, and test-hooks stay Justfile recipes: the CI
-# matrix runs the first two on Windows, and test-hooks runs from the
-# pinned bats container image.
+# test-go and test-go-race stay Justfile recipes: the CI matrix runs
+# them on Windows.
 
 [tasks.test]
 description = "Run every test suite"
-run = ["just test-go", "mise run test-py", "just test-hooks"]
+run = ["just test-go", "mise run test-py", "mise run test-hooks"]
+
+# The shell hooks under scripts/ answer to bats rather than to
+# `go test`, so they get a third suite alongside the two language ones.
+# It joins the `test` aggregate because the commit-message gates every
+# repository here installs are exactly the code a regression should
+# stop. The bats pin means the suites pass under the same runner
+# everywhere rather than whichever bats a contributor happens to have.
+[tasks.test-hooks]
+description = "Run the bats suites for the shell hooks under scripts/"
+usage = 'arg "<path>" default="test"'
+run = "bats $usage_path"
 
 # Serial by default so a failing run prints a clean, ordered trace; pass
 # `mise run test-py -n auto` to fan the suite across xdist workers.

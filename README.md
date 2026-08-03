@@ -68,7 +68,7 @@ mise run build
 
 ## Development
 
-[mise](https://mise.jdx.dev) pins the toolchain and drives the workflow: `mise run bootstrap` sets up a fresh clone, `mise run lint` runs the full lint suite, `mise run test` runs the tests, and `mise run build` compiles the binaries into `bin/`. On a machine with no mise, the committed shim at `tools/mise-bootstrap` stands in for `mise` and installs the pinned release on first use. The pins live in [mise.toml](mise.toml) and the drop-ins under `.config/mise/conf.d/`, locked by digest in the committed `mise.lock` files. The [Justfile](Justfile) remains for the container-pinned gates, the Go test recipes the CI matrix runs on Windows, and the recipe names the APM primitives invoke. See [AGENTS.md](AGENTS.md) for the agent-facing contributor guide.
+[mise](https://mise.jdx.dev) pins the toolchain and drives the workflow: `mise run bootstrap` sets up a fresh clone, `mise run lint` runs the full lint suite, `mise run test` runs the tests, and `mise run build` compiles the binaries into `bin/`. On a machine with no mise, the committed shim at `tools/mise-bootstrap` stands in for `mise` and installs the pinned release on first use. The pins live in [mise.toml](mise.toml) and the drop-ins under `.config/mise/conf.d/`, locked by digest in the committed `mise.lock` files. The [Justfile](Justfile) remains for the Go test recipes the CI matrix runs on Windows and the recipe names the APM primitives invoke. See [AGENTS.md](AGENTS.md) for the agent-facing contributor guide.
 
 ## Releases
 

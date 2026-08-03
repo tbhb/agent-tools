@@ -15,10 +15,9 @@ version: 3
 # not go-arch-lint. Allow any vendor dep at the architectural layer.
 #
 # deepScan: false disables the method-call / dependency-injection
-# tracking, which requires running a Go toolchain inside the linter
-# container. The official image bundles Go 1.25; until it tracks our
-# `go` directive (1.26+), we stick to the basic component-imports
-# check, which is the rule that's load-bearing at this scale.
+# tracking. The basic component-imports check is the rule that's
+# load-bearing at this scale; revisit when components grow interfaces
+# whose implementations cross layers.
 allow:
   depOnAnyVendor: true
   deepScan: false

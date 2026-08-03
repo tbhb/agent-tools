@@ -125,32 +125,31 @@ repos:
         types: [text]
         files: "\\.(jsx?|tsx?|c(js|ts)|m(js|ts)|d\\.(ts|cts|mts)|jsonc?|json5|css|svelte|vue|astro|graphql|gql)$"
 
-      # The Go formatter and linter run from the pinned golangci-lint
-      # container image, so their recipes stay in the Justfile; the shim
-      # provides the pinned just. The recipe owns the file list (git
-      # ls-files minus vendor/), so the hooks pass no filenames and only
-      # decide *whether* to run.
+      # The Go formatter and linter run golangci-lint from its mise pin
+      # through the shim. golangci-lint owns the file list (its own
+      # discovery minus vendor/, in vendor mode), so the hooks pass no
+      # filenames and only decide *whether* to run.
       - id: golangci-lint-fmt
         name: golangci-lint fmt
-        entry: tools/mise-bootstrap exec -- just format-go
+        entry: tools/mise-bootstrap run format-go
         language: system
         types: [go]
         pass_filenames: false
 
       - id: golangci-lint
         name: golangci-lint
-        entry: tools/mise-bootstrap exec -- just lint-go
+        entry: tools/mise-bootstrap run lint-go
         language: system
         types: [go]
         pass_filenames: false
 
       # Shell gates. The formatter runs first and rewrites in place (a
       # modified file fails the commit, so the contributor reviews and
-      # re-stages); then the correctness linter runs from the pinned
-      # shellcheck image via its Justfile recipe. The `lint-shell-fmt`
-      # diff gate has no hook of its own — shfmt has already normalized
-      # the file by the time shellcheck runs — and CI still reads it
-      # through the lint aggregate.
+      # re-stages); then the correctness linter runs the mise-pinned
+      # shellcheck through its task. The `lint-shell-fmt` diff gate has
+      # no hook of its own — shfmt has already normalized the file by
+      # the time shellcheck runs — and CI still reads it through the
+      # lint aggregate.
       - id: shfmt
         name: shfmt
         entry: tools/mise-bootstrap run format-shell
@@ -160,7 +159,7 @@ repos:
 
       - id: shellcheck
         name: shellcheck
-        entry: tools/mise-bootstrap exec -- just lint-shell
+        entry: tools/mise-bootstrap run lint-shell
         language: system
         types: [shell]
         pass_filenames: false

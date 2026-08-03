@@ -7,17 +7,18 @@
 # This workflow also exposes a `workflow_call` trigger so other tbhb
 # repositories can lint their workflows through it instead of each
 # carrying its own actionlint setup. A reusable workflow has to be
-# self-contained: in a called workflow a `uses: ./...` local action and any
-# bare `just`/`Justfile` reference resolve against the *caller's* checkout,
-# not this repo, so the job can't lean on the `setup-just` composite or the
-# `just lint-workflows` recipe.
+# self-contained: in a called workflow a `uses: ./...` local action and
+# any task or recipe reference resolve against the *caller's* checkout,
+# not this repo, so the job can't lean on the `repotools:lint-workflows`
+# task the local entrypoint runs.
 # It invokes the pinned Docker image directly against whatever tree
 # `actions/checkout` lays down — this repo's on push/PR, the caller's on
 # `workflow_call`.
 #
-# The image pin is duplicated from the `actionlint_image` literal in the
-# Justfile (the local entrypoint); Renovate's docker datasource keeps both in
-# lockstep via the `# renovate:` marker on each.
+# The local entrypoint runs the same actionlint version from its mise
+# pin. The two pins move under different Renovate datasources (docker
+# here, the mise manager there), so they can skew for the life of one
+# bump PR, but both track the same upstream release.
 
 name: lint-workflows
 

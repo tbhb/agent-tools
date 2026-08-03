@@ -55,6 +55,20 @@ description = "Format-check the Justfile with just's own formatter"
 tools = { just = "1.57.0" }
 run = "just --fmt --check --unstable"
 
+# actionlint walks `.github/workflows/` by default, parses each
+# workflow, and flags unknown actions, mis-typed expressions, shellcheck
+# issues inside `run:` blocks, and SHA-pin drift. Complements the
+# yamllint gate (which checks YAML structure) with workflow-shape rules
+# yamllint can't see. shellcheck is pinned beside actionlint because
+# actionlint shells out to whatever `shellcheck` binary it finds: the
+# container image this task replaces bundled one, and without the pin
+# here the `run:`-block checks would silently vanish on a machine with
+# no shellcheck rather than fail.
+[tasks."repotools:lint-workflows"]
+description = "Lint GitHub Actions workflow files via actionlint"
+tools = { actionlint = "1.7.12", shellcheck = "0.11.0" }
+run = "actionlint"
+
 # Format-check the mise configuration with mise's own formatter, so the
 # files that define the toolchain and most of the gates are themselves
 # gated. It does not overlap with lint-toml: mise fmt is the stricter of
