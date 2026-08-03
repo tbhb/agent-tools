@@ -96,6 +96,7 @@ includes = [
   ".repotools/tasks/format.toml",
   ".repotools/tasks/git-hooks.toml",
   ".repotools/tasks/lint.toml",
+  ".repotools/tasks/preapproval.toml",
   ".repotools/tasks/security.toml",
   ".repotools/tasks/toolchain.toml",
 ]
