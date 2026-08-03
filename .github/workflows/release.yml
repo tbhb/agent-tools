@@ -6,21 +6,30 @@ name: release
 # explicit version for the first cut, where --auto has no tag to
 # diff against), syncs apm.yml's version field via the pre-bump hook
 # in cog.toml, writes CHANGELOG.md, commits, and tags vX.Y.Z. The
-# workflow then replaces cog's tag with an SSH-signed annotated one
-# and pushes commit and tag back to main. One tag serves both
-# consumer paths (APM installs pin tbhb/repotools#vX.Y.Z and Go
-# installs pin @vX.Y.Z), so no artifact build runs here.
+# workflow then replays cog's commit through the API so GitHub
+# creates and signs it, and replaces cog's tag with an SSH-signed
+# annotated one. One tag serves both consumer paths (APM installs
+# pin tbhb/repotools#vX.Y.Z and Go installs pin @vX.Y.Z), so no
+# artifact build runs here.
 #
-# Two credentials, two jobs to do. The release app's installation
-# token gets the branch push past the main ruleset, where the
-# workflow token cannot go: GitHub refuses the built-in Actions app
-# as a bypass actor on a personal-account repo, while a user-owned
-# app installed here validates fine as an Integration bypass actor.
-# The signing key produces the tag signature, because nothing on
-# GitHub's side signs a tag: the API has no signed-tag path of the
-# createCommitOnBranch kind, so a Verified tag has to be signed by a
-# key the runner holds, under the tagger identity that key's account
-# verifies. The key is CI-only and revocable on its own.
+# Two credentials, and neither one signs what the other does. The
+# release app's installation token creates the release commit and
+# pushes the tag past the main ruleset, where the workflow token
+# cannot go: GitHub refuses the built-in Actions app as a bypass
+# actor on a personal-account repo, while a user-owned app installed
+# here validates fine as an Integration bypass actor. That token
+# also puts the app's identity on the commit, which nothing on the
+# runner can do, because a signature has to come from a key the
+# signer holds and an App has none to hold. GitHub signs what it
+# creates, so the commit is verified without a key ever touching it.
+#
+# The tag is the other half, and it goes the other way. No API
+# creates a signed tag: createCommitOnBranch has no tag equivalent,
+# so a Verified tag has to be signed by a key the runner holds,
+# under the tagger identity that key's account verifies. The key is
+# CI-only and revocable on its own. A release therefore ends with a
+# commit GitHub signed and a tag Tony Burns signed, both verified
+# and each by the only party that could have.
 
 on:
   workflow_dispatch:
@@ -57,10 +66,10 @@ jobs:
           permission-contents: write
 
       # Unlike the read-only workflows, this checkout keeps its
-      # credentials: the job's whole purpose is pushing the release
-      # commit and tag back to main, and the app token it checks out
-      # with is what the ruleset's bypass list admits. Full history so
-      # cog can find the previous tag and walk the commits since.
+      # credentials: the job's whole purpose is landing the release
+      # commit and tag on main, and the app token it checks out with
+      # is what the ruleset's bypass list admits. Full history so cog
+      # can find the previous tag and walk the commits since.
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -87,20 +96,13 @@ jobs:
             echo "args=--auto --skip-ci" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Bump version and tag
-        uses: cocogitto/cocogitto-action@52d0023b4396897f1815648e553db2ab8d782f3a # v4.2.0
-        with:
-          git-user: github-actions[bot]
-          git-user-email: github-actions[bot]@users.noreply.github.com
-          command: bump
-          args: ${{ steps.plan.outputs.args }}
-
-      # cog drives libgit2 and can only make a lightweight tag, which
-      # `push --follow-tags` would silently leave behind: that flag
-      # pushes annotated tags alone. Replace it with the SSH-signed
-      # annotated tag the release convention expects, under the tagger
-      # identity that GitHub verifies the signing key against.
-      - name: Sign the release tag
+      # Ahead of the bump rather than beside the tagging that uses it.
+      # The release commit reaches main the moment the API creates it,
+      # and the tag can only be cut afterwards, so everything between
+      # those two points is a window where main carries an untagged
+      # release. Writing the key first moves the one step likely to
+      # fail on a missing secret to before that window opens.
+      - name: Prepare the tag signing key
         env:
           TAG_SIGNING_KEY: ${{ secrets.TAG_SIGNING_KEY }}
         run: |
@@ -109,15 +111,118 @@ jobs:
           chmod 600 "$HOME/.ssh/signing_key"
           git config gpg.format ssh
           git config user.signingkey "$HOME/.ssh/signing_key"
-          TAG=$(git tag --points-at HEAD)
-          if [ -z "$TAG" ]; then
+
+      # This commit stays on the runner. The next step reads it and
+      # nothing pushes it, so the identity below reaches no history.
+      - name: Bump version and tag
+        uses: cocogitto/cocogitto-action@52d0023b4396897f1815648e553db2ab8d782f3a # v4.2.0
+        with:
+          git-user: github-actions[bot]
+          git-user-email: github-actions[bot]@users.noreply.github.com
+          command: bump
+          args: ${{ steps.plan.outputs.args }}
+
+      # Replay cog's commit through createCommitOnBranch so GitHub
+      # makes it. A commit git writes on the runner can only be signed
+      # by a key the runner holds, and the release App has none, so an
+      # App-identity commit has to be one GitHub creates: it signs with
+      # its own key and the result reads as authored by
+      # tbhb-releases[bot] and committed by GitHub.
+      #
+      # The paths come off cog's commit rather than a list here. Add a
+      # seventh version literal to cog.toml's pre_bump_hooks and this
+      # step already carries it.
+      #
+      # expectedHeadOid is cog's parent, which is where main stood at
+      # checkout, so a push that raced this run fails the mutation
+      # rather than being overwritten by it. The tree comparison
+      # afterwards is the check that the replay was faithful: a file
+      # change the diff filters missed leaves GitHub holding a
+      # different tree than the one cog's hooks produced.
+      - name: Create the release commit through the API
+        id: commit
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          BRANCH: main
+        run: |
+          tag=$(git tag --points-at HEAD)
+          if [ -z "$tag" ]; then
             echo "::error::cog bump left no tag on HEAD"
             exit 1
           fi
-          git tag -d "$TAG"
+
+          additions=$(
+            while IFS= read -r -d '' path; do
+              jq -n --arg path "$path" \
+                --arg contents "$(base64 -w0 -- "$path")" \
+                '{path: $path, contents: $contents}'
+            done < <(git diff -z --name-only --diff-filter=d HEAD~1 HEAD) |
+              jq -s '.'
+          )
+          deletions=$(
+            git diff -z --name-only --diff-filter=D HEAD~1 HEAD |
+              jq -Rs 'split("\u0000") | map(select(length > 0) | {path: .})'
+          )
+
+          jq -n \
+            --arg query 'mutation($input: CreateCommitOnBranchInput!) {
+              createCommitOnBranch(input: $input) { commit { oid } }
+            }' \
+            --arg repo "$REPO" \
+            --arg branch "$BRANCH" \
+            --arg parent "$(git rev-parse HEAD~1)" \
+            --arg headline "$(git log -1 --format=%s)" \
+            --arg body "$(git log -1 --format=%b)" \
+            --argjson additions "$additions" \
+            --argjson deletions "$deletions" \
+            '{
+              query: $query,
+              variables: {
+                input: {
+                  branch: {
+                    repositoryNameWithOwner: $repo,
+                    branchName: $branch
+                  },
+                  expectedHeadOid: $parent,
+                  message: {headline: $headline, body: $body},
+                  fileChanges: {
+                    additions: $additions,
+                    deletions: $deletions
+                  }
+                }
+              }
+            }' > "$RUNNER_TEMP/commit.json"
+
+          oid=$(gh api graphql --input "$RUNNER_TEMP/commit.json" \
+            --jq '.data.createCommitOnBranch.commit.oid')
+          if [ -z "$oid" ]; then
+            echo "::error::createCommitOnBranch returned no commit"
+            exit 1
+          fi
+
+          git fetch --quiet origin "$BRANCH"
+          if [ "$(git rev-parse 'HEAD^{tree}')" != "$(git rev-parse "$oid^{tree}")" ]; then
+            echo "::error::the API commit's tree differs from the one cog built"
+            exit 1
+          fi
+
+          git tag -d "$tag"
+          git reset --quiet --hard "$oid"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      # cog drives libgit2 and can only make a lightweight tag, which
+      # `push --follow-tags` would silently leave behind: that flag
+      # pushes annotated tags alone. Replace it with the SSH-signed
+      # annotated tag the release convention expects, under the tagger
+      # identity that GitHub verifies the signing key against. The
+      # commit is already on main, so the tag is all that is left to
+      # push.
+      - name: Sign and push the release tag
+        env:
+          TAG: ${{ steps.commit.outputs.tag }}
+        run: |
           GIT_COMMITTER_NAME="Tony Burns" \
           GIT_COMMITTER_EMAIL="tony@tonyburns.net" \
             git tag -s "$TAG" -m "$TAG"
-
-      - name: Push release commit and tag
-        run: git push --follow-tags origin main
+          git push origin "refs/tags/$TAG"

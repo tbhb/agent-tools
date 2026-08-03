@@ -160,6 +160,7 @@ gosec
 gosumdb
 govet
 govulncheck
+gpgsig
 granit
 gremlins
 gsub
