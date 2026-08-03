@@ -32,6 +32,13 @@ Two shapes of run exist and both are covered:
     anything displaced it, still carries the skill's name. Read per-run
     figures for these as an upper bound.
 
+`--timing` reads the same runs on the clock instead. Every record carries an
+ISO timestamp, so a run's wall clock is its span, and the part of that span
+spent blocked on the operator is subtractable: a turn ends and nothing moves
+until someone types, and an `AskUserQuestion` sits until someone answers. A
+permission prompt is the wait this cannot see, since it suspends a tool call
+without writing a record, so it reads as a slow command.
+
 A session that was relocated (a renamed repository, say) appears under both
 the old and the new project directory. Records are deduplicated on
 (sessionId, uuid), so a relocated session counts once.
@@ -47,7 +54,10 @@ import os
 import re
 import sys
 from collections import Counter, defaultdict
+from dataclasses import asdict, dataclass
+from datetime import datetime
 from pathlib import Path
+from statistics import median
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -69,6 +79,9 @@ SUBCOMMAND_HEADS = frozenset(
     {"apm", "cargo", "docker", "gh", "git", "go", "just", "mise", "npm", "uv"}
 )
 VERB_COUNT = {"gh": 2}
+
+MINUTE = 60
+HOUR = 3600
 
 SCRIPT_CALL = re.compile(r"skills/(?P<skill>[\w-]+)/scripts/(?P<script>[\w.-]+)")
 ENV_PREFIX = re.compile(r"^(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)+")
@@ -184,6 +197,131 @@ def fork_marker(path: Path) -> str:
     return ""
 
 
+def is_operator_prompt(record: Record) -> bool:
+    """Whether this user record is a person typing rather than a tool result.
+
+    A tool result carries `toolUseResult` and a list of result blocks. What
+    a person typed arrives as plain string content, and the harness marks
+    its own injected turns `isMeta`.
+    """
+    if record.get("type") != "user" or record.get("isMeta"):
+        return False
+    if "toolUseResult" in record:
+        return False
+    content = as_mapping(record.get("message")).get("content")
+    return isinstance(content, str) and bool(content.strip())
+
+
+def asks_operator(record: Record) -> bool:
+    """Whether this assistant record ends by putting a question to the user."""
+    content = as_mapping(record.get("message")).get("content")
+    entries: list[object] = list(content) if isinstance(content, list) else []
+    return any(as_mapping(entry).get("name") == "AskUserQuestion" for entry in entries)
+
+
+def seconds_between(earlier: str, later: str) -> float:
+    """The gap between two transcript timestamps, or zero if either is unusable."""
+    try:
+        start = datetime.fromisoformat(earlier)
+        end = datetime.fromisoformat(later)
+    except ValueError:
+        return 0.0
+    return max(0.0, (end - start).total_seconds())
+
+
+@dataclass
+class Run:
+    """One run's span on the clock."""
+
+    skill: str
+    session: str
+    run: str
+    agent_type: str
+    started: str
+    ended: str
+    idle_seconds: float = 0.0
+
+    @property
+    def wall_seconds(self) -> float:
+        return seconds_between(self.started, self.ended)
+
+    @property
+    def active_seconds(self) -> float:
+        return max(0.0, self.wall_seconds - self.idle_seconds)
+
+    def as_row(self) -> dict[str, str | float]:
+        return {
+            **asdict(self),
+            "wall_seconds": self.wall_seconds,
+            "active_seconds": self.active_seconds,
+        }
+
+
+def collect_runs(projects: Path, since: str = "") -> list[Run]:
+    """One entry per run, carrying its wall clock and the part spent waiting.
+
+    Waiting means blocked on the operator, which happens two ways. A turn
+    ends and nothing moves until someone types, and an `AskUserQuestion`
+    sits until someone answers, its reply arriving as an ordinary tool
+    result. Subtracting both leaves the time the run was working.
+
+    A permission prompt is the wait this cannot see. It suspends a tool call
+    with no record of its own, so it reads as a slow command and lands in
+    the active figure.
+    """
+    runs: dict[tuple[str, str], Run] = {}
+    seen: set[tuple[str, str]] = set()
+    for path in transcripts(projects):
+        is_fork = path.parent.name == "subagents"
+        kind = agent_type(path) if is_fork else "main"
+        previous: Record | None = None
+        skill = ""
+        span = 0
+        for record in read_records(path):
+            if record.get("type") not in ("assistant", "user"):
+                continue
+            timestamp = str(record.get("timestamp", ""))
+            if not timestamp or (since and timestamp < since):
+                continue
+            session = str(record.get("sessionId", ""))
+            key = (session, str(record.get("uuid", "")))
+            if key in seen:
+                continue
+            seen.add(key)
+
+            # Only an assistant record carries attribution. A user record
+            # belongs to whichever span was already running.
+            if record.get("type") == "assistant":
+                current = str(record.get("attributionSkill") or "")
+                if current != skill:
+                    span += 1
+                    skill = current
+
+            name = path.stem if is_fork else f"{path.stem}#{span}"
+            entry = runs.setdefault(
+                (session, name),
+                Run(skill, session, name, kind, timestamp, timestamp),
+            )
+            # A fork opens with the prompt that launches it, which carries no
+            # attribution, so the run is created before its skill is known.
+            # A main span never needs this: the span index changes with the
+            # skill, so an entry's name already fixes which skill it holds.
+            if not entry.skill:
+                entry.skill = skill
+            entry.ended = timestamp
+
+            if previous is not None and (
+                is_operator_prompt(record)
+                or (asks_operator(previous) and "toolUseResult" in record)
+            ):
+                entry.idle_seconds += seconds_between(
+                    str(previous.get("timestamp", "")), timestamp
+                )
+            previous = record
+
+    return list(runs.values())
+
+
 def collect(projects: Path, since: str = "") -> list[Row]:
     """Every tool call in every transcript, tagged with its active skill.
 
@@ -296,6 +434,63 @@ def detail(rows: list[Row], skill: str, top: int) -> str:
     return "\n".join(lines)
 
 
+def duration(seconds: float) -> str:
+    """A duration short enough to sit in a column."""
+    total = int(seconds)
+    if total < MINUTE:
+        return f"{total}s"
+    if total < HOUR:
+        return f"{total // MINUTE}m{total % MINUTE:02d}s"
+    return f"{total // HOUR}h{total % HOUR // MINUTE:02d}m"
+
+
+def timings(entries: list[Run]) -> str:
+    """How long each skill's runs take, with the operator's share removed.
+
+    The `kind` column is the one to read first. A fork's figures are its own
+    and nothing else's. An in-context skill's are an upper bound over a span
+    that keeps running after the skill is done, and the overshoot is not
+    small: measured against fix-prose, where the caller resumes and its work
+    keeps carrying the skill's name, the span ran several times the length of
+    the loop it was supposed to describe.
+    """
+    by_skill: defaultdict[str, list[Run]] = defaultdict(list)
+    for entry in entries:
+        by_skill[entry.skill or "(unattributed)"].append(entry)
+
+    header = (
+        f"{'skill':28} {'kind':>7} {'runs':>5} {'median':>8} {'p90':>8} "
+        f"{'active':>9} {'waiting':>9}"
+    )
+    lines = [header]
+
+    def weight(name: str) -> float:
+        return -sum(e.active_seconds for e in by_skill[name])
+
+    order = sorted(by_skill, key=weight)
+    for skill in order:
+        group = by_skill[skill]
+        active = sorted(e.active_seconds for e in group)
+        idle = sum(e.idle_seconds for e in group)
+        kind = "fork" if all(e.agent_type != "main" for e in group) else "in-ctx"
+        # p90 by index rather than interpolation: these are observed run
+        # lengths, so the figure should be one of them.
+        p90 = active[min(len(active) - 1, int(len(active) * 0.9))]
+        lines.append(
+            f"{skill:28} {kind:>7} {len(group):5} {duration(median(active)):>8} "
+            f"{duration(p90):>8} {duration(sum(active)):>9} {duration(idle):>9}"
+        )
+    lines.append("")
+    lines.append("active is wall clock less time blocked on the operator.")
+    lines.append("A permission prompt has no record, so it counts as active.")
+    lines.append("")
+    lines.append("A fork's figures are exact. An in-ctx figure overstates,")
+    lines.append("often several times over: the span runs until another")
+    lines.append("in-context skill loads, so the caller's later work, and the")
+    lines.append("forks it spawns, keep counting against the skill that ended.")
+    return "\n".join(lines)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Correlate transcript tool calls to the skill that made them."
@@ -320,6 +515,11 @@ def main(argv: list[str] | None = None) -> int:
         "--top", type=int, default=12, help="entries to show per breakdown"
     )
     parser.add_argument(
+        "--timing",
+        action="store_true",
+        help="report how long each skill's runs take instead of what they called",
+    )
+    parser.add_argument(
         "--json", action="store_true", help="write the rows as JSON Lines instead"
     )
     args = parser.parse_args(argv)
@@ -327,6 +527,17 @@ def main(argv: list[str] | None = None) -> int:
     if not args.projects_dir.is_dir():
         print(f"no projects directory: {args.projects_dir}", file=sys.stderr)
         return 2
+
+    if args.timing:
+        entries = collect_runs(args.projects_dir, args.since)
+        if args.skill:
+            entries = [e for e in entries if e.skill == args.skill]
+        if args.json:
+            for entry in entries:
+                print(json.dumps(entry.as_row()))
+            return 0
+        print(timings(entries))
+        return 0
 
     rows = collect(args.projects_dir, args.since)
     if args.json:

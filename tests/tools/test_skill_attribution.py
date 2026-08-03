@@ -28,14 +28,25 @@ assert SCRIPT.is_file(), f"subject not found: {SCRIPT}"
 MISSING_PROJECTS = 2
 
 
-def assistant(uuid: str, skill: str | None, commands: list[str], session: str) -> str:
+def stamp(minutes: int = 0) -> str:
+    """A transcript timestamp, offset from a fixed origin."""
+    return f"2026-08-03T12:{minutes:02d}:00.000Z"
+
+
+def assistant(
+    uuid: str,
+    skill: str | None,
+    commands: list[str],
+    session: str,
+    at: str = stamp(),
+) -> str:
     """One assistant record carrying a bash call per command."""
     return json.dumps(
         {
             "type": "assistant",
             "uuid": uuid,
             "sessionId": session,
-            "timestamp": "2026-08-03T12:00:00.000Z",
+            "timestamp": at,
             "version": "2.1.220",
             **({"attributionSkill": skill} if skill else {}),
             "message": {
@@ -43,6 +54,54 @@ def assistant(uuid: str, skill: str | None, commands: list[str], session: str) -
                     {"type": "tool_use", "name": "Bash", "input": {"command": command}}
                     for command in commands
                 ]
+            },
+        }
+    )
+
+
+def question(uuid: str, session: str, at: str, skill: str) -> str:
+    """An assistant record that puts a question to the operator."""
+    return json.dumps(
+        {
+            "type": "assistant",
+            "uuid": uuid,
+            "sessionId": session,
+            "timestamp": at,
+            "attributionSkill": skill,
+            "message": {
+                "content": [
+                    {"type": "tool_use", "name": "AskUserQuestion", "input": {}}
+                ]
+            },
+        }
+    )
+
+
+def prompt(uuid: str, session: str, at: str, text: str = "do the thing") -> str:
+    """A user record of the kind a person types."""
+    return json.dumps(
+        {
+            "type": "user",
+            "uuid": uuid,
+            "sessionId": session,
+            "timestamp": at,
+            "message": {"role": "user", "content": text},
+        }
+    )
+
+
+def tool_result(uuid: str, session: str, at: str) -> str:
+    """A user record of the kind the harness writes back after a tool call."""
+    return json.dumps(
+        {
+            "type": "user",
+            "uuid": uuid,
+            "sessionId": session,
+            "timestamp": at,
+            "toolUseResult": {"ok": True},
+            "message": {
+                "role": "user",
+                "content": [{"type": "tool_result", "content": "done"}],
             },
         }
     )
@@ -185,6 +244,99 @@ def test_detail_names_a_skill_with_no_calls(projects: Path) -> None:
     result = run(projects, "--skill", "merge-pr")
     assert result.returncode == 0
     assert "no calls attributed to merge-pr" in result.stdout
+
+
+def timing_rows(projects: Path, *args: str) -> list[dict[str, str | float]]:
+    result = run(projects, "--timing", "--json", *args)
+    assert result.returncode == 0, result.stderr
+    return [json.loads(line) for line in result.stdout.splitlines()]
+
+
+def test_a_fork_run_takes_the_skill_its_records_carry(projects: Path) -> None:
+    # A fork opens with the launching prompt, which carries no attribution.
+    write_fork(
+        projects,
+        "s7",
+        "agent-a2",
+        [
+            prompt("u0", "s7", stamp(0), "Base directory for this skill: /x"),
+            assistant("u1", "review-squash-message", ["gh pr diff 3"], "s7", stamp(2)),
+        ],
+    )
+    rows = timing_rows(projects)
+    assert [row["skill"] for row in rows] == ["review-squash-message"]
+
+
+def test_waiting_on_an_operator_prompt_is_not_active_time(projects: Path) -> None:
+    write_main(
+        projects,
+        "s8",
+        [
+            assistant("u1", "commit", ["git status"], "s8", stamp(0)),
+            prompt("u2", "s8", stamp(30)),
+        ],
+    )
+    entry = next(r for r in timing_rows(projects) if r["skill"] == "commit")
+    assert entry["wall_seconds"] == 1800
+    assert entry["idle_seconds"] == 1800
+    assert entry["active_seconds"] == 0
+
+
+def test_waiting_on_a_question_is_not_active_time(projects: Path) -> None:
+    write_main(
+        projects,
+        "s9",
+        [
+            assistant("u1", "merge-pr", ["git status"], "s9", stamp(0)),
+            question("u2", "s9", stamp(1), "merge-pr"),
+            tool_result("u3", "s9", stamp(21)),
+        ],
+    )
+    entry = next(r for r in timing_rows(projects) if r["skill"] == "merge-pr")
+    assert entry["wall_seconds"] == 1260
+    assert entry["idle_seconds"] == 1200
+    assert entry["active_seconds"] == 60
+
+
+def test_an_ordinary_tool_result_counts_as_active_time(projects: Path) -> None:
+    write_main(
+        projects,
+        "s10",
+        [
+            assistant("u1", "rebase", ["git rebase main"], "s10", stamp(0)),
+            tool_result("u2", "s10", stamp(5)),
+        ],
+    )
+    entry = next(r for r in timing_rows(projects) if r["skill"] == "rebase")
+    assert entry["idle_seconds"] == 0
+    assert entry["active_seconds"] == 300
+
+
+def test_timing_summary_names_what_it_cannot_see(projects: Path) -> None:
+    write_main(projects, "s11", [assistant("u1", "commit", ["git status"], "s11")])
+    result = run(projects, "--timing")
+    assert result.returncode == 0, result.stderr
+    assert "permission prompt" in result.stdout
+
+
+def test_timing_marks_an_in_context_skill_as_an_upper_bound(
+    projects: Path,
+) -> None:
+    write_main(projects, "s12", [assistant("u1", "commit", ["git status"], "s12")])
+    write_fork(
+        projects,
+        "s12",
+        "agent-a3",
+        [assistant("u2", "review-commit-message", ["git diff"], "s12")],
+    )
+    result = run(projects, "--timing")
+    assert result.returncode == 0, result.stderr
+    rows = {
+        line.split()[0]: line.split()[1]
+        for line in result.stdout.splitlines()
+        if line.startswith(("commit ", "review-commit-message "))
+    }
+    assert rows == {"commit": "in-ctx", "review-commit-message": "fork"}
 
 
 def test_missing_projects_directory_is_an_error(tmp_path: Path) -> None:
