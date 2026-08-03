@@ -32,9 +32,11 @@ export LC_ALL=C
 
 msg_file=$1
 
-# Consumer repos that carry the agent-output template every tbhb
-# repository tracks under their StylesPath get one self-contained line
-# per finding instead of vale's default human-oriented output. vale
+# Consumer repos whose StylesPath carries the agent output template the
+# ai-tells package ships get one self-contained line per finding instead
+# of vale's default human-oriented output. A repo pinned to ai-tells
+# before v1.29.0 has no such file, which the existence probe below
+# covers by leaving the default output in place. vale
 # resolves a bare template name against `<StylesPath>/config/templates/`,
 # and the hook runs from the consumer repo's root, so probing that path
 # through the StylesPath in the local .vale.ini decides whether the
@@ -42,7 +44,7 @@ msg_file=$1
 # consumer repos differ on the directory name (`.vale` here, `styles`
 # elsewhere). When .vale.ini, the StylesPath key, or the template file
 # is missing, the flag stays empty and the default output is unchanged.
-template=project-agent.tmpl
+template=ai-tells-agent.tmpl
 styles_path=$(sed -nE 's/^StylesPath[[:space:]]*=[[:space:]]*(.*[^[:space:]])[[:space:]]*$/\1/p' .vale.ini 2>/dev/null | head -n 1)
 output_flag=''
 if [[ -n $styles_path && -f "$styles_path/config/templates/$template" ]]; then

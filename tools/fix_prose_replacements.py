@@ -104,7 +104,7 @@ PREPOSITION = frozenset(
     }
 )
 
-TEMPLATE = "project-agent.tmpl"
+TEMPLATE = "ai-tells-agent.tmpl"
 
 # The script takes exactly one argument: the file to fix.
 ARGC = 1
