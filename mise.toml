@@ -13,14 +13,9 @@
 # vendir syncs both payload halves into every consumer at the same
 # paths, so nothing relocates between publisher and consumer.
 #
-# What stayed in the Justfile, and why:
-#
-#   - The Go test and coverage recipes the CI matrix runs on Windows.
-#     Ported task bodies are bash by the shebang rule below, and mise's
-#     handling of bash-shebang bodies on a Windows runner is unverified,
-#     while `just` on those runners is proven.
-#   - Thin delegation recipes for the names the APM primitives invoke.
-#     Those skills still spell their gates `just <recipe>`.
+# What stays in the Justfile: thin delegation recipes for the names the
+# APM primitives invoke, since those skills still spell their gates
+# `just <recipe>`. Nothing there does work of its own.
 
 [settings]
 # Record resolved versions, URLs, and digests in the lockfiles. Each
@@ -147,6 +142,20 @@ run = 'CGO_ENABLED=0 go build -trimpath -buildvcs=false -ldflags "$(bash tools/g
 [tasks.install]
 description = "Install every binary to GOPATH/bin"
 run = 'CGO_ENABLED=0 go install -trimpath -buildvcs=false -ldflags "$(bash tools/go-ldflags.sh)" ./cmd/...'
+
+# The first argument names the ./cmd/<bin> package; the rest pass
+# through to it. No usage spec, because a spec declaring one argument
+# rejects the trailing ones: without it every invocation argument
+# arrives as a shell positional in a shebang body.
+[tasks.run]
+description = "Run one binary by name, e.g. `mise run run agentstore version`"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+bin=$1
+shift
+go run -ldflags "$(bash tools/go-ldflags.sh)" "./cmd/$bin" "$@"
+'''
 
 [tasks.clean]
 description = "Clean build artifacts"
@@ -515,12 +524,29 @@ fi
 '''
 
 # --- Test ---
-# test-go and test-go-race stay Justfile recipes: the CI matrix runs
-# them on Windows.
+# The CI matrix runs this family on Windows, which is why it stayed in
+# the Justfile until a probe settled the question the carve-out rested
+# on. mise runs a bash-shebang body on windows-2025 under Git Bash, and
+# its own go pin resolves there too, so both the recipes and the
+# setup-go step they leaned on are gone.
 
 [tasks.test]
 description = "Run every test suite"
-run = ["just test-go", "mise run test-py", "mise run test-hooks"]
+run = ["mise run test-go", "mise run test-py", "mise run test-hooks"]
+
+# Extra invocation args append to the run string, so `mise run test-go
+# -- -run TestFoo` reaches `go test` unchanged.
+[tasks.test-go]
+description = "Run the Go tests"
+run = "go test ./..."
+
+# Slower than plain test-go; pairs with goroutine-bearing code as it
+# lands. Native fuzz targets discovered by the nightly workflow rerun
+# under -race automatically when their function-under-test is reached
+# from -race builds; for ad-hoc local runs use this task.
+[tasks.test-go-race]
+description = "Run the Go tests with the race detector"
+run = "go test -race ./..."
 
 # The shell hooks under scripts/ answer to bats rather than to
 # `go test`, so they get a third suite alongside the two language ones.
@@ -599,10 +625,87 @@ set -eu
 uv run hypothesis fuzz "$@" -- packages/*/tests/property
 '''
 
-# cover-go and its variants stay Justfile recipes alongside test-go.
 [tasks.cover]
 description = "Run every coverage gate"
-run = ["just cover-go", "mise run cover-py"]
+run = ["mise run cover-go", "mise run cover-py"]
+
+[tasks.cover-go]
+description = "Run the Go tests with coverage, print the per-function breakdown, and enforce the .testcoverage.yml thresholds"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+go test -coverprofile=coverage.out ./...
+echo
+go tool cover -func=coverage.out | tail -n 30
+echo
+go tool go-test-coverage --config .testcoverage.yml
+'''
+
+# Highlights covered and uncovered regions in source view so a
+# contributor can find exactly where a new test should land. Wraps
+# `go tool cover -html`.
+[tasks.cover-go-html]
+description = "Open the HTML coverage report"
+run = [
+  "go test -coverprofile=coverage.out ./...",
+  "go tool cover -html=coverage.out",
+]
+
+# Cobertura is the lingua franca format coverage dashboards accept. This
+# is the quick local form; CI's per-slot and combined uploads flow
+# through cover-go-binary and cover-go-merge below.
+[tasks.cover-go-cobertura]
+description = "Emit a Cobertura XML report from one local text profile"
+run = [
+  "go test -coverprofile=coverage.out ./...",
+  "go tool gocover-cobertura < coverage.out > coverage.xml",
+]
+
+# CI uploads the binary covdir per matrix slot so the downstream coverage
+# job can merge the slots with `go tool covdata merge` (see cover-go-merge)
+# into one combined report -- a merge only the binary format supports
+# losslessly. The covdir is absolute because `go test` runs each
+# package's binary from that package's directory, which would scatter a
+# relative path. MISE_PROJECT_ROOT stands in for the Justfile's
+# justfile_directory(): on Windows it arrives as a native path while $PWD
+# is the Git Bash form, and go needs the native one.
+[tasks.cover-go-binary]
+description = "Run the Go tests into <covdir> as binary coverage, then render Cobertura XML"
+usage = 'arg "<covdir>" default="coverage.covdata"'
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+covdir="$MISE_PROJECT_ROOT/$usage_covdir"
+rm -rf "$covdir"
+mkdir -p "$covdir"
+go test ./... -cover -args -test.gocoverdir="$covdir"
+go tool covdata textfmt -i="$covdir" -o=coverage.out
+go tool gocover-cobertura < coverage.out > coverage.xml
+'''
+
+# Takes one subdirectory per slot under <slotsdir>, merges them into a
+# single profile, and renders the combined Cobertura XML to coverage.xml.
+# CI runs this in the downstream coverage job after collecting every
+# slot's uploaded covdata.
+[tasks.cover-go-merge]
+description = "Merge the per-slot binary coverage dirs into one report"
+usage = 'arg "<slotsdir>" default="coverage.covdata.slots"'
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+rm -rf coverage.covdata.merged
+mkdir -p coverage.covdata.merged
+go tool covdata merge -i="$(ls -d "$usage_slotsdir"/*/ | paste -sd, -)" -o=coverage.covdata.merged
+go tool covdata textfmt -i=coverage.covdata.merged -o=coverage.out
+go tool gocover-cobertura < coverage.out > coverage.xml
+'''
+
+# The bare check separates a CI step that runs tests itself from the
+# threshold enforcement, and gives a contributor a way to re-check after
+# editing .testcoverage.yml without rerunning the suite.
+[tasks.cover-go-check]
+description = "Run only the threshold gate against an existing coverage.out"
+run = "go tool go-test-coverage --config .testcoverage.yml"
 
 # The Python floor is absolute: [tool.coverage] in pyproject.toml sets
 # fail_under = 100 with branch coverage on, so anything unreachable
@@ -753,7 +856,7 @@ run = [
 description = "Comprehensive quality bar for release-prep sweeps"
 run = [
   "mise run check",
-  "just test-go-race",
+  "mise run test-go-race",
   "mise run fuzz",
   "mise run repotools:gitleaks",
 ]
