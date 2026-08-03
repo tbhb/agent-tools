@@ -220,7 +220,7 @@ fuzz:
     {{ mise }} run fuzz
 
 gitleaks:
-    {{ mise }} run gitleaks
+    {{ mise }} run repotools:gitleaks
 
 # AGENTS.md and the rebase workflow spell these two by their just names.
 skill-tokens *args:
