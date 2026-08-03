@@ -21,7 +21,11 @@
 # clearing it would change what the document claims, which leaves those
 # findings with the caller by design. A rule misfiring on correct prose
 # reports the same way. Someone has to be able to overrule one, so the
-# refusal below says how, and requiring a deliberate step is the point.
+# refusal below says how.
+#
+# That release covers one edit rather than the session. Which edits it
+# covers is the whole design: a release the caller pays for once gets
+# paid once and then covers everything, so the price has to recur.
 #
 # Exit 2 blocks and returns stderr as the reason.
 set -euo pipefail
@@ -74,6 +78,28 @@ esac
 
 [ "$path" = "$locked" ] || exit 0
 
+# A one-shot release covers this edit and no more. The lock outlives it,
+# so the edit after this one meets the refusal again and the choice gets
+# made per edit rather than once per session.
+#
+# The older release was deleting the lock, and that is how it got spent:
+# one deletion covered everything that followed, so a caller who needed
+# one hand edit kept the rest of them too. Most refusals on record were
+# answered that way within seconds, several by a deletion appended to an
+# unrelated command.
+#
+# The token is read after the path comparison above, so an edit to some
+# other file leaves it unspent for the file it was armed for. Consuming
+# it here is safe against a first attempt that fails, because a call
+# rejected by the harness validation never reaches PreToolUse at all,
+# and safe against a batch, because PreToolUse fires once per call and
+# in sequence rather than concurrently.
+release="$git_dir/fix-prose.release"
+if [ -e "$release" ]; then
+  rm -f "$release"
+  exit 0
+fi
+
 printf 'Blocked by the fix-prose guard.\n\n%s\n' \
   "Clearing the prose findings on this file belongs to the fix-prose
 skill, which runs the lint rounds in a subagent so their output stays
@@ -85,8 +111,13 @@ To hand it a decision, pass it in the arguments rather than applying it
 here.
 
 Where a finding needs a change of meaning, or a rule is misfiring on
-correct prose, editing by hand is the right answer. Release the guard
-first, and the edit is yours:
+correct prose, editing by hand is the right answer. Release one edit,
+and it is yours:
 
-  rm ${lock}" >&2
+  bash .claude/skills/fix-prose/scripts/release-once.sh
+
+The lock survives that edit, so a second one means running it again.
+Reach for it where the finding needs a decision. Where it needs a
+rewording, the invocation above costs the same and spends its context
+rather than this one." >&2
 exit 2
