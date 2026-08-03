@@ -79,9 +79,11 @@ git -C "$repo" commit --quiet -m "initial"
 git_dir=$(git -C "$repo" rev-parse --absolute-git-dir)
 lock="$git_dir/fix-prose.lock"
 base="$git_dir/fix-prose.baseline"
+release="$git_dir/fix-prose.release"
 
 arm() { payload "$repo" "$1" "$2" "" | bash "$SCRIPTS/arm-guard.sh"; }
 guard() { payload "$repo" "" "" "$1" | bash "$SCRIPTS/guard-target.sh" >/dev/null 2>&1; }
+rel() { (cd "$repo" && bash "$SCRIPTS/release-once.sh" >/dev/null 2>&1); }
 verify() { (cd "$repo" && bash "$SCRIPTS/check-suppressions.sh" --verify >/dev/null 2>&1); }
 
 # --- cases -----------------------------------------------------------
@@ -132,6 +134,49 @@ check $? 0 "a target restored after the release stays unguarded"
 arm fix-prose "target.md just lint-draft target.md"
 guard "$repo/target.md"
 check $? 2 "re-arming after a release refuses the caller again"
+
+# The one-shot release. Deleting the lock covered a whole session, which
+# is how it got spent, so this covers one edit and leaves the lock in
+# place for the next one.
+rel
+[ -f "$release" ]
+check $? 0 "release-once arms a token while a lock is held"
+
+guard "$repo/target.md"
+check $? 0 "the released edit goes through"
+
+[ -f "$release" ]
+check $? 1 "the edit consumed the token"
+
+guard "$repo/target.md"
+check $? 2 "the edit after the released one is refused again"
+
+[ -s "$lock" ]
+check $? 0 "the lock outlives the release it granted"
+
+# The token is read after the path comparison, so an edit elsewhere
+# cannot spend a release armed for the locked file.
+rel
+guard "$repo/other.md"
+check $? 0 "an unlocked path stays allowed while a token is armed"
+[ -f "$release" ]
+check $? 0 "an edit to another path leaves the token unspent"
+rm -f "$release"
+
+# Arming needs something to release. Both of these would otherwise leave
+# a token behind for whatever gets locked next.
+rm -f "$lock"
+rel
+[ -f "$release" ]
+check $? 1 "release-once arms nothing when no lock is held"
+
+printf '%s\n' "$repo/gone.md" >"$lock"
+rel
+[ -f "$release" ]
+check $? 1 "release-once arms nothing when the locked path is absent"
+rm -f "$lock"
+
+arm fix-prose "target.md just lint-draft target.md"
 
 printf 'More settled prose.\n' >>"$repo/target.md"
 verify

@@ -280,7 +280,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:27a5f3fce5b883bd0148dcc59505a89c685665e85a3eee5c256fe6fc2efc7d39
+  content_hash: sha256:3f913280766550c63a9b6dd2d3dde055c709f4302276daee6837e5cfc9c105b9
 - kind: project-relative
   target: claude
   value: .claude/skills/fix-prose/scripts/preflight.sh
@@ -290,6 +290,15 @@ deployments:
   - .
   active_owner: .
   content_hash: sha256:7833798bf2c3e5ca489f5594d678d889431acaf9da19090ee64f5891fbf33361
+- kind: project-relative
+  target: claude
+  value: .claude/skills/fix-prose/scripts/release-once.sh
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:d56fab18b47cfd58282298fbfe73574cd5df8343193f0a1ea571ff27af109044
 - kind: project-relative
   target: claude
   value: .claude/skills/fix-prose/tokens.json
@@ -890,6 +899,7 @@ local_deployed_files:
 - .claude/skills/fix-prose/scripts/check-suppressions.sh
 - .claude/skills/fix-prose/scripts/guard-target.sh
 - .claude/skills/fix-prose/scripts/preflight.sh
+- .claude/skills/fix-prose/scripts/release-once.sh
 - .claude/skills/fix-prose/tokens.json
 - .claude/skills/merge-pr
 - .claude/skills/merge-pr/SKILL.md
@@ -980,8 +990,9 @@ local_deployed_file_hashes:
   .claude/skills/fix-prose/SKILL.md: sha256:ddc759424ef24a29eae573b2e7129d13bf43d283ad1d5a4960e462cdd349d24e
   .claude/skills/fix-prose/scripts/arm-guard.sh: sha256:1f9b431f8f510f9787f14418bb13fe0380af614592ac495a1091c1ab280bafa3
   .claude/skills/fix-prose/scripts/check-suppressions.sh: sha256:037ffa7ad42ec224e1ab51961a07dc3f555bc526082b8d4705f7fceae4abffa5
-  .claude/skills/fix-prose/scripts/guard-target.sh: sha256:27a5f3fce5b883bd0148dcc59505a89c685665e85a3eee5c256fe6fc2efc7d39
+  .claude/skills/fix-prose/scripts/guard-target.sh: sha256:3f913280766550c63a9b6dd2d3dde055c709f4302276daee6837e5cfc9c105b9
   .claude/skills/fix-prose/scripts/preflight.sh: sha256:7833798bf2c3e5ca489f5594d678d889431acaf9da19090ee64f5891fbf33361
+  .claude/skills/fix-prose/scripts/release-once.sh: sha256:d56fab18b47cfd58282298fbfe73574cd5df8343193f0a1ea571ff27af109044
   .claude/skills/fix-prose/tokens.json: sha256:bc3a1ff8fde6cfdcd8b6540c3a4fb6307781d723fe780c85e5390f4532ccb79d
   .claude/skills/merge-pr/SKILL.md: sha256:40c6a48a1ddcdac0eaac7a4701d70f55981fb727272f1a1fb7a6cff67ed36eb4
   .claude/skills/merge-pr/scripts/guard-merge.sh: sha256:f36c2f0410b6ed7c3b874e946e5da7ba4ded171e673b088a121010942d75bbef
