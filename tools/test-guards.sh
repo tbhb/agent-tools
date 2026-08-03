@@ -116,6 +116,23 @@ check $? 2 "a relative payload path resolves and still refuses"
 guard "$repo/other.md"
 check $? 0 "the guard allows a path nobody is fixing"
 
+# The lock outlives its document. A commit draft is deleted once the
+# commit lands, and the next commit writes a new one at the same path, so
+# a lock matching on the path alone refuses a document its run never saw.
+mv "$repo/target.md" "$repo/target.md.away"
+guard "$repo/target.md"
+check $? 0 "an absent target releases the lock rather than refusing"
+[ -f "$lock" ]
+check $? 1 "the released lock is gone rather than left to match again"
+mv "$repo/target.md.away" "$repo/target.md"
+
+guard "$repo/target.md"
+check $? 0 "a target restored after the release stays unguarded"
+
+arm fix-prose "target.md just lint-draft target.md"
+guard "$repo/target.md"
+check $? 2 "re-arming after a release refuses the caller again"
+
 printf 'More settled prose.\n' >>"$repo/target.md"
 verify
 check $? 0 "editing the target itself stays clean"
