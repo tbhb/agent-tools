@@ -11,10 +11,10 @@ Draft every commit message in the repo-root file `COMMIT_AGENTMSG` before you co
 1. Group the outstanding work into atomic commits, and stage the paths for one of them by name. Never `git add -A` or `git add .`.
 2. Write the full message (subject, body, and trailers) to `COMMIT_AGENTMSG`. The body explains why the change exists, because the diff already says what changed.
 3. Review the draft with the `review-commit-message` skill, which runs as an independent agent.
-4. Run `just lint-commit-msg` and resolve whatever it reports.
+4. Run `mise run lint-commit-msg` and resolve whatever it reports.
 5. Confirm the message with the operator, then commit the validated draft through `.claude/skills/commit/scripts/commit.sh`.
 
-`just lint-commit-msg` mirrors the commit-msg hook:
+`mise run lint-commit-msg` mirrors the commit-msg hook:
 
 - vale under the commit scope, which catches AI commit tells via `ai-tells-commits`
 - cspell with the commit dictionary
@@ -39,10 +39,10 @@ The file carries three things the template can't. YAML frontmatter holds the pul
 
 1. Draft the description, with a title in the Conventional Commits shape. A squash merge turns that title into the commit subject on the default branch.
 2. Review the draft with the `review-pr-description` skill, which runs as an independent agent.
-3. Run `just lint-pr-description` and resolve whatever it reports.
+3. Run `mise run lint-pr-description` and resolve whatever it reports.
 4. Confirm with the operator, then publish through `.claude/skills/pr/scripts/create-pr.sh`.
 
-`just lint-pr-description` runs a mechanical validator plus vale and cspell. The validator is offline and settles only what looking can settle:
+`mise run lint-pr-description` runs a mechanical validator plus vale and cspell. The validator is offline and settles only what looking can settle:
 
 - the frontmatter shape, its known keys, and a label the pull request actually carries
 - the title's Conventional Commits form, its bounds, and whether its type appears among the commits that would land
@@ -55,8 +55,8 @@ Each finding names a line and the fix, so resolving one means opening the draft 
 The rest of the lifecycle splits into three skills, each usable on its own:
 
 - `watch-pr` waits for the checks. It streams one event per check through the `Monitor` tool, so a wait costs one turn rather than one per look.
-- `fix-pr` diagnoses a red pull request. One call reads the failing logs and names the local recipe reproducing each failure.
-- `merge-pr` squash merges under a message this toolchain writes. Its briefing script prints the published description, every commit the squash collapses, and the diffstat, then leaves a `SQUASH_AGENTMSG` skeleton whose body the agent writes. That message then goes through `review-squash-message` and `just lint-squash-msg`, and past a confirmation, before the merge clears both drafts. It also works on a pull request nobody here authored, a dependency bump being the usual case.
+- `fix-pr` diagnoses a red pull request. One call reads the failing logs and names the local task reproducing each failure.
+- `merge-pr` squash merges under a message this toolchain writes. Its briefing script prints the published description, every commit the squash collapses, and the diffstat, then leaves a `SQUASH_AGENTMSG` skeleton whose body the agent writes. That message then goes through `review-squash-message` and `mise run lint-squash-msg`, and past a confirmation, before the merge clears both drafts. It also works on a pull request nobody here authored, a dependency bump being the usual case.
 
 Left alone, GitHub writes the squash message by concatenating every commit on the branch. That text has never passed a commit-msg hook, and nothing lints it afterwards, so `merge-pr` writes the message instead.
 
@@ -79,7 +79,7 @@ apm.lock.yaml rebase-resolve=regenerate
 **/skills/*/tokens.json rebase-resolve=regenerate
 ```
 
-A path marked that way resolves by taking one side whole, because the generator overwrites it afterwards. Once the rebase finishes, run `just skill-tokens` and then `apm install`, in that order. Measuring writes the token counts under `.apm/`, and installing deploys them and records their hashes, so the reverse order leaves the lockfile describing files that changed after it read them. Commit what the two of them rewrite.
+A path marked that way resolves by taking one side whole, because the generator overwrites it afterwards. Once the rebase finishes, run `mise run skill-tokens` and then `apm install`, in that order. Measuring writes the token counts under `.apm/`, and installing deploys them and records their hashes, so the reverse order leaves the lockfile describing files that changed after it read them. Commit what the two of them rewrite.
 
 `conflict-markers=documented` is the companion attribute, for a file carrying marker-shaped lines as its subject rather than its damage. The resolve skill's own `SKILL.md` carries a built-in exemption, so no consumer meets that false alarm.
 
@@ -87,7 +87,7 @@ Never a bare `git stash pop` around any of this. `.claude/rules/worktree-wip.md`
 
 ## Prose lint output
 
-`just lint-prose` and the prek vale hook already emit the agent output template, which arrives with the `ai-tells` package: `vale sync` writes it to `.vale/config/templates/ai-tells-agent.tmpl`. It prints one self-contained line per finding (location, severity, rule, the exact matched text, and the replacement when the rule carries one) plus a totals line, so you can fix every finding without follow-up searching. Pass `--output=ai-tells-agent.tmpl` yourself only when you invoke vale directly. Empty output means a clean run, and the exit code carries the result. An exit code higher than 1 marks a vale that failed rather than one that found nothing.
+`mise run lint-prose` and the prek vale hook already emit the agent output template, which arrives with the `ai-tells` package: `vale sync` writes it to `.vale/config/templates/ai-tells-agent.tmpl`. It prints one self-contained line per finding (location, severity, rule, the exact matched text, and the replacement when the rule carries one) plus a totals line, so you can fix every finding without follow-up searching. Pass `--output=ai-tells-agent.tmpl` yourself only when you invoke vale directly. Empty output means a clean run, and the exit code carries the result. An exit code higher than 1 marks a vale that failed rather than one that found nothing.
 
 That template is a published interface rather than a convenience. The scoping probes in `fix-prose` and `write-prose-fix` count its finding lines with `grep -c '^[0-9]'`, and the replacement probe reads its `replace_with=` field, so reshaping either one is a breaking change for this repository and for every consumer reading the output. Nothing here should reintroduce a repo-local template under a different name. The earlier private copy resolved only in this tree, which left those probes broken wherever that name was absent.
 
@@ -95,9 +95,9 @@ That template is a published interface rather than a convenience. The scoping pr
 
 Every Markdown paragraph in this repository occupies one line, leaving the renderer to decide where prose breaks. Hard wrapping belongs to commit messages and to comments in code or config, each with its own gate.
 
-`cmd/guard-markdown` enforces it. A prek hook runs it over `*.md`. A Claude `PreToolUse` hook runs it against a `Write` or `Edit` and denies the call before wrapped prose reaches disk. `just lint-markdown-wrap` runs it in the verification stack, and `just fix-markdown-wrap` collapses paragraphs someone already wrapped.
+`cmd/guard-markdown` enforces it. A prek hook runs it over `*.md`. A Claude `PreToolUse` hook runs it against a `Write` or `Edit` and denies the call before wrapped prose reaches disk. `mise run lint-markdown-wrap` runs it in the verification stack, and `mise run fix-markdown-wrap` collapses paragraphs someone already wrapped.
 
-A `CHANGELOG.md` is exempt in every one of those modes. The match is exact, on the base name alone, so a changelog under any directory qualifies and nothing else does. A generator writes it from commit messages, which are hard-wrapped under their own gate, so the wrapping arrives with the content and unwrapping it by hand holds only until the next release. `internal/markdown` holds the exemption in a constant, so it reaches every consumer repo and no repo can decline it. A second exception is the point at which that becomes declarative configuration instead. The vale gate already skips the same file through a glob in `just lint-prose`.
+A `CHANGELOG.md` is exempt in every one of those modes. The match is exact, on the base name alone, so a changelog under any directory qualifies and nothing else does. A generator writes it from commit messages, which are hard-wrapped under their own gate, so the wrapping arrives with the content and unwrapping it by hand holds only until the next release. `internal/markdown` holds the exemption in a constant, so it reaches every consumer repo and no repo can decline it. A second exception is the point at which that becomes declarative configuration instead. The vale gate already skips the same file through a glob in `mise run lint-prose`.
 
 Copy this shape for the next rule.
 
@@ -105,11 +105,11 @@ Copy this shape for the next rule.
 
 APM can deploy a hook's executable. A package-root `hooks/` directory lands under `.claude/hooks/<package>/hooks/`, which a declaration then references through `${CLAUDE_PLUGIN_ROOT}`. Nothing here takes that route now, so the directory is absent. `guard-markdown` takes the other one: `go install` puts it on PATH, so the declaration names a bare command and no file has to travel beside it.
 
-## Tasks and recipes
+## Tasks
 
 mise pins the toolchain and holds most task definitions. `mise.toml` has the repo-specific pins and tasks, and it selects the shared payload this repository dogfoods: the conf.d drop-ins plus the task files under `.repotools/tasks/`, which vendir syncs into every consumer at the same paths. The tree commits both lockfiles, and `repotools:check-toolchain` gates the installed set against them.
 
-The Justfile survives for two reasons. The Go test and coverage recipes stay there because the CI matrix runs them on Windows, where `just` under Git Bash has a working record while mise's handling of bash-shebang task bodies remains untested. Thin delegation recipes cover every name an APM primitive invokes, and each forwards to the corresponding mise task through the committed `tools/mise-bootstrap` shim, so the pinned mise runs even where PATH has none.
+No Justfile survives. The last recipes to leave were the Go test and coverage family, held back because the CI matrix runs them on Windows and nobody had checked mise there. A probe on windows-2025 found it running a bash-shebang body under Git Bash and resolving its own go pin, which retired both the recipes and the `actions/setup-go` step feeding them. The delegation recipes went with them once the published skills learned to spell their gates `mise run <task>`. The committed `tools/mise-bootstrap` shim still stands in for mise wherever PATH has none, and the prek hooks run through it.
 
 Tasks that operate on one source language carry a `-go` or `-py` suffix, and the bare name aggregates both: `mise run test` runs `test-go` and `test-py`, and so do `cover`, `mutate`, and `fuzz`. Reach for the suffixed form while iterating on one language, and the bare form before pushing. Lint gates follow the same shape through `lint-go-all` and `lint-py-all`, which `mise run lint` composes. A bare-name task lists its members in an ordered `run` array rather than in `depends`, because `depends` runs in parallel and interleaves the linters' findings, which defeats the one-line-per-finding output template.
 

@@ -10,7 +10,7 @@
 # cspell's parent-directory config search loads the main worktree's
 # .cspell-words.txt and merges it ahead of the explicit --config. A
 # word that a branch adds to its own dictionary then reads as unknown
-# and the commit fails, even though "just lint-commit-msg" passed
+# and the commit fails, even though "mise run lint-commit-msg" passed
 # (that recipe lints COMMIT_AGENTMSG at the worktree root, where the
 # search finds the right dictionary).
 #

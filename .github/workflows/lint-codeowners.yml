@@ -11,7 +11,7 @@
 # `actions/checkout` lays down, and each reads the caller's context on a
 # call: `GITHUB_REPOSITORY` and `github.event.pull_request.head.sha`
 # resolve to the caller, so the job stays self-contained with no local
-# action or `just` recipe to drag in.
+# action or task to drag in.
 #
 # Two checks, both satisfied by the default read-only token:
 #

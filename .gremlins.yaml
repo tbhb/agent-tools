@@ -9,7 +9,7 @@
 #
 # The timeout coefficient stays a recipe flag so the nightly workflow
 # can override it per run (a CLI flag outranks this file); see the
-# `mutate` recipe in the Justfile.
+# `mutate` task in mise.toml.
 
 unleash:
   exclude-files:

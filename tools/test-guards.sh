@@ -14,7 +14,7 @@
 # run would leave that mutation behind. A throwaway repository also
 # gives the gitignored-style case somewhere honest to live.
 #
-# Out of `just lint` on purpose. It writes to a temporary directory,
+# Out of `mise run lint` on purpose. It writes to a temporary directory,
 # spawns git, and takes long enough to notice, so it belongs with the
 # out-of-band recipes rather than in the gate every commit runs.
 #
@@ -62,7 +62,7 @@ mkdir -p "$repo/.vale/ai-tells" "$repo/.vale/config/vocabularies/project"
 printf 'StylesPath = .vale\n' >"$repo/.vale.ini"
 printf '{}\n' >"$repo/.cspell.jsonc"
 printf 'widget\n' >"$repo/.cspell-words.txt"
-printf 'default:\n' >"$repo/Justfile"
+printf '[tools]\n' >"$repo/mise.toml"
 printf 'extends: existence\n' >"$repo/.vale/ai-tells/VerbTricolon.yml"
 printf 'alpha\n' >"$repo/.vale/config/vocabularies/project/accept.txt"
 
@@ -94,15 +94,15 @@ check $? 1 "a missing baseline reports rather than passing"
 guard "$repo/target.md"
 check $? 0 "no lock leaves the guard silent"
 
-arm commit "target.md just lint-draft target.md"
+arm commit "target.md mise run lint-draft target.md"
 [ -f "$lock" ]
 check $? 1 "another skill's invocation does not arm the guard"
 
-arm fix-prose "nonexistent.md just lint-draft nonexistent.md"
+arm fix-prose "nonexistent.md mise run lint-draft nonexistent.md"
 [ -f "$lock" ]
 check $? 1 "an absent target does not arm the guard"
 
-arm fix-prose "target.md just lint-draft target.md"
+arm fix-prose "target.md mise run lint-draft target.md"
 [ -f "$lock" ] && [ -d "$base" ]
 check $? 0 "fix-prose records the target and the baseline"
 
@@ -131,7 +131,7 @@ mv "$repo/target.md.away" "$repo/target.md"
 guard "$repo/target.md"
 check $? 0 "a target restored after the release stays unguarded"
 
-arm fix-prose "target.md just lint-draft target.md"
+arm fix-prose "target.md mise run lint-draft target.md"
 guard "$repo/target.md"
 check $? 2 "re-arming after a release refuses the caller again"
 
@@ -176,7 +176,7 @@ rel
 check $? 1 "release-once arms nothing when the locked path is absent"
 rm -f "$lock"
 
-arm fix-prose "target.md just lint-draft target.md"
+arm fix-prose "target.md mise run lint-draft target.md"
 
 printf 'More settled prose.\n' >>"$repo/target.md"
 verify
@@ -222,7 +222,7 @@ check $? 1 "an inline vale suppression is caught"
 
 # The baseline records what the target already carried, so re-arming on
 # a file holding a directive must not report that directive afterwards.
-arm fix-prose "target.md just lint-draft target.md"
+arm fix-prose "target.md mise run lint-draft target.md"
 verify
 check $? 0 "a directive present at baseline is not a finding"
 

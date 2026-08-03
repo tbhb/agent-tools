@@ -80,7 +80,7 @@ members = ["packages/*"]
 repotools = { workspace = true }
 
 [tool.complexipy]
-# Scope lives here rather than in the Justfile recipe so editor and
+# Scope lives here rather than in the mise task so editor and
 # pre-commit invocations of a bare `complexipy` measure the same tree
 # the CI gate does.
 paths = ["packages"]
@@ -406,7 +406,7 @@ max-complexity = 15
 convention = "google"
 
 [tool.vulture]
-# Scope lives here rather than in the Justfile recipe so editor and
+# Scope lives here rather than in the mise task so editor and
 # pre-commit invocations of a bare `vulture` scan the same tree the CI
 # gate does. No confidence threshold is lowered. There is no
 # vulture_allowlist.py yet: nothing here hides its caller from vulture's
