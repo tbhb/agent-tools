@@ -76,11 +76,20 @@ rc=0
 # the fix-prose skill exists to refuse.
 readonly CONTROL='This is a very robust and comprehensive design that does not use contractions and it is significantly better.'
 
-probe=$(printf '%s\n' "$CONTROL" |
-  vale --path="$file" --output=ai-tells-agent.tmpl 2>/dev/null |
-  grep -c '^[0-9]' || true)
+# vale exits 2 or above when it fails rather than lints, and it prints
+# nothing on stdout when it does. Counting findings alone turns that into
+# a zero and blames the path, so read the status first and say which of
+# the two happened.
+probe_out=$(printf '%s\n' "$CONTROL" |
+  vale --path="$file" --output=ai-tells-agent.tmpl 2>&1)
+probe_rc=$?
+probe=$(printf '%s\n' "$probe_out" | grep -c '^[0-9]' || true)
 
-if [ "${probe:-0}" -eq 0 ]; then
+if [ "$probe_rc" -gt 1 ]; then
+  printf '%s:1 [error] vale-failed  vale exited %s instead of linting, so this run measured nothing: %s\n' \
+    "$file" "$probe_rc" "$(printf '%s' "$probe_out" | tr '\n' ' ')"
+  rc=1
+elif [ "${probe:-0}" -eq 0 ]; then
   printf '%s:1 [error] unscoped-path  no .vale.ini section matches this path, so vale loads no styles and a silent run proves nothing; move the draft to a path the config names\n' "$file"
   rc=1
 fi

@@ -289,7 +289,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:d1ad1d8afa8323c3b51b275f13c41a0a3cf82da516a4311e05d633f36efd23f6
+  content_hash: sha256:de4ce16740adec37b29bceeb0e5adbf021dbabeedcd9c7efc63179be479658cc
 - kind: project-relative
   target: claude
   value: .claude/skills/fix-prose/scripts/release-once.sh
@@ -856,7 +856,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:b2baa9847e45f6f05d39690339ee5ac09d8cc06e435243a62a5996ecbe600328
+  content_hash: sha256:bbf6f0a137eff304b282fed8c52348c891f474202391fb80a117b49a31298bdc
 - kind: project-relative
   target: claude
   value: .claude/skills/write-prose-fix/tokens.json
@@ -991,7 +991,7 @@ local_deployed_file_hashes:
   .claude/skills/fix-prose/scripts/arm-guard.sh: sha256:b3a6a97ec8dd99136a65010aaa156f21f4d1321c2f03dd33c3fa85cefea3d23b
   .claude/skills/fix-prose/scripts/check-suppressions.sh: sha256:aba27bd1eb064494f7a7f6c4fe19219558983e13a8a87cf481204fff747b2688
   .claude/skills/fix-prose/scripts/guard-target.sh: sha256:90a27acd92779e4582bbf99c9956f62366fcb85c233e12a05c497292d5a14e4e
-  .claude/skills/fix-prose/scripts/preflight.sh: sha256:d1ad1d8afa8323c3b51b275f13c41a0a3cf82da516a4311e05d633f36efd23f6
+  .claude/skills/fix-prose/scripts/preflight.sh: sha256:de4ce16740adec37b29bceeb0e5adbf021dbabeedcd9c7efc63179be479658cc
   .claude/skills/fix-prose/scripts/release-once.sh: sha256:3f7935af5f97859066f49eccb2c9ce68322e419e6fa06a047f54442ab06e8912
   .claude/skills/fix-prose/tokens.json: sha256:cfcbaf7c7e2fa69db12688932c01977f5e8275b93692dee187b638c120b6d6da
   .claude/skills/merge-pr/SKILL.md: sha256:40c6a48a1ddcdac0eaac7a4701d70f55981fb727272f1a1fb7a6cff67ed36eb4
@@ -1043,5 +1043,5 @@ local_deployed_file_hashes:
   .claude/skills/write-pr-description/scripts/guard-draft.sh: sha256:8c0a80c080fa29e231745de949d5821f273f062fc6ae0ed78b6cc4167da8d443
   .claude/skills/write-pr-description/tokens.json: sha256:a1c681ef0391dc19736f8c01098b852769bd896c5782dbc9c819aa0b01abf9ff
   .claude/skills/write-prose-fix/SKILL.md: sha256:23f044d7c8fcf7906896341cfc62c86352a0f11d66e68ddc6d196a81ee99a5a1
-  .claude/skills/write-prose-fix/scripts/context.sh: sha256:b2baa9847e45f6f05d39690339ee5ac09d8cc06e435243a62a5996ecbe600328
+  .claude/skills/write-prose-fix/scripts/context.sh: sha256:bbf6f0a137eff304b282fed8c52348c891f474202391fb80a117b49a31298bdc
   .claude/skills/write-prose-fix/tokens.json: sha256:b5aab2b1a97606f4ef0a2b23dcf34427a1197f27ff9f19dc2aabe17ace3c5054
