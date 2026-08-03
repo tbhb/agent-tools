@@ -253,7 +253,11 @@ pipx
 pkgsite
 postflight
 prealloc
+preapproval
+preapprovals
+preapprove
 predeclared
+preflights
 prek
 prepend
 prepending
@@ -334,6 +338,7 @@ subshells
 subtest
 subtests
 sumdb
+swiftc
 syft
 symref
 synctest
@@ -356,6 +361,7 @@ tolower
 tombi
 toplevel
 tostring
+touchid
 tparallel
 trimpath
 typesscopes

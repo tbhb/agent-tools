@@ -64,6 +64,24 @@ Each of these skills carries guard hooks in its frontmatter, scoped to the workf
 
 A skill's hooks outlive the turn that invoked it, so more than one of these guards is often live at once. The `pr` and `merge-pr` guards share one allowlist so they agree wherever both run. `watch-pr` and `fix-pr` claim only the narrower forms their own scripts wrap, because a broader claim there would refuse a sibling's legitimate calls.
 
+## Pre-approving the confirmations
+
+`commit`, `pr`, and `merge-pr` each stop at an `AskUserQuestion` before the step that writes something. Every gate and every independent review has already run by then, so across a series of commits that prompt is the only thing left costing a turn. Answering it once in advance is what these tasks are for:
+
+```bash
+mise run preapprove              # commit and pr
+mise run preapprove merge        # adds merge to whatever is already held
+mise run revoke-preapproval      # withdraws everything
+```
+
+Grants are additive. The scopes are `commit`, `pr`, `merge`, and `all`, and a bare grant never covers merging, which is the one action here that no later step can walk back. Each grant belongs to one Claude Code session, keyed on `CLAUDE_CODE_SESSION_ID` and recorded at `<git dir>/preapprovals/<session id>` beside the other session marks the skills write, so a new session starts holding nothing.
+
+Granting takes a Touch ID prompt, and revoking takes nothing. An operator's shell and an agent's are the same shell here, reaching the same mise under the same environment, so a fingerprint is the one input left that an agent can't produce. `--no-biometrics` covers a machine with no sensor, and the record says which of the two happened, so a grant that skipped the sensor never passes for one that didn't. None of that amounts to a boundary: anything able to run a shell can write the record by hand, or edit the preflight that reads it. What the prompt buys is that the sanctioned path needs a person, so an agent granting itself has to go around that path in a transcript and a diff somebody can read.
+
+Never run either task on the agent's behalf, and never write the record directly.
+
+Every preflight reports what the session holds under `== pre-approval ==`, and the confirmation step reads that line rather than asking again. A grant answers the one question at that step and no more, and each skill lists the cases that send it back to the operator regardless.
+
 ## Moving a branch onto its base
 
 Run the `rebase` skill. It picks the base the way the commit preflight does, then replays the branch under pinned settings and checks what came out.
