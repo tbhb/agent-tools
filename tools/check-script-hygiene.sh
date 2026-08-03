@@ -55,12 +55,20 @@ if [ ${#files[@]} -eq 0 ]; then
     '.apm/skills/*/scripts/*.sh' 'hooks/*.sh' 'scripts/*.sh' 'tools/*.sh')
 fi
 
+# The files the structural pass below scans: everything that exists and
+# has not opted out. Collected here so `hygiene-exempt` means the same
+# thing to both passes, and so a script that calls neither git nor gh
+# still reaches the rules that have nothing to do with either.
+scan_files=()
+
 for f in "${files[@]}"; do
   [ -f "$f" ] || continue
 
   if grep -q '^# hygiene-exempt:' "$f"; then
     continue
   fi
+
+  scan_files+=("$f")
 
   # Comments discuss these commands constantly, and a guard script
   # quotes them in its refusal text. Only code lines count.
@@ -87,26 +95,47 @@ for f in "${files[@]}"; do
       "invokes gh without unsetting GH_REPO and GH_HOST; an exported one retargets the repository"
   fi
 
-  # Rule 3: output this script parses goes through the wrapper.
-  while IFS=: read -r lineno text; do
-    [ -n "$lineno" ] || continue
-    case $text in
-    *'# hygiene-ok'*) continue ;;
-    esac
-    report "$f" "$lineno" "bare-git-output" \
-      "parses git output without gitr; log.showSignature and the diff prefix settings reshape this"
-  done < <(grep -nE '(^|[^-[:alnum:]_r])git (log|show|diff)\b' "$f" |
-    grep -vE '^[0-9]+:[[:space:]]*#' || true)
-
-  # Rule 4: an external difftool replaces the patch wholesale, so every
-  # diff says so explicitly.
-  while IFS=: read -r lineno _; do
-    [ -n "$lineno" ] || continue
-    report "$f" "$lineno" "diff-without-no-ext-diff" \
-      "gitr diff without --no-ext-diff; diff.external would replace the patch entirely"
-  done < <(grep -nE 'gitr diff' "$f" | grep -v -- '--no-ext-diff' |
-    grep -vE '^[0-9]+:[[:space:]]*#' || true)
 done
+
+# Rules 3 to 5 match shell structure rather than text, so ast-grep owns
+# them and .ast-grep/rules holds one file each. They run over the whole
+# file list in a single pass, after the per-file loop above, because
+# ast-grep starts faster once than once per script.
+#
+# The JSON stream is reformatted into report()'s shape rather than shown
+# raw. ast-grep's own output is a rustc-style block with source previews,
+# and the agent reading this expects one self-contained line per finding,
+# the same shape the vale template emits. Line numbers arrive 0-indexed.
+if [ ${#scan_files[@]} -gt 0 ]; then
+  ast_err=$(mktemp)
+  trap 'rm -f "$ast_err"' EXIT
+
+  # ast-grep exits 1 when it finds diagnostics, which is the ordinary
+  # case here and not a failure of the run. Any other status means the
+  # tool itself broke: a missing binary, an unreadable sgconfig.yml, a
+  # rule that no longer parses. Those must not read as a clean gate, so
+  # the status is separated from the finding count rather than discarded.
+  set +e
+  ast_json=$(ast-grep scan --json=stream "${scan_files[@]}" 2>"$ast_err")
+  ast_status=$?
+  set -e
+  if [ "$ast_status" -gt 1 ]; then
+    printf 'check-script-hygiene: ast-grep failed with status %s\n' "$ast_status" >&2
+    cat "$ast_err" >&2
+    exit 1
+  fi
+
+  # join rather than @tsv: @tsv escapes a backslash as two, and every
+  # one of these messages quotes a shell escape. Sorted by file then
+  # line, because ast-grep streams grouped by rule and the reader wants
+  # a script's findings together and in source order.
+  while IFS=$'\t' read -r file line rule message; do
+    [ -n "$file" ] || continue
+    report "$file" "$line" "$rule" "$message"
+  done < <(printf '%s' "$ast_json" |
+    jq -r 'select(.file) | [.file, (.range.start.line + 1 | tostring), .ruleId, .message] | join("\t")' |
+    sort -t"$(printf '\t')" -k1,1 -k2,2n)
+fi
 
 if [ "$findings" -gt 0 ]; then
   printf 'TOTAL: %s finding(s)\n' "$findings"

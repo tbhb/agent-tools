@@ -1,0 +1,23 @@
+---
+# An IFS built by command substitution loses its trailing newline,
+# because $( ) strips trailing newlines by definition. The hardening
+# block in these scripts used to write IFS=$(printf ' \t\n'), which
+# yields space and tab only, and every `for x in $var` over a
+# newline-separated value then ran once over the joined string instead of
+# once per line. Six loops across this tree were silently broken that
+# way, including create-pr.sh's check that every issue reference in a
+# pull request description exists.
+#
+# Deliberately narrow. The constraint fires only when the format string
+# carries a newline, so IFS=$(printf '\t') scoping a tab split to a
+# single `read` stays legal: there is no trailing newline for $( ) to
+# eat, and squash-message.sh depends on that form.
+id: ifs-command-substitution
+language: bash
+severity: error
+message: "IFS built by $( ) loses its trailing newline; write IFS=$' \\t\\n' instead"
+rule:
+  pattern: IFS=$(printf $FMT)
+constraints:
+  FMT:
+    regex: '\\n'

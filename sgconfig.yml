@@ -1,0 +1,10 @@
+---
+# ast-grep project config. Its name and location are fixed by the tool,
+# which walks up from the working directory looking for it.
+#
+# check-script-hygiene.sh is the only consumer. It passes an explicit
+# file list rather than letting ast-grep walk the tree, because the gate
+# scopes itself to the skill and tools scripts and includes untracked
+# ones, which is where a brand new script is cheapest to correct.
+ruleDirs:
+  - .ast-grep/rules
