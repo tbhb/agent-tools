@@ -703,7 +703,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:c17f0f5944d4ee09c6c3e89b5833d7dc92686ea31657b1908ef4174841f01abf
+  content_hash: sha256:5061db9a99d1833b565047f7888e3c889c5608baf9bb33e0b27ada936d6e7c8a
 - kind: project-relative
   target: claude
   value: .claude/skills/review-prose-fix/tokens.json
@@ -712,7 +712,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:b8fa2bd099d312f303730dacaa5380cb320ebdc23080873db6cbb5c76c4567f0
+  content_hash: sha256:a8199b47458d65d5964a27d0f7cc96e61a0ff45f0dd10344abb21a0c92904e58
 - kind: project-relative
   target: claude
   value: .claude/skills/review-squash-message
@@ -1040,8 +1040,8 @@ local_deployed_file_hashes:
   .claude/skills/review-commit-message/tokens.json: sha256:97d50df77eb89bbba01e7c17408ba6fd228ad036d6c27537660c566d3e77fa05
   .claude/skills/review-pr-description/SKILL.md: sha256:150aa2fcce0043f8704683b982c026cc569844c41543a774f498f4b07a6dd528
   .claude/skills/review-pr-description/tokens.json: sha256:9fdf3d0de53316a2e33f1b40a775d95cc8281877dc255e6cf597f991f75e03ff
-  .claude/skills/review-prose-fix/SKILL.md: sha256:c17f0f5944d4ee09c6c3e89b5833d7dc92686ea31657b1908ef4174841f01abf
-  .claude/skills/review-prose-fix/tokens.json: sha256:b8fa2bd099d312f303730dacaa5380cb320ebdc23080873db6cbb5c76c4567f0
+  .claude/skills/review-prose-fix/SKILL.md: sha256:5061db9a99d1833b565047f7888e3c889c5608baf9bb33e0b27ada936d6e7c8a
+  .claude/skills/review-prose-fix/tokens.json: sha256:a8199b47458d65d5964a27d0f7cc96e61a0ff45f0dd10344abb21a0c92904e58
   .claude/skills/review-squash-message/SKILL.md: sha256:ab2bc599f50e01a4bdffa7963fac4e44aa951aff32f741db6be79f447c3d078b
   .claude/skills/review-squash-message/scripts/context.sh: sha256:c8feff629fee467eaf0240582f0a30eb54c3b12ee97e5ba205859dabb6951b3c
   .claude/skills/review-squash-message/tokens.json: sha256:76a94eedf22a4ea1fe8e1ff7a4ed3b8752c851206a9fc117959ec911a2b03a57
