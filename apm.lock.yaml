@@ -325,7 +325,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:8a3e8c9e00537895b07fa5b987b33576b7939471fc5d18bb291c79d931edfe46
+  content_hash: sha256:418582c9578c4a11e1a224fb4765871c691111de8de29ac82e27821638f14bab
 - kind: project-relative
   target: claude
   value: .claude/skills/merge-pr/scripts/guard-merge.sh
@@ -388,7 +388,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:bbe2866f7f1bb6d61415cfb4c0620d023279d77ae44e334fadcc72b6f435e62b
+  content_hash: sha256:9e9ea0add42c635cd2ca21509b041346e816d94296feb46da3903515c06daa40
 - kind: project-relative
   target: claude
   value: .claude/skills/pr
@@ -1004,14 +1004,14 @@ local_deployed_file_hashes:
   .claude/skills/fix-prose/scripts/preflight.sh: sha256:de4ce16740adec37b29bceeb0e5adbf021dbabeedcd9c7efc63179be479658cc
   .claude/skills/fix-prose/scripts/release-once.sh: sha256:3f7935af5f97859066f49eccb2c9ce68322e419e6fa06a047f54442ab06e8912
   .claude/skills/fix-prose/tokens.json: sha256:1d9c9a43c67cd336a626b5af57441fc3a55bef12fe74fbf8ab4b7ea20a77435b
-  .claude/skills/merge-pr/SKILL.md: sha256:8a3e8c9e00537895b07fa5b987b33576b7939471fc5d18bb291c79d931edfe46
+  .claude/skills/merge-pr/SKILL.md: sha256:418582c9578c4a11e1a224fb4765871c691111de8de29ac82e27821638f14bab
   .claude/skills/merge-pr/scripts/guard-merge.sh: sha256:4b8d3377751cf151d8a8bf3e6b79715e172bdea4742217b9653562c310b216ca
   .claude/skills/merge-pr/scripts/populate-description.sh: sha256:ed9688d83433ff7e1700255ae02e3dc912faf34dc34bdd9edb22eb02b8032d3a
   .claude/skills/merge-pr/scripts/preflight.sh: sha256:164ee9756773d7c65c8da430309c42c2dd7b0553616d361c0bd7962c05d0f3d9
   .claude/skills/merge-pr/scripts/squash-merge.sh: sha256:4ad8fcd535fbc37524cf89baa42632eb40c156c23d0dfff47d22b9aa9caa930a
   .claude/skills/merge-pr/scripts/squash-message.sh: sha256:eeaca25d0bce0dc874ad389854e2bd4de77669cfed3da97c9999513652b7011a
   .claude/skills/merge-pr/scripts/stamp-review.sh: sha256:b54430e9cacb8045163dbc35c73be61de8f69fa236e1b41620fe1b10d0eaca0e
-  .claude/skills/merge-pr/tokens.json: sha256:bbe2866f7f1bb6d61415cfb4c0620d023279d77ae44e334fadcc72b6f435e62b
+  .claude/skills/merge-pr/tokens.json: sha256:9e9ea0add42c635cd2ca21509b041346e816d94296feb46da3903515c06daa40
   .claude/skills/pr/SKILL.md: sha256:5fc5c6e46c7c9c8c6ef6d9fd0c850f10104558127a0c41d97a88e332e13fbca0
   .claude/skills/pr/scripts/create-pr.sh: sha256:e4aba4ec72fcc682d6d362c590269358ad295300917a0c25d106d290f3cd7b82
   .claude/skills/pr/scripts/guard-gh.sh: sha256:48849363413f51369df0eabce051afc97109033a8ad50666e685b1160b4f624a
