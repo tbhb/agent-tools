@@ -293,6 +293,7 @@ rollup
 rowserrcheck
 rpop
 rstrip
+rtrimstr
 ruleid
 rumdl
 runuser
