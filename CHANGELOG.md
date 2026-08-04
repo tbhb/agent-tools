@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file. See [conven
 - - -
 <!-- release -->
 
+## [v0.7.0](https://github.com/tbhb/repotools/compare/ecd105a8a91f9c649d9ef8a87adfb9442d0ba637..v0.7.0) - 2026-08-04
+
+### Bug Fixes
+
+- (**skills**) tighten what the review loops spend a round on (#40) - ([ecd105a](https://github.com/tbhb/repotools/commit/ecd105a8a91f9c649d9ef8a87adfb9442d0ba637)) - [@tbhb](https://github.com/tbhb)
+
+### Build system
+
+- retire the just pin and its shared tasks (#41) - ([b6e309e](https://github.com/tbhb/repotools/commit/b6e309e55b5f0298c2eedfce3003245096ff6293)) - [@tbhb](https://github.com/tbhb)
+
+- - -
+
+<!-- release -->
+
 ## [v0.6.0](https://github.com/tbhb/repotools/compare/1f1e78e755f924112c90f4c7f31838fdf2749df8..v0.6.0) - 2026-08-04
 
 ### Features

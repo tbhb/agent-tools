@@ -4,7 +4,7 @@
 #
 #   repos:
 #     - repo: https://github.com/tbhb/repotools
-#       rev: v0.6.0
+#       rev: v0.7.0
 #       hooks:
 #         - id: guard-markdown
 #         - id: commit-trailers
