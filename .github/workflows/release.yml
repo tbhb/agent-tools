@@ -187,13 +187,20 @@ jobs:
             echo "::error::built $actual file entries for $expected changed files"
             exit 1
           fi
-          additions=$(jq -s '.' < "$additions_file")
           deletions=$(
             git diff -z --name-only --diff-filter=D HEAD~1 HEAD |
               jq -Rs 'split("\u0000") | map(select(length > 0) | {path: .})'
           )
 
+          # --slurpfile rather than --argjson for the additions. The
+          # argument ceiling applies to this call too, and the array
+          # holds every encoded file, so passing it inline meets the
+          # same 128 KiB limit the per-file loop above already avoids.
+          # Reading the file gathers the same stream of objects into
+          # the same array with none of it on the command line, and
+          # deletions stays inline because it holds paths alone.
           jq -n \
+            --slurpfile additions "$additions_file" \
             --arg query 'mutation($input: CreateCommitOnBranchInput!) {
               createCommitOnBranch(input: $input) { commit { oid } }
             }' \
@@ -202,7 +209,6 @@ jobs:
             --arg parent "$(git rev-parse HEAD~1)" \
             --arg headline "$(git log -1 --format=%s)" \
             --arg body "$(git log -1 --format=%b)" \
-            --argjson additions "$additions" \
             --argjson deletions "$deletions" \
             '{
               query: $query,
