@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file. See [conven
 - - -
 <!-- release -->
 
+## [v0.6.0](https://github.com/tbhb/repotools/compare/1f1e78e755f924112c90f4c7f31838fdf2749df8..v0.6.0) - 2026-08-04
+
+### Features
+
+- (**skills**) base the release on state the skill reads for itself - ([28cbc46](https://github.com/tbhb/repotools/commit/28cbc463332f61dd24f2b1e7891df9205ff6a169)) - [@tbhb](https://github.com/tbhb)
+- (**skills**) drive a release from readiness to a verified tag - ([cdd680b](https://github.com/tbhb/repotools/commit/cdd680b7202c53fd3b8ca200c68537c6221a0511)) - [@tbhb](https://github.com/tbhb)
+- (**skills**) hand review-squash-message its inputs up front (#32) - ([19bed45](https://github.com/tbhb/repotools/commit/19bed45bfdf6be19df044a0bb8f9e5c448cd47ab)) - [@tbhb](https://github.com/tbhb)
+- (**tools**) report each skill's tool calls and its time on the clock (#30) - ([0c891d4](https://github.com/tbhb/repotools/commit/0c891d414ba61df2dc7858a2767cf891fde068ed)) - [@tbhb](https://github.com/tbhb)
+
+### Bug Fixes
+
+- (**ci**) read the release commit's file list out of a file - ([62a6fe8](https://github.com/tbhb/repotools/commit/62a6fe8730cb7a20d0fd5c6aa0ec022acb0b4222)) - [@tbhb](https://github.com/tbhb)
+- (**ci**) build the release commit's file list without argument limits - ([8072914](https://github.com/tbhb/repotools/commit/8072914a0b5e6f534dbfbdc24194fdb8fcce8d15)) - [@tbhb](https://github.com/tbhb)
+- (**tools**) hold the dispatched version to digits and dots alone - ([3402d34](https://github.com/tbhb/repotools/commit/3402d347e8b6e14441ebcf7962fb17c2db8c1029)) - [@tbhb](https://github.com/tbhb)
+- (**tools**) name the release ref rather than inferring it (#38) - ([d766538](https://github.com/tbhb/repotools/commit/d7665385f0e2dac7dcfeacf676ef805a677c4988)) - [@tbhb](https://github.com/tbhb)
+- verify a pinned preset reference at the ref it names (#37) - ([444f921](https://github.com/tbhb/repotools/commit/444f921633380c28a7c2dfabe88fdb35f627f0ff)) - [@tbhb](https://github.com/tbhb)
+
+### Revert
+
+- undo the partial v0.6.0 bump left on main - ([87a4bdc](https://github.com/tbhb/repotools/commit/87a4bdcf100937ebfd509fde61b39ef3371a348e)) - [@tbhb](https://github.com/tbhb)
+
+### Build system
+
+- scope Python coverage from the task instead of a member list (#35) - ([ff44888](https://github.com/tbhb/repotools/commit/ff44888d896d181bfc2af6a2ce5145e42ff6683d)) - [@tbhb](https://github.com/tbhb)
+- pre-approve the commit, pr, and merge confirmations per session (#36) - ([6f27794](https://github.com/tbhb/repotools/commit/6f277944a6751a9ab9b5881906afef37d0d2d06a)) - [@tbhb](https://github.com/tbhb)
+- install every workspace member and pin what resolves them (#34) - ([1f1e78e](https://github.com/tbhb/repotools/commit/1f1e78e755f924112c90f4c7f31838fdf2749df8)) - [@tbhb](https://github.com/tbhb)
+
+### Continuous Integration
+
+- create the release commit through the API so GitHub signs it (#39) - ([de08aa8](https://github.com/tbhb/repotools/commit/de08aa8615af97b4c9d73e782f3ab56027ace327)) - [@tbhb](https://github.com/tbhb)
+
+- - -
+
+<!-- release -->
+
 ## [v0.5.0](https://github.com/tbhb/repotools/compare/2b68005951deb9096af2e59b460b9f366867ae2c..v0.5.0) - 2026-08-03
 
 ### Bug Fixes

@@ -7,7 +7,7 @@ Shared agent tooling for tbhb repositories. The repo provides Go command-line to
 Repositories across tbhb install the shared primitives with the [APM CLI](https://microsoft.github.io/apm/quickstart/):
 
 ```bash
-apm install tbhb/repotools#v0.5.0
+apm install tbhb/repotools#v0.6.0
 ```
 
 The package deploys these primitives from [`.apm/`](.apm/):
@@ -36,7 +36,7 @@ A check is one rule enforced everywhere it matters. The same binary answers to a
 ```yaml
 repos:
   - repo: https://github.com/tbhb/repotools
-    rev: v0.5.0
+    rev: v0.6.0
     hooks:
       - id: guard-markdown
 ```
